@@ -60,7 +60,7 @@ bool QueryImplPq::prepare(const std::string & name, const std::string & statemen
     try {
         d->uniqueQueryIdentifier = name;
 
-        d->database->getConnection()->wrapped.prepare(*d->uniqueQueryIdentifier, statement);
+        d->database->getConnection()->prepare(*d->uniqueQueryIdentifier, statement);
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();

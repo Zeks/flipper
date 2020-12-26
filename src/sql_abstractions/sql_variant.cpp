@@ -19,6 +19,8 @@ Variant::Variant(const bool &data):data(data){}
 Variant::Variant(const QByteArray &data):data(data){}
 Variant::Variant(std::string &&data):data(data){}
 Variant::Variant(int32_t &&data):data(data){}
+
+Variant::Variant(const int64_t &data):data(data){}
 Variant::Variant(int64_t &&data):data(data){}
 Variant::Variant(uint32_t &&data):data(static_cast<uint64_t>(data)){}
 Variant::Variant(uint64_t &&data):data(data){}

@@ -625,7 +625,11 @@ sql::Database InitDatabase(QString name, bool setDefault)
         db = sql::Database::addDatabase("QSQLITE");
     else
         db = sql::Database::addDatabase("QSQLITE", name.toStdString());
-    db.setDatabaseName(path.toStdString() + ".sqlite");
+
+    sql::ConnectionToken token;
+    token.serviceName = path.toStdString() + ".sqlite";
+    db.setConnectionToken(token);
+
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
     InstallCustomFunctions(db);
@@ -667,7 +671,9 @@ sql::Database InitNamedDatabase(QString dbName, QString filename, bool setDefaul
         db = sql::Database::addDatabase("QSQLITE");
     else
         db = sql::Database::addDatabase("QSQLITE", dbName.toStdString());
-    db.setDatabaseName(filename.toStdString() + ".sqlite");
+    sql::ConnectionToken token;
+    token.serviceName = filename.toStdString() + ".sqlite";
+    db.setConnectionToken(token);
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << dbName << ", open : " << isOpen;
     InstallCustomFunctions(db);
@@ -683,7 +689,11 @@ sql::Database InitDatabase2(QString file, QString name, bool setDefault)
         db = sql::Database::addDatabase("QSQLITE");
     else
         db = sql::Database::addDatabase("QSQLITE", name.toStdString());
-    db.setDatabaseName(file.toStdString() + ".sqlite");
+
+    sql::ConnectionToken token;
+    token.serviceName = file.toStdString() + ".sqlite";
+    db.setConnectionToken(token);
+
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
     InstallCustomFunctions(db);
@@ -703,7 +713,11 @@ sql::Database InitAndUpdateDatabaseForFile(QString folder,
     else
         db = sql::Database::addDatabase("QSQLITE", connectionName.toStdString());
     QString filename  = folder + "/" + file + ".sqlite";
-    db.setDatabaseName(filename.toStdString());
+
+
+    sql::ConnectionToken token;
+    token.serviceName = filename.toStdString() + ".sqlite";
+    db.setConnectionToken(token);
     bool isOpen = db.open();
 
     InstallCustomFunctions(db);

@@ -25,6 +25,7 @@ public:
     void bindValue(const QueryBinding &);
     void bindValue(QueryBinding &&);
     bool next();
+    virtual void setNamedQuery(std::string);
     bool supportsVectorizedBind() const;
     Variant value(int) const;
     Variant value(const std::string &) const;

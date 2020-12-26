@@ -4,7 +4,7 @@
 #include <unordered_map>
 namespace sql {
 
-std::unordered_map<std::string, std::string> namedQueries;
+//std::unordered_map<std::string, std::string> namedQueries;
 
 ESqlErrors SqliteErrorCodeToLocalErrorCode(int sqliteErrorCode){
     switch(sqliteErrorCode){
@@ -16,7 +16,7 @@ ESqlErrors SqliteErrorCodeToLocalErrorCode(int sqliteErrorCode){
         return ESqlErrors::se_none;
     default:
         QLOG_ERROR() << "Unexpected unknowm error code:" + QString::number(sqliteErrorCode).toStdString();
-        return ESqlErrors::se_unknown;
+        return ESqlErrors::se_generic_sql_error;
     }
 
 
@@ -58,8 +58,8 @@ bool QueryImplSqlite::prepare(std::string && sql)
 bool QueryImplSqlite::exec()
 {
     auto result = q.exec();
-    if(namedQueries.find(queryName) == std::end(namedQueries))
-        namedQueries[queryName] = q.lastQuery().toStdString();
+//    if(namedQueries.find(queryName) == std::end(namedQueries))
+//        namedQueries[queryName] = q.lastQuery().toStdString();
     return result;
 }
 

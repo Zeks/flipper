@@ -45,9 +45,9 @@ Database Database::database(std::string name)
     return Database();
 }
 
-void Database::setDatabaseName(std::string name)
+void Database::setConnectionToken(ConnectionToken token)
 {
-    d->setDatabaseName(name);
+    d->setConnectionToken(token);
 }
 
 std::string Database::driverType() const

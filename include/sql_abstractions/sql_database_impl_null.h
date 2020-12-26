@@ -4,7 +4,7 @@ namespace sql {
 class DatabaseImplNull : public DatabaseImplBase{
     public:
     DatabaseImplNull():DatabaseImplBase(){}
-    void setDatabaseName(std::string) override;
+    void setConnectionToken(ConnectionToken) override;
     bool open()override;
     bool isOpen() const override;
     bool transaction() override;

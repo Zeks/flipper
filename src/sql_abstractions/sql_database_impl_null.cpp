@@ -2,7 +2,7 @@
 
 namespace sql {
 
-void DatabaseImplNull::setDatabaseName(std::string)
+void DatabaseImplNull::setConnectionToken(ConnectionToken)
 {
     // intentionally empty
 }

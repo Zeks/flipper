@@ -8,7 +8,7 @@
 #include "sql_abstractions/sql_database.h"
 
 namespace sql {
-std::unordered_map<std::string, std::string> namedQueries;
+static std::unordered_map<std::string, std::string> namedQueries;
 
 Query::Query(Database db)
 {

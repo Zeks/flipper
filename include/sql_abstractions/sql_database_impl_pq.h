@@ -21,7 +21,7 @@ class DatabaseImplPq : public DatabaseImplBase{
     std::string driverType() const override;
     std::shared_ptr<DatabaseImplPqImpl> d;
     std::shared_ptr<pqxx::work> getTransaction();
-    std::shared_ptr<PQXXConnectionWrapper> getConnection();
+    pqxx::connection* getConnection();
 };
 
 }

@@ -70,6 +70,11 @@ bool QueryImplNull::next()
     return {};
 }
 
+void QueryImplNull::setNamedQuery(std::string)
+{
+    throw std::logic_error("use of nulld sql driver");
+}
+
 bool QueryImplNull::supportsVectorizedBind() const
 {
     throw std::logic_error("use of nulld sql driver");

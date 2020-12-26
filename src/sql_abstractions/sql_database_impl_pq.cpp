@@ -10,7 +10,8 @@
 namespace sql {
 class DatabaseImplPqImpl:std::enable_shared_from_this<DatabaseImplPqImpl>{
 public:
-    std::shared_ptr<PQXXConnectionWrapper> connection;
+    //std::shared_ptr<PQXXConnectionWrapper> connection;
+    pqxx::connection connection;
     std::string connectionName;
     ConnectionToken token;
     std::shared_ptr<pqxx::work> transaction;
@@ -20,7 +21,6 @@ public:
 DatabaseImplPq::DatabaseImplPq()
 {
     d.reset(new DatabaseImplPqImpl());
-    d->connection.reset(new PQXXConnectionWrapper());
 }
 
 void DatabaseImplPq::setConnectionToken(ConnectionToken token)
@@ -33,7 +33,7 @@ bool DatabaseImplPq::open()
     auto& token = d->token;
     auto uri = fmt::format("postgresql://{0}:{1}@{2}:{3}", token.user,token.password, token.ip, token.port);
     try {
-        d->connection->wrapped = pqxx::connection(uri);
+        d->connection = pqxx::connection(uri);
     }
     catch (const pqxx::broken_connection& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_broken_connection);
@@ -45,13 +45,13 @@ bool DatabaseImplPq::open()
         QLOG_ERROR() << e.what();
         return false;
     }
-    return d->connection->wrapped.is_open();
+    return d->connection.is_open();
 }
 
 bool DatabaseImplPq::isOpen() const
 {
     try {
-        return d->connection->wrapped.is_open();
+        return d->connection.is_open();
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
@@ -66,7 +66,7 @@ bool DatabaseImplPq::transaction()
     if(d->transaction)
         return true;
     try {
-        d->transaction.reset(new pqxx::work(d->connection->wrapped));
+        d->transaction.reset(new pqxx::work(d->connection));
     }
     catch (const pqxx::broken_connection& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_broken_connection);
@@ -108,7 +108,7 @@ bool DatabaseImplPq::rollback()
 void DatabaseImplPq::close()
 {
     try{
-    d->connection->wrapped.close();
+    d->connection.close();
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
@@ -140,9 +140,9 @@ std::shared_ptr<pqxx::work> DatabaseImplPq::getTransaction()
     return d->transaction;
 }
 
-std::shared_ptr<PQXXConnectionWrapper> DatabaseImplPq::getConnection()
+pqxx::connection *DatabaseImplPq::getConnection()
 {
-    return d->connection;
+    return &d->connection;
 }
 
 }
