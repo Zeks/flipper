@@ -1,5 +1,6 @@
 #include "sql_abstractions/sql_query_impl_pq.h"
 #include "sql_abstractions/sql_database_impl_pq.h"
+#include "sql_abstractions/sql_error.h"
 #include <pqxx/pqxx>
 #include "fmt/format.h"
 #include "logger/QsLog.h"
@@ -13,11 +14,12 @@ struct QueryImplPqImpl{
     std::shared_ptr<DatabaseImplPq> database;
     std::string preparedStatementId;
     bool namedStatement;
-    std::string delayedStatement;
+    std::string Statement;
     std::optional<std::string> uniqueQueryIdentifier;
     std::vector<QueryBinding> bindings;
     pqxx::result resultSet;
     std::optional<pqxx::result::const_iterator> current_result_iterator;
+    Error lastError;
 };
 QueryImplPq::QueryImplPq() : d(new QueryImplPqImpl())
 {
@@ -29,11 +31,23 @@ QueryImplPq::QueryImplPq(std::shared_ptr<DatabaseImplPq> db) : QueryImplPq()
     d->database = db;
 }
 
+QueryImplPq::QueryImplPq(const std::string& query, std::shared_ptr<DatabaseImplPq> impl): QueryImplPq(impl)
+{
+    d->Statement = query;
+}
+
+QueryImplPq::QueryImplPq(std::string&& query, std::shared_ptr<DatabaseImplPq> impl): QueryImplPq(impl)
+{
+    d->Statement = query;
+}
+
+
+
 bool QueryImplPq::NeedsPreparing(const std::string& statement){
     if(statement.find("$1") == std::string::npos)
     {
         // we're not supposed to prepare this
-        d->delayedStatement = statement;
+        d->Statement = statement;
         return false;
     }
     return true;
@@ -47,7 +61,8 @@ bool QueryImplPq::prepare(const std::string & name, const std::string & statemen
         d->uniqueQueryIdentifier = name;
 
         d->database->getConnection()->wrapped.prepare(*d->uniqueQueryIdentifier, statement);
-    }  catch (const std::exception& e) {
+    }  catch (const pqxx::failure& e) {
+        d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
         return false;
     }
@@ -94,11 +109,12 @@ bool QueryImplPq::exec()
 
     auto transaction = d->database->getTransaction();
 
-    if(!d->delayedStatement.empty()){
+    if(!d->Statement.empty()){
         try{
-            d->resultSet = transaction->exec(d->delayedStatement);
+            d->resultSet = transaction->exec(d->Statement);
         }
-        catch (const std::exception& e) {
+        catch (const pqxx::failure& e) {
+            d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
             QLOG_ERROR() << e.what();
             return false;
         }
@@ -108,9 +124,10 @@ bool QueryImplPq::exec()
             auto dynamicParams = pqxx::prepare::make_dynamic_params(d->bindings, [](const auto& v){
                 return VariantToString(v.value);
             });
-            d->resultSet = transaction->exec_prepared(d->delayedStatement, dynamicParams);
+            d->resultSet = transaction->exec_prepared(d->Statement, dynamicParams);
         }
-        catch (const std::exception& e) {
+        catch (const pqxx::failure& e) {
+            d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
             QLOG_ERROR() << e.what();
             return false;
         }
@@ -188,28 +205,24 @@ bool QueryImplPq::supportsVectorizedBind() const
     return true;
 }
 
-Variant QueryImplPq::value(int index) const
-{
-    if(!d->current_result_iterator.has_value())
-        throw std::logic_error("cannot fetch data from invalid iterator");
-    pqxx::row& row = *d->current_result_iterator;
-    auto field = row.at(index);
+Variant FieldToVariant(const pqxx::row::reference& field){
+    Variant v;
     try{
         switch(field.type()){
         case 23:
             int64_t result;
             if(auto [p, ec] = std::from_chars(field.view().begin(), field.view().end(), result); ec == std::errc())
-                return Variant(result);
+                v = Variant(result);
             return Variant();
             break; // int4 aka bigint
         case 1043:
-            QLOG_INFO() << "Date is returned as: " << std::string(field.view());
-            return Variant();
+            QLOG_INFO() << "Date is returned as: " << field.c_str();
+            v = Variant();
             break; // timestamp, test format: 1999-01-08
         case 1114:
-            return Variant(std::string(field.view()));
+            v = Variant(field.c_str());
             break; // varchar
-        default:
+            default:
             throw std::logic_error("Received type that isn't available for processing:" + std::to_string(field.type()));
                     break;
         }
@@ -220,47 +233,56 @@ Variant QueryImplPq::value(int index) const
     catch(const std::out_of_range& e){
         QLOG_ERROR() << "could not convert string to number, out of range: " + std::string(field.view());
     }
-    return {};
+
+    return v;
+}
+
+Variant QueryImplPq::value(int index) const
+{
+    if(!d->current_result_iterator.has_value())
+        throw std::logic_error("cannot fetch data from invalid iterator");
+    auto row = d->current_result_iterator.operator->();
+    auto field = row->at(index);
+   return FieldToVariant(field);
 }
 
 Variant QueryImplPq::value(const std::string & name) const
 {
-    throw std::logic_error("use of nulld sql driver");
-    return {};
+    auto row = *d->current_result_iterator;
+    return FieldToVariant(row.at(name));
 }
 
 Variant QueryImplPq::value(std::string && name) const
 {
-    throw std::logic_error("use of nulld sql driver");
-    return {};
+    auto row = *d->current_result_iterator;
+    return FieldToVariant(row.at(name));
 }
 
 Variant QueryImplPq::value(const char * name) const
 {
-    throw std::logic_error("use of nulld sql driver");
-    return {};
+    auto row = *d->current_result_iterator;
+    return FieldToVariant(row.at(name));
 }
 
-QSqlRecord QueryImplPq::record()
-{
-    throw std::logic_error("use of nulld sql driver");
-    return {};
-}
+//QSqlRecord QueryImplPq::record()
+//{
+//    throw std::logic_error("use of nulld sql driver");
+//    return {};
+//}
 
 Error QueryImplPq::lastError() const
 {
-    throw std::logic_error("use of nulld sql driver");
-    return {};
+    return d->lastError;
 }
 
 std::string QueryImplPq::lastQuery() const
 {
-    throw std::logic_error("use of nulld sql driver");
+    return d->Statement;
 }
 
 std::string QueryImplPq::implType() const
 {
-    return "null";
+    return "PQXX";
 }
 
 }

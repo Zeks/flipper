@@ -1,4 +1,5 @@
 #include "sql_abstractions/sql_database_impl_pq.h"
+#include "sql_abstractions/sql_error.h"
 #include "sql_abstractions/pqxx_connection_wrapper.h"
 
 #include "fmt/format.h"
@@ -13,6 +14,7 @@ public:
     std::string connectionName;
     ConnectionToken token;
     std::shared_ptr<pqxx::work> transaction;
+    Error lastError;
 };
 
 DatabaseImplPq::DatabaseImplPq()
@@ -32,7 +34,14 @@ bool DatabaseImplPq::open()
     auto uri = fmt::format("postgresql://{0}:{1}@{2}:{3}", token.user,token.password, token.ip, token.port);
     try {
         d->connection->wrapped = pqxx::connection(uri);
-    }  catch (const std::exception& e) {
+    }
+    catch (const pqxx::broken_connection& e) {
+        d->lastError = Error(e.what(), ESqlErrors::se_broken_connection);
+        QLOG_ERROR() << e.what();
+        return false;
+    }
+    catch (const pqxx::failure& e) {
+        d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
         return false;
     }
@@ -43,7 +52,8 @@ bool DatabaseImplPq::isOpen() const
 {
     try {
         return d->connection->wrapped.is_open();
-    }  catch (const std::exception& e) {
+    }  catch (const pqxx::failure& e) {
+        d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
         return false;
     }
@@ -57,7 +67,14 @@ bool DatabaseImplPq::transaction()
         return true;
     try {
         d->transaction.reset(new pqxx::work(d->connection->wrapped));
-    }  catch (const std::exception& e) {
+    }
+    catch (const pqxx::broken_connection& e) {
+        d->lastError = Error(e.what(), ESqlErrors::se_broken_connection);
+        QLOG_ERROR() << e.what();
+        return false;
+    }
+    catch (const pqxx::failure& e) {
+        d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
         return false;
     }
@@ -68,7 +85,8 @@ bool DatabaseImplPq::commit()
 {
     try{
     d->transaction->commit();
-    }  catch (const std::exception& e) {
+    }  catch (const pqxx::failure& e) {
+        d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
         return false;
     }
@@ -79,7 +97,8 @@ bool DatabaseImplPq::rollback()
 {
     try{
         d->transaction->abort();
-    }  catch (const std::exception& e) {
+    }  catch (const pqxx::failure& e) {
+        d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
         return false;
     }
@@ -90,7 +109,8 @@ void DatabaseImplPq::close()
 {
     try{
     d->connection->wrapped.close();
-    }  catch (const std::exception& e) {
+    }  catch (const pqxx::failure& e) {
+        d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
     }
 }

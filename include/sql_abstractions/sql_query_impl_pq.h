@@ -17,6 +17,8 @@ class QueryImplPq: public QueryImplBase{
 public:
     QueryImplPq();
     QueryImplPq(std::shared_ptr<DatabaseImplPq>);
+    QueryImplPq(const std::string& query, std::shared_ptr<DatabaseImplPq>);
+    QueryImplPq(std::string&& query, std::shared_ptr<DatabaseImplPq>);
 
     //prepares a nameless statement with automatic uuid
     bool prepare(const std::string &, const std::string &) override;
@@ -36,7 +38,7 @@ public:
     Variant value(const std::string &) const  override;
     Variant value(std::string &&) const  override ;
     Variant value(const char *) const  override;
-    QSqlRecord record()  override;
+    //QSqlRecord record()  override;
     Error lastError() const override;
     std::string lastQuery() const  override;
     std::string implType() const override;

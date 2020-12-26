@@ -125,10 +125,10 @@ Variant Query::value(const char * name) const
     return d->value(name);
 }
 
-QSqlRecord Query::record()
-{
-    return d->record();
-}
+//QSqlRecord Query::record()
+//{
+//    return d->record();
+//}
 
 Error Query::lastError() const
 {

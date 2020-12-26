@@ -100,11 +100,11 @@ Variant QueryImplNull::value(const char *) const
     return {};
 }
 
-QSqlRecord QueryImplNull::record()
-{
-    throw std::logic_error("use of nulld sql driver");
-    return {};
-}
+//QSqlRecord QueryImplNull::record()
+//{
+//    throw std::logic_error("use of nulld sql driver");
+//    return {};
+//}
 
 Error QueryImplNull::lastError() const
 {

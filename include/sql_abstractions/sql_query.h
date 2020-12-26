@@ -44,7 +44,7 @@ public:
     Variant value(const std::string&)  const;
     Variant value(std::string&&)  const;
     Variant value(const char*) const;
-    QSqlRecord record();
+    //QSqlRecord record();
     Error lastError() const;
     std::string lastQuery() const;
 

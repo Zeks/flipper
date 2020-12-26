@@ -158,10 +158,10 @@ Variant QueryImplSqlite::value(const char * fieldName) const
     return Variant(q.value(fieldName));
 }
 
-QSqlRecord QueryImplSqlite::record()
-{
-    return q.record();
-}
+//QSqlRecord QueryImplSqlite::record()
+//{
+//    return q.record();
+//}
 
 Error QueryImplSqlite::lastError() const
 {

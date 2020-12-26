@@ -29,7 +29,7 @@ public:
     virtual Variant value(const std::string&)  const = 0;
     virtual Variant value(std::string&&)  const = 0;
     virtual Variant value(const char*) const = 0;
-    virtual QSqlRecord record() = 0;
+    //virtual QSqlRecord record() = 0;
     virtual Error lastError() const = 0;
     virtual std::string lastQuery() const = 0;
     virtual std::string implType() const = 0;
