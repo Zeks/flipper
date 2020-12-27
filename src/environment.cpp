@@ -1131,7 +1131,7 @@ PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDat
 {
     interfaces.fanfics->ClearProcessedHash();
     auto fandoms = interfaces.fandoms->ListOfTrackedFandoms();
-    qDebug()  << "Tracked fandoms: " << fandoms;
+    //qDebug()  << "Tracked fandoms: " << fandoms;
     emit resetEditorText();
 
     QStringList nameList;

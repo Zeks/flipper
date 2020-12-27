@@ -50,8 +50,8 @@ sql::Database DatabaseVendor::InstantiateDatabase(const sql::ConnectionToken & t
 {
     sql::Database db;
     db = sql::Database::addDatabase(token.tokenType, token.serviceName + QUuid::createUuid().toString().toStdString());
-    auto filename = token.folder.empty() ? token.serviceName : token.folder + "/" + token.serviceName;
     if(token.tokenType == "QSQLITE"){
+        auto filename = token.folder.empty() ? token.serviceName : token.folder + "/" + token.serviceName;
         sql::ConnectionToken databaseToken;
         databaseToken.serviceName = filename + ".sqlite";
         db.setConnectionToken(databaseToken);

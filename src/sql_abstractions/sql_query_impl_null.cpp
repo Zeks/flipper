@@ -1,6 +1,5 @@
 #include "sql_abstractions/sql_query_impl_null.h"
 namespace sql {
-std::shared_ptr<std::unordered_map<std::string, std::string>> QueryImplBase::namedQueriesHolder{new std::unordered_map<std::string, std::string>};
 QueryImplNull::QueryImplNull()
 {
 

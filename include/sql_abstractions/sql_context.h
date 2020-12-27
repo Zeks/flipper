@@ -154,16 +154,7 @@ struct SqlContext
             }
         }
     }
-//    template <typename KeyType>
-//    void ExecuteWithKeyListAndBindFunctor(std::vector<KeyType> keyList, std::function<void(KeyType&& key, sql::Query& q)>&& functor, bool ignoreUniqueness = false){
-//        BindValues();
-//        for(auto&& key : keyList)
-//        {
-//            functor(std::move(key), q);
-//            if(!ExecAndCheck(ignoreUniqueness))
-//                break;
-//        }
-//    }
+
     template<template <class> class  ContainerType, typename KeyType>
     void ExecuteWithKeyListAndBindFunctor(ContainerType<KeyType> keyList, std::function<void(KeyType&& key, sql::Query& q)>&& functor, bool ignoreUniqueness = false){
         BindValues();
@@ -241,10 +232,10 @@ struct SqlContext
         } while(q.next());
     }
     template <typename ValueType>
-    void FetchLargeSelectIntoList(std::string&& fieldName, std::string&& actualQuery, std::function<ValueType(sql::Query&)>&& func, std::string&& countQuery = "")
+    void FetchLargeSelectIntoList(std::string&& actualQuery, std::function<ValueType(sql::Query&)>&& func, std::string&& countQuery = "")
     {
         if(countQuery.length() == 0)
-            qs = "select count(*) from ( " + actualQuery + " ) ";
+            qs = "select count(*) from ( " + actualQuery + " ) as aliased_count";
         else
             qs = countQuery;
         Prepare(qs);

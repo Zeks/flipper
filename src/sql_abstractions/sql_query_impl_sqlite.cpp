@@ -57,10 +57,7 @@ bool QueryImplSqlite::prepare(std::string && sql)
 
 bool QueryImplSqlite::exec()
 {
-    auto result = q.exec();
-//    if(namedQueries.find(queryName) == std::end(namedQueries))
-//        namedQueries[queryName] = q.lastQuery().toStdString();
-    return result;
+    return q.exec();
 }
 
 void QueryImplSqlite::setForwardOnly(bool value)
@@ -159,6 +156,8 @@ Variant QueryImplSqlite::value(const char * fieldName) const
 
 Error QueryImplSqlite::lastError() const
 {
+    // with wrapped qt driver error can actually happen in prepare statement
+    // for this I keep the error that happened there and return it here
     if(prepareErrorStorage.isValid()){
         if(prepareErrorStorage.text().find("duplicate column") != std::string::npos)
         {
@@ -167,11 +166,6 @@ Error QueryImplSqlite::lastError() const
         }
         return prepareErrorStorage;
     }
-//    if(q.lastError().isValid()){
-//        QLOG_ERROR() << q.lastError().nativeErrorCode();
-//        QLOG_ERROR() << q.lastError().driverText();
-//        QLOG_ERROR() << q.lastError().databaseText();
-//    }
     return Error(q.lastError().text().toStdString(), SqliteErrorCodeToLocalErrorCode(q.lastError().nativeErrorCode().toInt()));
 }
 

@@ -26,8 +26,8 @@ database::Transaction::Transaction(sql::Database db)
 {
     this->db = db;
     QWriteLocker locker(&lock);
-    auto connetionName = db.connectionName();
-    if(!transactionSet.contains(connetionName))
+    auto connectionName = db.connectionName();
+    if(!transactionSet.contains(connectionName))
     {
         //qDebug() << "opening transaction";
         start();

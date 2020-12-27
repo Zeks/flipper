@@ -1,15 +1,11 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <QSqlRecord>
-#include <QSqlDatabase>
-#include <QSqlQuery>
+
 #include "sql_abstractions/sql_variant.h"
 #include "sql_abstractions/sql_error.h"
 #include "sql_abstractions/sql_query_impl_base.h"
 #include "sql_abstractions/sql_database_impl_pq.h"
-#include "sql_abstractions/pqxx_connection_wrapper.h"
 
+#include <string>
 
 namespace sql{
 struct QueryImplPqImpl;
@@ -46,6 +42,6 @@ private:
     // not in interface
     bool NeedsPreparing(const std::string& statement);
     void ExtractNamedPlaceholders(std::string_view);
-    std::string ReplaceNamedPlaceholders(std::string);
+    void ReplaceNamedPlaceholders(std::string &);
 };
 }

@@ -24,11 +24,11 @@ bool PushFandomToTopOfRecent(QString fandom, sql::Database db);
 QStringList FetchRecentFandoms(sql::Database db);
 bool RebaseFandomsToZero(sql::Database db);
 QDateTime GetCurrentDateTime(sql::Database db);
-sql::Database InitDatabase(QString name, bool setDefault = false);
-sql::Database InitDatabase2(QString file, QString name, bool setDefault = false);
-sql::Database InitNamedDatabase(QString dbName, QString filename, bool setDefault = false);
+sql::Database InitSqliteDatabase(QString name, bool setDefault = false);
+sql::Database InitSqliteDatabase2(QString file, QString name, bool setDefault = false);
+sql::Database InitNamedSqliteDatabase(QString dbName, QString filename, bool setDefault = false);
 
-sql::Database InitAndUpdateDatabaseForFile(QString folder, QString file, QString sqlFile, QString connectionName, bool setDefault);
+sql::Database InitAndUpdateSqliteDatabaseForFile(QString folder, QString file, QString sqlFile, QString connectionName, bool setDefault);
 
 int CreateNewTask(sql::Database db);
 int CreateNewSubTask(int taskId, int subTaskId, sql::Database db);

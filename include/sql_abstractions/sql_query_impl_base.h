@@ -34,7 +34,7 @@ public:
     virtual std::string lastQuery() const = 0;
     virtual std::string implType() const = 0;
     std::string queryName;
-    static std::shared_ptr<std::unordered_map<std::string, std::string>> namedQueriesHolder;
+    //static std::shared_ptr<std::unordered_map<std::string, std::string>> namedQueriesHolder;
     //std::shared_ptr<QueryImplBase> d;
 };
 

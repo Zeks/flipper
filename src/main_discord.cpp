@@ -69,7 +69,6 @@ int main(int argc, char *argv[]) {
     a.setApplicationName("Socrates");
     SetupLogger();
 
-    QString discordServiceToken;
     QSettings settings("settings/settings_discord.ini", QSettings::IniFormat);
 
     sql::ConnectionToken pgConnectionToken;
@@ -79,19 +78,26 @@ int main(int argc, char *argv[]) {
     pgConnectionToken.user = settings.value("users/login").toString().toStdString();
     pgConnectionToken.tokenType = "PQXX";
     sql::Database db;
-    db = sql::Database::addDatabase("PQXX");
+    db = sql::Database::addDatabase(pgConnectionToken.tokenType);
     db.setConnectionToken(pgConnectionToken);
     auto openResult = db.open();
     if(!openResult)
+    {
+        QLOG_ERROR() << "Failed to open database at the application start, exiting";
         return -1;
+    }
 
+    QString discordServiceToken;
     discordServiceToken = sql::GetUserToken(db).data;
     if(discordServiceToken.isEmpty())
+    {
+        QLOG_ERROR() << "couldn't get discord service token from the database, exiting";
         return -1;
+    }
 
 
     QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-    pageCacheInterface->SetDatabase(database::sqlite::InitAndUpdateDatabaseForFile("database","PageCache","dbcode/pagecacheinit.sql", "PageCache", false));
+    pageCacheInterface->SetDatabase(database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","PageCache","dbcode/pagecacheinit.sql", "PageCache", false));
     pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
 
     An<discord::DatabaseVendor> vendor;

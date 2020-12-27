@@ -74,13 +74,13 @@ bool SqliteInterface::ReadDbFile(QString file, QString connectionName)
 
 sql::Database SqliteInterface::InitDatabase(QString connectionName, bool setDefault)
 {
-    db = sqlite::InitDatabase(connectionName, setDefault);
+    db = sqlite::InitSqliteDatabase(connectionName, setDefault);
     return db;
 }
 
 sql::Database SqliteInterface::InitDatabase2(QString fileName, QString connectionName, bool setDefault)
 {
-    db = sqlite::InitDatabase2(fileName, connectionName, setDefault);
+    db = sqlite::InitSqliteDatabase2(fileName, connectionName, setDefault);
     return db;
 }
 
@@ -90,7 +90,7 @@ sql::Database SqliteInterface::InitAndUpdateDatabaseForFile(QString folder,
                                                            QString connectionName,
                                                            bool setDefault)
 {
-    db = sqlite::InitAndUpdateDatabaseForFile(folder,file,  sqlFile, connectionName, setDefault);
+    db = sqlite::InitAndUpdateSqliteDatabaseForFile(folder,file,  sqlFile, connectionName, setDefault);
     return db;
 }
 
@@ -160,7 +160,7 @@ bool SqliteInterface::PassReadingDataToAnotherDatabase(sql::Database dbTarget)
 
 sql::Database SqliteInterface::InitNamedDatabase(QString dbName, QString fileName, bool setDefault)
 {
-    db = sqlite::InitNamedDatabase(dbName, fileName, setDefault);
+    db = sqlite::InitNamedSqliteDatabase(dbName, fileName, setDefault);
     EnsureUUIDForUserDatabase();
     return db;
 }

@@ -1,9 +1,9 @@
 #include "sql_abstractions/sql_database_impl_pq.h"
 #include "sql_abstractions/sql_error.h"
-#include "sql_abstractions/pqxx_connection_wrapper.h"
 
 #include "fmt/format.h"
 #include "logger/QsLog.h"
+
 #include <optional>
 #include <iostream>
 
@@ -85,14 +85,14 @@ bool DatabaseImplPq::transaction()
 bool DatabaseImplPq::commit()
 {
     try{
-    d->transaction->commit();
-    d->transaction.reset();
+        d->transaction->commit();
+        d->transaction.reset();
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
         return false;
     }
-    return false;
+    return true;
 }
 
 bool DatabaseImplPq::rollback()
@@ -105,15 +105,15 @@ bool DatabaseImplPq::rollback()
         QLOG_ERROR() << e.what();
         return false;
     }
-    return false;
+    return true;
 }
 
 void DatabaseImplPq::close()
 {
     try{
-    d->connection->close();
-    d->connection.reset();
-    d->transaction.reset();
+        d->transaction.reset();
+        d->connection->close();
+        d->connection.reset();
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();

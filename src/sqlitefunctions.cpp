@@ -617,7 +617,7 @@ QDateTime GetCurrentDateTime(sql::Database db)
     return dt;
 }
 
-sql::Database InitDatabase(QString name, bool setDefault)
+sql::Database InitSqliteDatabase(QString name, bool setDefault)
 {
     QString path = name;
     sql::Database db;
@@ -664,7 +664,7 @@ int CreateNewSubTask(int taskId, sql::Database db)
     return id;
 }
 
-sql::Database InitNamedDatabase(QString dbName, QString filename, bool setDefault)
+sql::Database InitNamedSqliteDatabase(QString dbName, QString filename, bool setDefault)
 {
     sql::Database db;
     if(setDefault)
@@ -681,7 +681,7 @@ sql::Database InitNamedDatabase(QString dbName, QString filename, bool setDefaul
     return db;
 }
 
-sql::Database InitDatabase2(QString file, QString name, bool setDefault)
+sql::Database InitSqliteDatabase2(QString file, QString name, bool setDefault)
 {
     //QString path = name;
     sql::Database db;
@@ -701,7 +701,7 @@ sql::Database InitDatabase2(QString file, QString name, bool setDefault)
     return db;
 }
 
-sql::Database InitAndUpdateDatabaseForFile(QString folder,
+sql::Database InitAndUpdateSqliteDatabaseForFile(QString folder,
                                           QString file,
                                           QString sqlFile,
                                           QString connectionName,

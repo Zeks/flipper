@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "threaded_data/threaded_load.h"
 #include "threaded_data/common_traits.h"
-#include "sql_abstractions/string_streamer.h"
 
 #include <QThread>
 #include <QDebug>

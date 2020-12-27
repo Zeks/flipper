@@ -594,7 +594,7 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForFics(QSet<int> fics, sql::Database 
     userThreadData->ficsForAuthorSearch = fics;
     std::string qs = "select distinct author_id from fanfics where cfInFicsForAuthors(id) > 0";
     SqlContext<QSet<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList<int>("author_id", std::move(qs), [](sql::Query& q){
+    ctx.FetchLargeSelectIntoList<int>(std::move(qs), [](sql::Query& q){
         return q.value("author_id").toInt();
     });
     ctx.result.data.remove(0);
@@ -611,7 +611,7 @@ DiagnosticSQLResult<QSet<int>> GetRecommendersForFics(QSet<int> fics, sql::Datab
         list.push_back(QString::number(fic));
     qs = fmt::format(qs, "'" + list.join("','").toStdString() + "'");
     SqlContext<QSet<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList<int>("recommender_id", std::move(qs), [](sql::Query& q){
+    ctx.FetchLargeSelectIntoList<int>(std::move(qs), [](sql::Query& q){
         return q.value("recommender_id").toInt();
     });
     ctx.result.data.remove(0);
@@ -683,7 +683,7 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  sql:
 
     //!!! bindvalue incorrect for first query?
     SqlContext<QList<core::AuthorPtr>> ctx(db, {{"site",website}});
-    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", std::move(qs), [](sql::Query& q){
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>(std::move(qs), [](sql::Query& q){
         return AuthorFromQuery(q);
     }, "select count(*) from recommenders where website_type = :site");
     return std::move(ctx.result);
@@ -713,7 +713,7 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QStr
     SqlContext<QList<core::AuthorPtr>> ctx(db);
     ctx.bindValue("site",website);
     ctx.bindValue("date",date);
-    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", std::move(qs),
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>(std::move(qs),
                                                   [](sql::Query& q){
         return AuthorFromQuery(q);
     },"select count(*) from recommenders where website_type = :site");
@@ -749,7 +749,7 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QS
     ctx.bindValue("date_start",dateStart);
     ctx.bindValue("date_end",dateEnd);
     ctx.bindValue("site",website);
-    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("",  std::move(qs),
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>(std::move(qs),
                                                   [](sql::Query& q){
         return AuthorFromQuery(q);
     }, "select count(*) from recommenders where website_type = :site");
@@ -1784,16 +1784,16 @@ DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(s
             // genres detected
             for(int i = 1; i < 4; i++)
             {
-                QString tgKey = "true_genre" + QString::number(i);
-                QString tgKeyValue = "true_genre" + QString::number(i) + "_percent";
-                QString genre = QString::fromStdString(q.value(tgKey.toStdString()).toString());
-                if(genre.isEmpty()){
+                auto tgKey = "true_genre" + std::to_string(i);
+                auto tgKeyValue = "true_genre" + std::to_string(i) + "_percent";
+                auto genre = q.value(tgKey).toString();
+                if(genre.empty()){
                     break;
                 }
 
                 genre_stats::GenreBit bit;
-                bit.genres = genre.split(QRegExp("[\\s,]"), Qt::SkipEmptyParts);
-                bit.relevance = q.value(tgKeyValue.toStdString()).toFloat();
+                bit.genres = QString::fromStdString(genre).split(QRegExp("[\\s,]"), Qt::SkipEmptyParts);
+                bit.relevance = q.value(tgKeyValue).toFloat();
                 bit.isDetected = true;
                 for(const auto& genreBit : std::as_const(bit.genres))
                     if(genres.contains(genreBit))
@@ -2243,7 +2243,7 @@ DiagnosticSQLResult<QStringList>  GetFandomNamesForFicId(int fic_id, sql::Databa
     SqlContext<QStringList> ctx(db, std::move(qs), BP1(fic_id));
     ctx.ForEachInSelect([&](sql::Query& q){
         auto fandom = trim_copy(q.value("name").toString());
-        if(fandom.find("????") != std::string::npos)
+        if(fandom.find("????") == std::string::npos)
             ctx.result.data.push_back(QString::fromStdString(fandom));
     });
     return std::move(ctx.result);

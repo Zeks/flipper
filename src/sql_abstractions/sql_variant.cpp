@@ -2,7 +2,7 @@
 #include <QUuid>
 
 namespace sql{
-
+template<class> inline constexpr bool always_false_v = false;
 Variant::Variant(){}
 Variant::Variant(const std::string & data):data(data){}
 Variant::Variant(const char *data):data(std::string(data)){}

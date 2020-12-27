@@ -40,7 +40,7 @@ static inline QString CreateConnectString(QString ip,QString port)
 void TaskEnvironment::Init()
 {
     QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
-    userDbInterface->SetDatabase(database::sqlite::InitAndUpdateDatabaseForFile("database","DiscordDB","dbcode/discord_init.sql", "DiscordDB", false));
+    userDbInterface->SetDatabase(database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","DiscordDB","dbcode/discord_init.sql", "DiscordDB", false));
     userDbInterface->EnsureUUIDForUserDatabase();
 
     QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());

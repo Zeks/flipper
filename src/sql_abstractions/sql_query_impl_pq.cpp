@@ -12,14 +12,17 @@
 #include <stdexcept>
 #include <charconv>
 
-
-
 namespace sql {
+
+struct Statement{
+    std::string originalStatement;
+    std::string editedStatement;
+};
+
 struct QueryImplPqImpl{
     std::shared_ptr<DatabaseImplPq> database;
-    std::string preparedStatementId;
-    bool namedStatement;
-    std::string Statement;
+    Statement statement;
+    std::string originalStatement;
     std::optional<std::string> uniqueQueryIdentifier;
     std::vector<QueryBinding> bindings;
     std::vector<std::string> foundNamedPlaceholders;
@@ -39,12 +42,12 @@ QueryImplPq::QueryImplPq(std::shared_ptr<DatabaseImplPq> db) : QueryImplPq()
 
 QueryImplPq::QueryImplPq(const std::string& query, std::shared_ptr<DatabaseImplPq> impl): QueryImplPq(impl)
 {
-    d->Statement = query;
+    d->statement = {query,query};
 }
 
 QueryImplPq::QueryImplPq(std::string&& query, std::shared_ptr<DatabaseImplPq> impl): QueryImplPq(impl)
 {
-    d->Statement = query;
+    d->statement = {query,query};
 }
 
 
@@ -52,9 +55,9 @@ QueryImplPq::QueryImplPq(std::string&& query, std::shared_ptr<DatabaseImplPq> im
 
 
 bool QueryImplPq::NeedsPreparing(const std::string& statement){
-    if(statement.find("$1") == std::string::npos)
-        return false;
-    return true;
+    if(statement.find("$1") != std::string::npos)
+        return true;
+    return false;
 }
 
 void QueryImplPq::ExtractNamedPlaceholders(std::string_view view)
@@ -67,7 +70,7 @@ void QueryImplPq::ExtractNamedPlaceholders(std::string_view view)
     }
 }
 
-std::string QueryImplPq::ReplaceNamedPlaceholders(std::string statement)
+void QueryImplPq::ReplaceNamedPlaceholders(std::string& statement)
 {
     auto counter = 1;
     for(const auto& placeholder: d->foundNamedPlaceholders){
@@ -77,24 +80,25 @@ std::string QueryImplPq::ReplaceNamedPlaceholders(std::string statement)
         }
         counter++;
     }
-    return statement;
 }
 
 bool QueryImplPq::prepare(const std::string & statement, const std::string & name)
 {
-    d->Statement = statement;
-    ExtractNamedPlaceholders(d->Statement);
+    d->lastError = {};
+    d->statement = {statement,statement};
+    ExtractNamedPlaceholders(d->statement.originalStatement);
+    // if there are named placeholders this query by deafult needs preparing
     if(d->foundNamedPlaceholders.size() > 0){
-        d->Statement = ReplaceNamedPlaceholders(d->Statement);
+        ReplaceNamedPlaceholders(d->statement.editedStatement);
     }
-    else if(!NeedsPreparing(d->Statement))
+    else if(!NeedsPreparing(d->statement.editedStatement))
         return true;
     try {
         if(name.empty())
             d->uniqueQueryIdentifier = QUuid::createUuid().toString().toStdString();
         else
             d->uniqueQueryIdentifier = name;
-        d->database->getConnection()->prepare(*d->uniqueQueryIdentifier, d->Statement);
+        d->database->getConnection()->prepare(*d->uniqueQueryIdentifier, d->statement.editedStatement);
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
@@ -106,13 +110,12 @@ bool QueryImplPq::prepare(const std::string & statement, const std::string & nam
 
 std::optional<std::string> VariantToOptionalString(const Variant& wrapper){
     std::optional<std::string> result;
-    int indexOfValue = 0;
     try{
         auto& v = wrapper.data;
-        indexOfValue = v.index();
+        int indexOfValue = v.index();
         switch(indexOfValue){
         case 0:
-            result = {};
+            //monostate = null, leaving empty optional as is
             break;
         case 1:
             result = std::get<std::string>(v);
@@ -170,30 +173,36 @@ bool QueryImplPq::exec()
             d->database->commit();
     });
 
+    auto onSqlError = [&](const pqxx::failure& e){
+        d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
+        d->database->rollback();
+        transaction = nullptr;
+        ownTransaction = false;
+        QLOG_ERROR() << e.what();
+    };
+
     if(!d->uniqueQueryIdentifier.has_value()){
         try{
-            d->resultSet = transaction->exec(d->Statement);
+            d->resultSet = transaction->exec(d->statement.editedStatement);
         }
         catch (const pqxx::failure& e) {
-            d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
-            d->database->rollback();
-            transaction = nullptr;
-            QLOG_ERROR() << e.what();
+            onSqlError(e);
             return false;
         }
     }
     else{
 
-        auto fetchResultSet = [&](auto bindingsVector){
-            auto dynamicParams = pqxx::prepare::make_dynamic_params(bindingsVector, [](const auto& v){
-                if constexpr(std::is_same<typename decltype(bindingsVector)::value_type, std::reference_wrapper<QueryBinding>>::value)
-                        return VariantToOptionalString(v.get().value);
-                else
-                return VariantToOptionalString(v.value);
-            });
-            d->resultSet = transaction->exec_prepared(*d->uniqueQueryIdentifier, dynamicParams);
-        };
         try{
+            auto fetchResultSet = [&](auto bindingsVector){
+                auto dynamicParams = pqxx::prepare::make_dynamic_params(bindingsVector, [](const auto& v){
+                    if constexpr(std::is_same<typename decltype(bindingsVector)::value_type, std::reference_wrapper<QueryBinding>>::value)
+                            return VariantToOptionalString(v.get().value);
+                    else
+                    return VariantToOptionalString(v.value);
+                });
+                d->resultSet = transaction->exec_prepared(*d->uniqueQueryIdentifier, dynamicParams);
+            };
+
             // todo, this is temporary and needs to go once I am sure that all of the queries work
             for(const auto& bind: d->bindings)
             {
@@ -208,6 +217,12 @@ bool QueryImplPq::exec()
                     throw std::logic_error("trying to use the placeholder not in the query: " + bind.key + " query has: " + hasPlaceholders);
                 }
             }
+
+            // making sure named placeholders can be reused in more than one place
+            // requires creating a fictional reference wrapped vector at the place of execution
+            // in which the same value can be used more than once
+            // in this code foundNamedPlaceholders is the actual repeating placeholders in the query
+            // and bindings are what the user has bound
             std::vector<std::reference_wrapper<QueryBinding>> adjustedBindings;
             if(d->foundNamedPlaceholders.size() > 0){
                 for(const auto& placeholder: d->foundNamedPlaceholders){
@@ -222,15 +237,18 @@ bool QueryImplPq::exec()
                 fetchResultSet(adjustedBindings);
             }
             else{
+                // a case where positional bindings are used as is
+                // it should't trigger in current code, but still...
                 fetchResultSet(d->bindings);
             }
             d->database->getConnection()->unprepare(*d->uniqueQueryIdentifier);
         }
         catch (const pqxx::failure& e) {
-            d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
-            d->database->rollback();
-            transaction = nullptr;
-            QLOG_ERROR() << e.what();
+            try{
+                d->database->getConnection()->unprepare(*d->uniqueQueryIdentifier);
+            }
+            catch(...){} // not intersted in the chain of errors after exception has already been thrown
+            onSqlError(e);
             return false;
         }
     }
@@ -315,15 +333,15 @@ Variant FieldToVariant(const pqxx::row::reference& field){
         case 23:
             int64_t result;
             if(auto [p, ec] = std::from_chars(field.view().begin(), field.view().end(), result); ec == std::errc())
-                v = Variant(result);
+                v = result;
             break; // int4 aka bigint
         case 1043:
             QLOG_INFO() << "Date is returned as: " << field.c_str();
-            v = Variant();
+            v = field.c_str();
             break; // timestamp, test format: 1999-01-08
         case 25:
         case 1114:
-            v = Variant(field.c_str());
+            v = field.c_str();
             break; // varchar
         default:
             throw std::logic_error("Received type that isn't available for processing:" + std::to_string(field.type()));
@@ -351,21 +369,21 @@ Variant QueryImplPq::value(int index) const
 
 Variant QueryImplPq::value(const std::string & name) const
 {
-    auto row = *d->current_result_iterator;
+    const auto& row = *d->current_result_iterator;
     //qDebug() << "fetching field: " << name;
     return FieldToVariant(row.at(name));
 }
 
 Variant QueryImplPq::value(std::string && name) const
 {
-    auto row = *d->current_result_iterator;
+    const auto& row = *d->current_result_iterator;
     //qDebug() << "fetching field: " << name;
     return FieldToVariant(row.at(name));
 }
 
 Variant QueryImplPq::value(const char * name) const
 {
-    auto row = *d->current_result_iterator;
+    const auto& row = *d->current_result_iterator;
     //qDebug() << "fetching field: " << name;
     return FieldToVariant(row.at(name));
 }
@@ -383,7 +401,7 @@ Error QueryImplPq::lastError() const
 
 std::string QueryImplPq::lastQuery() const
 {
-    return d->Statement;
+    return d->statement.originalStatement;
 }
 
 std::string QueryImplPq::implType() const

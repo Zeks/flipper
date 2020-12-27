@@ -1,12 +1,9 @@
 #include "sql_abstractions/sql_query.h"
-#include "sql_abstractions/sql_query_impl_base.h"
 #include "sql_abstractions/sql_query_impl_sqlite.h"
 #include "sql_abstractions/sql_query_impl_pq.h"
 #include "sql_abstractions/sql_query_impl_null.h"
-#include "sql_abstractions/sql_database_impl_sqlite.h"
-#include "sql_abstractions/sql_database_impl_null.h"
-#include "sql_abstractions/sql_error.h"
 #include "sql_abstractions/sql_database.h"
+#include "sql_abstractions/sql_error.h"
 
 namespace sql {
 static std::unordered_map<std::string, std::string> namedQueries;
@@ -34,13 +31,13 @@ bool Query::prepare(std::string && query)
 
 bool Query::prepare(const std::string & name, const std::string & query)
 {
-    setNamedQuery(name);
     return d->prepare(name, query);
 }
 
 bool Query::exec()
 {
     auto result = d->exec();
+    //todo : probably shitcode
     if(namedQueries.find(d->queryName) == std::end(namedQueries))
         namedQueries[d->queryName] = lastQuery();
     return result;
@@ -94,11 +91,6 @@ void Query::bindValue(QueryBinding && binding)
 bool Query::next()
 {
     return d->next();
-}
-
-void Query::setNamedQuery(std::string name)
-{
-
 }
 
 bool Query::supportsVectorizedBind() const

@@ -1,6 +1,5 @@
 #pragma once
 #include "sql_abstractions/sql_database_impl_base.h"
-#include "sql_abstractions/pqxx_connection_wrapper.h"
 #include "sql_abstractions/shared_trick.h"
 #include <pqxx/pqxx>
 #include <memory>

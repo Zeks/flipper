@@ -14,6 +14,7 @@ enum class ESqlErrors{
 class Error{
 public:
     Error(){}
+    // constructor for sql operations
     Error(std::string str, std::string query, ESqlErrors errorType){
         errorText = str;
         queryText = query;
@@ -21,6 +22,7 @@ public:
             hasError = true;
         actualErrorType = errorType;
     }
+    // constructor for db specific errors like failure opening transaction
     Error(std::string str, ESqlErrors errorType){
         errorText = str;
         if(!errorText.empty())
@@ -36,7 +38,6 @@ private:
     std::string errorText;
     std::string queryText;
     ESqlErrors actualErrorType;
-    int errorCode = 0;
     bool hasError = false;
 };
 

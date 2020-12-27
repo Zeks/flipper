@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 /* Trick to allow multiple inheritance of objects
  * inheriting shared_from_this.
  * cf. https://stackoverflow.com/a/12793989/587407

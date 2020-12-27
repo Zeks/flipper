@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <QSqlRecord>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include "sql_abstractions/sql_variant.h"
@@ -33,15 +32,11 @@ public:
     Variant value(const std::string &) const;
     Variant value(std::string &&) const;
     Variant value(const char *) const;
-    //QSqlRecord record();
     Error lastError() const;
     std::string lastQuery() const;
     std::string implType() const;
 
     QSqlQuery q;
     Error prepareErrorStorage;
-    std::string queryName;
-
-
 };
 }
