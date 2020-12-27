@@ -104,13 +104,13 @@ bool QueryImplPq::prepare(const std::string & statement, const std::string & nam
 }
 
 
-std::string VariantToString(const Variant& wrapper){
-    std::string result;
+std::optional<std::string> VariantToOptionalString(const Variant& wrapper){
+    std::optional<std::string> result;
     auto& v = wrapper.data;
     auto indexOfValue = v.index();
     switch(indexOfValue){
     case 0:
-        result = "";
+        result = {};
         break;
     case 1:
         result = std::get<std::string>(v);
@@ -142,7 +142,7 @@ std::string VariantToString(const Variant& wrapper){
     default:
         throw std::logic_error("all indexes should be handled in pg driver: " + std::to_string(indexOfValue));
     }
-    qDebug() << "Returning converted variant: " << result;
+    qDebug() << "Returning converted variant: " << result.value_or("");
     return result;
 }
 
@@ -170,13 +170,27 @@ bool QueryImplPq::exec()
         auto fetchResultSet = [&](auto bindingsVector){
             auto dynamicParams = pqxx::prepare::make_dynamic_params(bindingsVector, [](const auto& v){
                 if constexpr(std::is_same<typename decltype(bindingsVector)::value_type, std::reference_wrapper<QueryBinding>>::value)
-                    return VariantToString(v.get().value);
+                    return VariantToOptionalString(v.get().value);
                 else
-                    return VariantToString(v.value);
+                    return VariantToOptionalString(v.value);
             });
             d->resultSet = transaction->exec_prepared(*d->uniqueQueryIdentifier, dynamicParams);
         };
         try{
+            // todo, this is temporary and needs to go once I am sure that all of the queries work
+            for(const auto& bind: d->bindings)
+            {
+                auto it = std::find_if(std::begin(d->foundNamedPlaceholders), std::end(d->foundNamedPlaceholders), [bind](const auto& value){
+                    return value == ":" + bind.key;
+                });
+                if(it == d->foundNamedPlaceholders.end()){
+                    std::string hasPlaceholders;
+                    std::for_each(std::begin(d->foundNamedPlaceholders), std::end(d->foundNamedPlaceholders),[&](auto value){
+                        hasPlaceholders+=value + " ";
+                    });
+                    throw std::logic_error("trying to use the placeholder not in the query: " + bind.key + " query has: " + hasPlaceholders);
+                }
+            }
             std::vector<std::reference_wrapper<QueryBinding>> adjustedBindings;
             if(d->foundNamedPlaceholders.size() > 0){
                 for(const auto& placeholder: d->foundNamedPlaceholders){
