@@ -112,7 +112,6 @@ App{
         "src/sql/discord/discord_queries.cpp",
         "src/sql_abstractions/sql_context.cpp",
         "src/sql_abstractions/sql_database.cpp",
-        "src/sql_abstractions/sql_database_impl_base.cpp",
         "src/sql_abstractions/sql_database_impl_null.cpp",
         "src/sql_abstractions/sql_database_impl_pq.cpp",
         "src/sql_abstractions/sql_database_impl_sqlite.cpp",
