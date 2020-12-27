@@ -602,10 +602,10 @@ Fanfics::IdResult Fanfics::FicIdToWebsiteMapping::GetDBIdByWebId(core::SiteId si
 Fanfics::IdResult Fanfics::FicIdToWebsiteMapping::GetDBIdByWebId(QString website, int webId)
 {
     Fanfics::IdResult result;
-    auto itOuter = webIdIndex.find(website);
+    auto itOuter = webIdIndex.constFind(website);
     if(itOuter == webIdIndex.cend())
         return result;
-    auto itInner = (*itOuter).find(webId);
+    auto itInner = (*itOuter).constFind(webId);
     if(itInner == (*itOuter).cend())
         return result;
 

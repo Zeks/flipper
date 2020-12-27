@@ -1,10 +1,5 @@
 #include "sql_abstractions/sql_query_impl_null.h"
 namespace sql {
-QueryImplNull::QueryImplNull()
-{
-
-}
-
 
 bool QueryImplNull::prepare(const std::string &, const std::string & )
 {

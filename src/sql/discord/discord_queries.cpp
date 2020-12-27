@@ -272,6 +272,7 @@ DiagnosticSQLResult<int> WriteUserList(sql::Database db, QString user_id, QStrin
 
 DiagnosticSQLResult<bool> DeleteUserList(sql::Database db, QString user_id, QString list_name)
 {
+    Q_UNUSED(list_name);
     std::string qs = "delete from user_lists where user_id = :user_id and list_id = 0";
     //auto generated= QDateTime::currentDateTimeUtc();
     SqlContext<bool> ctx(db, std::move(qs), BP1(user_id));

@@ -8,7 +8,7 @@ namespace sql{
 
 class QueryImplNull: public QueryImplBase{
 public:
-    QueryImplNull();
+    QueryImplNull() = default;
 
     bool prepare(const std::string &, const std::string &);
     bool exec();

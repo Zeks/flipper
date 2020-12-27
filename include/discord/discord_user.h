@@ -240,7 +240,7 @@ private:
     int perfectRngFicsSize = 0;
     int goodRngFicsSize = 0;
     int favouritesSize = 0;
-    int largeListCounter;
+    int largeListCounter = 0;
 
     QDate lastLargeListRegenerationDate;
 

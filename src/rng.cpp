@@ -79,6 +79,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
     auto& currentList = rngData->randomIdLists[where]->ids;
     rngData->randomIdLists[where]->lastAccessTimestamp = QDateTime::currentDateTimeUtc();
     std::uniform_int_distribution<> distr(0, currentList.size()-1); // define the range
+    result.reserve(filter.maxFics);
     for(auto i = 0; i < filter.maxFics; i++)
     {
         auto value = distr(eng);

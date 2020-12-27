@@ -3,30 +3,24 @@
 
 namespace sql{
 template<class> inline constexpr bool always_false_v = false;
-Variant::Variant(){}
+
 Variant::Variant(const std::string & data):data(data){}
 Variant::Variant(const char *data):data(std::string(data)){}
-Variant::Variant(const int32_t &data):data(data){}
-Variant::Variant(const uint32_t &data):data(static_cast<uint64_t>(data)){}
-Variant::Variant(const uint64_t &data):data(data){}
-Variant::Variant(const double &data):data(data){}
 Variant::Variant(const QDateTime &data):data(data){}
 Variant::Variant(const QDate &data):data(QDateTime(data.startOfDay())){}
 Variant::Variant(QDate &&data):data(QDateTime(data.startOfDay())){}
 Variant::Variant(const QString &data):data(data.toStdString()){}
 Variant::Variant(QString && data):data(data.toStdString()){}
-Variant::Variant(const bool &data):data(data){}
 Variant::Variant(const QByteArray &data):data(data){}
 Variant::Variant(std::string &&data):data(data){}
-Variant::Variant(int32_t &&data):data(data){}
+Variant::Variant(int32_t data):data(data){}
 
-Variant::Variant(const int64_t &data):data(data){}
-Variant::Variant(int64_t &&data):data(data){}
-Variant::Variant(uint32_t &&data):data(static_cast<uint64_t>(data)){}
-Variant::Variant(uint64_t &&data):data(data){}
-Variant::Variant(double &&data):data(data){}
+Variant::Variant(int64_t data):data(data){}
+Variant::Variant(uint32_t data):data(static_cast<uint64_t>(data)){}
+Variant::Variant(uint64_t data):data(data){}
+Variant::Variant(double data):data(data){}
 Variant::Variant(QDateTime &&data):data(data){}
-Variant::Variant(bool &&data):data(data){}
+Variant::Variant(bool data):data(data){}
 Variant::Variant(QByteArray &&data):data(data){}
 
 Variant::Variant(const QVariant & v)

@@ -261,10 +261,6 @@ void RecommendationLists::DeleteLocalList(int listId)
     idIndex.remove(list->id);
     nameIndex.remove(list->name);
     ficsCacheForLists.remove(list->id);
-    //grpcCacheForLists.remove(list->id);
-    QList<QPair<int, int>> keysToRemove;
-
-
 
     authorsCacheForLists.remove(list->id);
     cachedAuthorStats.remove(list->id);

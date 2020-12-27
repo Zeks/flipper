@@ -611,7 +611,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 {
 
     qDebug() << "At start list id is: " << params->id;
-    FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
 
 
     params->ficData->fics = sourceFics;
@@ -700,7 +700,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 
 core::FavListDetails CoreEnvironment::GetStatsForFicList(QVector<int> sourceFics)
 {
-    FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     QVector<core::Identity> pack;
     pack.resize(sourceFics.size());
     int i = 0;
@@ -782,7 +782,7 @@ int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::Recommendat
 {
     list->id = interfaces.recs->GetListIdForName(list->name);
     qDebug() << "At start list id is: " << list->id;
-    FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     list->ficData->fics = sourceFics;
 
     database::Transaction transaction(interfaces.recs->db);
@@ -836,6 +836,7 @@ bool CoreEnvironment::ResumeUnfinishedTasks()
         return false;
     auto tasks = interfaces.pageTask->GetUnfinishedTasks();
     TaskList tasksToResume;
+    tasksToResume.reserve(tasks.size());
     for(const auto& task : std::as_const(tasks))
     {
         QString diagnostics;
@@ -1031,6 +1032,7 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
     QStringList mobileUrls;
     // 26th page onwards can't be reached without m.
     const int startOfUnreachablePart = 26;
+    mobileUrls.reserve(amountOfPagesToGrab);
     for(int i = startOfUnreachablePart; i <= amountOfPagesToGrab; i++)
         mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
 
@@ -1176,6 +1178,7 @@ QList<int> CoreEnvironment::GetDBIDsForFics(QVector<int> ids)
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     grpcSource->GetInternalIDsForFics(&pack);
     QList<int> result;
+    result.reserve(pack.size());
     for(const auto& source: std::as_const(pack))
     {
         result.push_back(source.id);
@@ -1280,6 +1283,7 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
     params->name = "Recommendations";
     params->userFFNId = interfaces.recs->GetUserProfile();
     QVector<int> sourceFics;
+    sourceFics.reserve(sourceFicsSet.size());
     for(const auto& fic : sourceFicsSet)
         sourceFics.push_back(fic.toInt());
 

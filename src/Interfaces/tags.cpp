@@ -43,7 +43,7 @@ QStringList Tags::ReadUserTags()
 {
     QStringList tags = sql::ReadUserTags(db).data;
     QSet<QString> baseSet = {"Liked", "Disliked","Limbo", "Hide", "Meh", "Spoiler", "Wait", "Stem", "Queue", "Finished", "Gems", "Rec", "Series"};
-    for(auto basicTag: baseSet)
+    for(const auto& basicTag: baseSet)
     {
         if(!tags.contains(basicTag))
             tags.push_back(basicTag);

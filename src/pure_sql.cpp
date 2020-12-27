@@ -277,7 +277,7 @@ DiagnosticSQLResult<bool> CreateFandomInDatabase(core::FandomPtr fandom, sql::Da
     SqlContext<bool> ctx(db);
 
 
-    int newFandomId;
+    int newFandomId = 0;
     if(useSuppliedIds)
         newFandomId  = fandom->id;
     else
@@ -2108,7 +2108,7 @@ DiagnosticSQLResult<bool> ProcessIgnoresIntoFandomLists(sql::Database db)
         ctx.ForEachInSelect([&index, db](sql::Query& q){
             auto qs = "insert into fandom_list_data(list_id, fandom_id, fandom_name, enabled_state, inclusion_mode, crossover_mode, ui_index)"
                       " values(0, :fandom_id, (select name from fandomindex where id = :fandom_id_repeat), 1, 0, :crossover_mode, :ui_index)";
-            SqlContext<bool> ctx(db, std::move(qs));
+            SqlContext<bool> ctx(db, qs);
             ctx.bindValue("fandom_id", q.value("fandom_id").toInt());
             ctx.bindValue("fandom_id_repeat", q.value("fandom_id").toInt());
             auto includeCrossovers = q.value("fandom_id").toInt();

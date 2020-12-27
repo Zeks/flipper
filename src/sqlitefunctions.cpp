@@ -422,7 +422,7 @@ bool InstallCustomFunctions(QSqlDatabase db)
     if (v.isValid() && qstrcmp(v.typeName(), "sqlite3*")==0)
     {
         sqlite3 *db_handle = *static_cast<sqlite3 **>(v.data());
-        if (db_handle != 0) {
+        if (db_handle != nullptr) {
             sqlite3_initialize();
 
             sqlite3_create_function(db_handle, "cfRegexp", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, nullptr, &cfRegexp, nullptr, nullptr);

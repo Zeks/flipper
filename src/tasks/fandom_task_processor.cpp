@@ -52,6 +52,7 @@ FandomParseTaskResult FandomLoadProcessor::Run(FandomParseTask task)
     StartPageWorker();
     emit taskStarted(task);
     int counter = 0;
+    int timeout = 500;
     WebPage webPage;
 
     QSet<QString> updatedFandoms;
@@ -63,7 +64,7 @@ FandomParseTaskResult FandomLoadProcessor::Run(FandomParseTask task)
     {
         while(pageQueue.pending && pageQueue.data.isEmpty())
         {
-            QThread::msleep(500);
+            QThread::msleep(timeout);
             if(!worker->working)
                 pageThread.start(QThread::HighPriority);
             QCoreApplication::processEvents();
@@ -233,7 +234,7 @@ PageTaskPtr FandomLoadProcessor::CreatePageTaskFromFandoms(QList<core::FandomPtr
     task->allowedSubtaskRetries = 3;
     task->cacheMode = cacheMode;
     task->parts = 0;
-    for(auto fandom : fandoms)
+    for(const auto& fandom : fandoms)
         task->parts += fandom->GetUrls().size();
     task->refreshIfNeeded = allowCacheRefresh;
     task->taskComment = taskComment;
@@ -246,7 +247,7 @@ PageTaskPtr FandomLoadProcessor::CreatePageTaskFromFandoms(QList<core::FandomPtr
     int counter = 0;
     An<PageManager> pager;
     pager->GetPage("", cacheMode);
-    for(auto fandom : fandoms)
+    for(const auto& fandom : fandoms)
     {
         auto lastUpdated = fandom->lastUpdateDate;
         if(forcedDate.isValid)

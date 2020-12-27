@@ -6,11 +6,6 @@ Transaction::Transaction(Database)
 
 }
 
-Transaction::~Transaction()
-{
-
-}
-
 bool Transaction::start()
 {
     return true;

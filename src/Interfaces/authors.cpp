@@ -409,7 +409,7 @@ bool Authors::EnsureId(core::AuthorPtr author, QString website)
 
     //QString url = author->url(website);
     auto webId = author->GetWebID(website);
-    const auto& it = authorsByWebID[website].find(webId);
+    const auto& it = authorsByWebID[website].constFind(webId);
     if(it != authorsByWebID[website].cend() && *it)
         author = *it;
 

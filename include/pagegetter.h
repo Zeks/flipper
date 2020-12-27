@@ -69,7 +69,7 @@ public:
     void SetAutomaticCache(QDate);
     void SetAutomaticCacheForCurrentDate(bool);
 
-    std::atomic<bool> working;
+    std::atomic<bool> working = false;
     QDate automaticCache;
     bool automaticCacheForCurrentDate = true;
 public slots:

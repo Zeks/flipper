@@ -9,7 +9,7 @@ class Transaction{
 public:
     Transaction(Database);
     Transaction(const Transaction&) = default;
-    ~Transaction();
+    ~Transaction() = default;
     bool start();
     bool cancel();
     bool finalize();

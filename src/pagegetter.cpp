@@ -57,7 +57,7 @@ public:
     QEventLoop waitLoop;
     WebPage result;
     bool cachedMode = false;
-    QNetworkReply::NetworkError error;
+    QNetworkReply::NetworkError error = QNetworkReply::NoError;
     WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::use_cache);
     WebPage GetPageFromDB(QString url);
     WebPage GetPageFromNetwork(QString url);
@@ -172,7 +172,6 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
         curlQuery = in.readAll();
     }
 
-    QString id = QUuid::createUuid().toString();
     QStringList params;
     QProcess process;
     QSettings settings("settings/settings_solver.ini", QSettings::IniFormat);
@@ -214,7 +213,6 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 
     QThread::msleep(500);
     QFile favouritesfile(filename);
-    QString favourites;
     if (favouritesfile.open(QFile::ReadOnly))
     {
         QTextStream in(&favouritesfile);

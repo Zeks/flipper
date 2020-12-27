@@ -333,12 +333,10 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
 
     QString ffnId;
     bool isId = false;
-    bool isHttp = false;
     bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
     bool keepPage = command.variantHash.contains(QStringLiteral("keep_page"));
 
     if(command.variantHash.contains(QStringLiteral("url"))){
-        isHttp = true;
         ffnId = command.variantHash[QStringLiteral("url")].toString().trimmed();
     }
     else if(command.variantHash.contains(QStringLiteral("user"))){
@@ -740,7 +738,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 
     QHash<int, int> positionToId;
     int i = 0;
-    for(auto fic: std::as_const(fics))
+    for(const auto& fic: std::as_const(fics))
     {
         positionToId[i+1] = fic.identity.id;
         i++;

@@ -37,7 +37,7 @@ void FandomLists::LoadFandomLists()
 {
     auto fandomLists = sql::FetchFandomLists(db);
 
-    for(auto list : fandomLists.data){
+    for(const auto& list : fandomLists.data){
         d->idToList[list->id] =  list;
         d->nameToList[list->name] =  list;
         auto fandomStates = sql::FetchFandomStatesInUserList(list->id, db);
