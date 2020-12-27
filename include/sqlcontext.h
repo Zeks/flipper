@@ -210,7 +210,7 @@ struct SqlContext
                                   std::function<ValueType(sql::Query&)>&& func = std::function<ValueType(sql::Query&)>())
     {
         if(countQuery.length() == 0)
-            qs = "select count(*) from ( " + actualQuery + " ) ";
+            qs = "select count(*) from ( " + actualQuery + " ) as aliased_count";
         else
             qs = countQuery;
         Prepare(qs);

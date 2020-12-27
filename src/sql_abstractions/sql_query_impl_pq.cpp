@@ -4,12 +4,15 @@
 #include <pqxx/pqxx>
 #include "fmt/format.h"
 #include "logger/QsLog.h"
+#include "GlobalHeaders/scope_guard.hpp"
 
 #include "third_party/ctre.hpp"
 #include <QUuid>
 #include <variant>
 #include <stdexcept>
 #include <charconv>
+
+
 
 namespace sql {
 struct QueryImplPqImpl{
@@ -50,11 +53,7 @@ QueryImplPq::QueryImplPq(std::string&& query, std::shared_ptr<DatabaseImplPq> im
 
 bool QueryImplPq::NeedsPreparing(const std::string& statement){
     if(statement.find("$1") == std::string::npos)
-    {
-        // we're not supposed to prepare this
-        d->Statement = statement;
         return false;
-    }
     return true;
 }
 
@@ -83,11 +82,12 @@ std::string QueryImplPq::ReplaceNamedPlaceholders(std::string statement)
 
 bool QueryImplPq::prepare(const std::string & statement, const std::string & name)
 {
-    ExtractNamedPlaceholders(statement);
+    d->Statement = statement;
+    ExtractNamedPlaceholders(d->Statement);
     if(d->foundNamedPlaceholders.size() > 0){
-        d->Statement = ReplaceNamedPlaceholders(statement);
+        d->Statement = ReplaceNamedPlaceholders(d->Statement);
     }
-    if(!NeedsPreparing(d->Statement))
+    else if(!NeedsPreparing(d->Statement))
         return true;
     try {
         if(name.empty())
@@ -106,43 +106,50 @@ bool QueryImplPq::prepare(const std::string & statement, const std::string & nam
 
 std::optional<std::string> VariantToOptionalString(const Variant& wrapper){
     std::optional<std::string> result;
-    auto& v = wrapper.data;
-    auto indexOfValue = v.index();
-    switch(indexOfValue){
-    case 0:
-        result = {};
-        break;
-    case 1:
-        result = std::get<std::string>(v);
-        break;
-    case 2:
-        result = std::to_string(std::get<int>(v));
-        break;
-    case 3:
-        result = std::to_string(std::get<uint>(v));
-        break;
-    case 4:
-        result = std::to_string(std::get<int64_t>(v));
-        break;
-    case 5:
-        result = std::to_string(std::get<uint64_t>(v));
-        break;
-    case 6:
-        result = std::to_string(std::get<double>(v));
-        break;
-    case 7:
-        result =  std::to_string(std::get<int>(v));
-        break;
-    case 8:
-        result =  std::get<QDateTime>(v).toString("yyyy-MM-dd").toStdString();
-        break;
-    case 9:
-        result =  std::get<QByteArray>(v).data(); // todo shitcode, verify
-        break;
-    default:
-        throw std::logic_error("all indexes should be handled in pg driver: " + std::to_string(indexOfValue));
+    int indexOfValue = 0;
+    try{
+        auto& v = wrapper.data;
+        indexOfValue = v.index();
+        switch(indexOfValue){
+        case 0:
+            result = {};
+            break;
+        case 1:
+            result = std::get<std::string>(v);
+            break;
+        case 2:
+            result = std::to_string(std::get<int>(v));
+            break;
+        case 3:
+            result = std::to_string(std::get<uint>(v));
+            break;
+        case 4:
+            result = std::to_string(std::get<int64_t>(v));
+            break;
+        case 5:
+            result = std::to_string(std::get<uint64_t>(v));
+            break;
+        case 6:
+            result = std::to_string(std::get<double>(v));
+            break;
+        case 7:
+            result =  std::get<QDateTime>(v).toString("yyyy-MM-dd").toStdString();
+            break;
+        case 8:
+            result =  std::to_string(std::get<bool>(v));
+            break;
+        case 9:
+            result =  std::get<QByteArray>(v).data(); // todo shitcode, verify
+            break;
+        default:
+            throw std::logic_error("all indexes should be handled in pg driver: " + std::to_string(indexOfValue));
+        }
+        qDebug() << "Passing converted variant to sql query: " << result.value_or("");
     }
-    qDebug() << "Returning converted variant: " << result.value_or("");
+    catch (const std::bad_variant_access& error){
+        QLOG_INFO() << "error:" << error.what();
+        throw;
+    }
     return result;
 }
 
@@ -150,10 +157,18 @@ std::optional<std::string> VariantToOptionalString(const Variant& wrapper){
 bool QueryImplPq::exec()
 {
 
+    auto transaction = d->database->getTransaction();
+    bool ownTransaction = transaction.get() == nullptr;
+
+
     if(!d->database->transaction())
         return false;
 
-    auto transaction = d->database->getTransaction();
+    transaction = d->database->getTransaction();
+    auto guard = sg::make_scope_guard([ownTransaction, transaction=std::ref(transaction), this](){
+        if(ownTransaction && transaction.get())
+            d->database->commit();
+    });
 
     if(!d->uniqueQueryIdentifier.has_value()){
         try{
@@ -161,6 +176,8 @@ bool QueryImplPq::exec()
         }
         catch (const pqxx::failure& e) {
             d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
+            d->database->rollback();
+            transaction = nullptr;
             QLOG_ERROR() << e.what();
             return false;
         }
@@ -170,9 +187,9 @@ bool QueryImplPq::exec()
         auto fetchResultSet = [&](auto bindingsVector){
             auto dynamicParams = pqxx::prepare::make_dynamic_params(bindingsVector, [](const auto& v){
                 if constexpr(std::is_same<typename decltype(bindingsVector)::value_type, std::reference_wrapper<QueryBinding>>::value)
-                    return VariantToOptionalString(v.get().value);
+                        return VariantToOptionalString(v.get().value);
                 else
-                    return VariantToOptionalString(v.value);
+                return VariantToOptionalString(v.value);
             });
             d->resultSet = transaction->exec_prepared(*d->uniqueQueryIdentifier, dynamicParams);
         };
@@ -211,6 +228,8 @@ bool QueryImplPq::exec()
         }
         catch (const pqxx::failure& e) {
             d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
+            d->database->rollback();
+            transaction = nullptr;
             QLOG_ERROR() << e.what();
             return false;
         }
@@ -267,7 +286,7 @@ bool QueryImplPq::next()
 {
     if(d->resultSet.size() == 0)
     {
-        QLOG_WARN() << "Requesting next value of empty resultset";
+        //QLOG_WARN() << "Requesting next value of empty resultset";
         return false;
     }
     if(!d->current_result_iterator.has_value())
@@ -276,7 +295,7 @@ bool QueryImplPq::next()
         std::advance((*d->current_result_iterator),1);
         if(*d->current_result_iterator == d->resultSet.end())
         {
-            QLOG_WARN() << "Requesting next value past the end of the resultset";
+            //QLOG_WARN() << "Requesting next value past the end of the resultset";
             return false;
         }
     }
@@ -292,11 +311,11 @@ Variant FieldToVariant(const pqxx::row::reference& field){
     Variant v;
     try{
         switch(field.type()){
+        case 20:
         case 23:
             int64_t result;
             if(auto [p, ec] = std::from_chars(field.view().begin(), field.view().end(), result); ec == std::errc())
                 v = Variant(result);
-            return Variant();
             break; // int4 aka bigint
         case 1043:
             QLOG_INFO() << "Date is returned as: " << field.c_str();
@@ -317,7 +336,7 @@ Variant FieldToVariant(const pqxx::row::reference& field){
     catch(const std::out_of_range& e){
         QLOG_ERROR() << "could not convert string to number, out of range: " + std::string(field.view());
     }
-
+    //qDebug() << "Fetched variant with value: " << v;
     return v;
 }
 
@@ -333,18 +352,21 @@ Variant QueryImplPq::value(int index) const
 Variant QueryImplPq::value(const std::string & name) const
 {
     auto row = *d->current_result_iterator;
+    //qDebug() << "fetching field: " << name;
     return FieldToVariant(row.at(name));
 }
 
 Variant QueryImplPq::value(std::string && name) const
 {
     auto row = *d->current_result_iterator;
+    //qDebug() << "fetching field: " << name;
     return FieldToVariant(row.at(name));
 }
 
 Variant QueryImplPq::value(const char * name) const
 {
     auto row = *d->current_result_iterator;
+    //qDebug() << "fetching field: " << name;
     return FieldToVariant(row.at(name));
 }
 

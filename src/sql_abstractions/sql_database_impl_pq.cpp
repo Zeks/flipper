@@ -86,6 +86,7 @@ bool DatabaseImplPq::commit()
 {
     try{
     d->transaction->commit();
+    d->transaction.reset();
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
@@ -98,6 +99,7 @@ bool DatabaseImplPq::rollback()
 {
     try{
         d->transaction->abort();
+        d->transaction.reset();
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
@@ -110,6 +112,8 @@ void DatabaseImplPq::close()
 {
     try{
     d->connection->close();
+    d->connection.reset();
+    d->transaction.reset();
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();

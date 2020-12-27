@@ -277,7 +277,7 @@ struct SqlContext
     void FetchLargeSelectIntoList(std::string&& fieldName, std::string&& actualQuery, std::string&& countQuery = "")
     {
         if(countQuery.length() == 0)
-            qs = "select count(*) from ( " + actualQuery + " ) ";
+            qs = "select count(*) from ( " + actualQuery + " ) as aliased_count ";
         else
             qs = countQuery;
         Prepare(qs);

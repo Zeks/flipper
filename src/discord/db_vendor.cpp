@@ -38,7 +38,7 @@ QSharedPointer<LockedDatabase> DatabaseVendor::GetDatabase(QString name)
     return databaseWrapper;
 }
 
-void DatabaseVendor::AddConnectionToken(QString name, const SqliteConnectionToken& token)
+void DatabaseVendor::AddConnectionToken(QString name, const sql::ConnectionToken& token)
 {
     if(name == "users")
         users = token;
@@ -46,16 +46,19 @@ void DatabaseVendor::AddConnectionToken(QString name, const SqliteConnectionToke
         pageCache = token;
 }
 
-sql::Database DatabaseVendor::InstantiateDatabase(const SqliteConnectionToken & token)
+sql::Database DatabaseVendor::InstantiateDatabase(const sql::ConnectionToken & token)
 {
     sql::Database db;
-    db = sql::Database::addDatabase("QSQLITE", token.databaseName.toStdString() + QUuid::createUuid().toString().toStdString());
-    QString filename = token.folder.isEmpty() ? token.databaseName : token.folder + "/" + token.databaseName;
-
-    sql::ConnectionToken databaseToken;
-    databaseToken.serviceName = filename.toStdString() + ".sqlite";
-    db.setConnectionToken(databaseToken);
-
+    db = sql::Database::addDatabase(token.tokenType, token.serviceName + QUuid::createUuid().toString().toStdString());
+    auto filename = token.folder.empty() ? token.serviceName : token.folder + "/" + token.serviceName;
+    if(token.tokenType == "QSQLITE"){
+        sql::ConnectionToken databaseToken;
+        databaseToken.serviceName = filename + ".sqlite";
+        db.setConnectionToken(databaseToken);
+    }
+    else if(token.tokenType == "PQXX"){
+        db.setConnectionToken(token);
+    }
     db.open();
     return db;
 }

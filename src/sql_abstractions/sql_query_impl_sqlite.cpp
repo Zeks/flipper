@@ -40,7 +40,7 @@ bool QueryImplSqlite::prepare(const std::string & sql)
     return result;
 }
 
-bool QueryImplSqlite::prepare(const std::string & name, const std::string & query)
+bool QueryImplSqlite::prepare(const std::string & query, const std::string & name)
 {
     // does the same thign as the above ignoring name
     Q_UNUSED(name);

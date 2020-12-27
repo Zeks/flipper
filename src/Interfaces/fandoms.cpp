@@ -439,14 +439,12 @@ QHash<int, QString> Fandoms::GetFandomNamesForIDs(QList<int> fandoms)
 
 bool Fandoms::FetchFandomsForFics(QVector<core::Fanfic> *fics)
 {
-    static bool loadFandoms = true;
-    LoadAllFandoms(loadFandoms);
-    loadFandoms = false;
     for(auto& fic: *fics)
     {
         for(int i = 0; i < fic.fandomIds.size(); i++)
         {
             auto index = fic.fandomIds.at(i);
+            EnsureFandom(index);
             if(index != -1)
                 fic.fandoms.push_back(indexFandomsById[fic.fandomIds[i]]);
         }
@@ -517,6 +515,7 @@ void Fandoms::AddToIndex(core::FandomPtr fandom)
         return;
     nameIndex[fandom->GetName().toLower()] = fandom;
     idIndex[fandom->id] = fandom;
+    indexFandomsById[fandom->id] = fandom->GetName();
     fandomsList.push_back(fandom->GetName());
     if(fandom->tracked)
         trackedFandoms.push_back(fandom);

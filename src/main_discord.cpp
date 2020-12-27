@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
     pgConnectionToken.password = settings.value("users/password").toString().toStdString();
     pgConnectionToken.port = settings.value("users/port").toInt();
     pgConnectionToken.user = settings.value("users/login").toString().toStdString();
+    pgConnectionToken.tokenType = "PQXX";
     sql::Database db;
     db = sql::Database::addDatabase("PQXX");
     db.setConnectionToken(pgConnectionToken);
@@ -94,7 +95,7 @@ int main(int argc, char *argv[]) {
     pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
 
     An<discord::DatabaseVendor> vendor;
-    vendor->AddConnectionToken("users", {"DiscordDB", "dbcode/discord_init.sql", "database"});
+    vendor->AddConnectionToken("users", pgConnectionToken);
     vendor->AddConnectionToken("pagecache", {"PageCache", "dbcode/pagecacheinit.sql", "database"});
 
     QSettings bot("settings/bot_token.ini", QSettings::IniFormat);
@@ -113,6 +114,7 @@ int main(int argc, char *argv[]) {
     QVector<core::Fandom> fandoms;
     auto lastFandomId = fandomsInterface->GetLastFandomID();
     ficSource->GetFandomListFromServer(lastFandomId, &fandoms);
+    fandomsInterface->LoadAllFandoms();
     if(fandoms.size() > 0)
         fandomsInterface->UploadFandomsIntoDatabase(fandoms, false);
     database::discord_queries::FillUserUids(fandomsInterface->db);
@@ -130,6 +132,9 @@ int main(int argc, char *argv[]) {
             }
             catch (const SleepyDiscord::ErrorCode& error){
                 QLOG_INFO() << "Discord error:" << error;
+            }
+            catch (const std::bad_variant_access& error){
+                QLOG_INFO() << "error:" << error.what();
             }
         }
     };
