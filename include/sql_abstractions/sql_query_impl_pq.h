@@ -27,7 +27,9 @@ public:
     void bindValue(std::string &&, Variant &&)  override;
     void bindValue(const QueryBinding &)  override;
     void bindValue(QueryBinding &&) override;
-    bool next() override;
+    bool next(bool warnOnEmpty) override;
+    int rowCount() const override;
+    bool supportsImmediateResultSize() const override;
     bool supportsVectorizedBind() const override;
     Variant value(int) const  override;
     Variant value(const std::string &) const  override;
@@ -43,5 +45,6 @@ private:
     bool NeedsPreparing(const std::string& statement);
     void ExtractNamedPlaceholders(std::string_view);
     void ReplaceNamedPlaceholders(std::string &);
+    void ResetLocalData();
 };
 }

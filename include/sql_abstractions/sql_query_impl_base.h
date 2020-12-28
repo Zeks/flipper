@@ -13,6 +13,7 @@ public:
     virtual bool exec() = 0;
     virtual void setForwardOnly(bool) = 0;
 
+
     virtual void bindVector(const std::vector<QueryBinding>&) = 0;
     virtual void bindVector(std::vector<QueryBinding>&&) = 0;
     virtual void bindValue(const std::string&, const Variant&) = 0;
@@ -21,9 +22,10 @@ public:
     virtual void bindValue(std::string&&, Variant&&) = 0;
     virtual void bindValue(const QueryBinding&) = 0;
     virtual void bindValue(QueryBinding&&) = 0;
-    virtual bool next() = 0;
+    virtual bool next(bool warnOnEmpty = false) = 0;
+    virtual int rowCount() const = 0;
 
-
+    virtual bool supportsImmediateResultSize() const = 0;
     virtual bool supportsVectorizedBind() const = 0;
     virtual Variant value(int) const = 0;
     virtual Variant value(const std::string&)  const = 0;

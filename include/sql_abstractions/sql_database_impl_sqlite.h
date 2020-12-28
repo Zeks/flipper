@@ -14,6 +14,7 @@ class DatabaseImplSqlite : public DatabaseImplBase{
     bool open()override;
     bool isOpen() const override;
     bool transaction() override;
+    bool hasOpenTransaction() const override;
     bool commit() override;
     bool rollback() override;
     void close() override;
@@ -23,6 +24,7 @@ class DatabaseImplSqlite : public DatabaseImplBase{
     std::string driverType() const override;
     QSqlDatabase db;
 private:
+    bool _hasOpenTransaction = false;
 
 
 };

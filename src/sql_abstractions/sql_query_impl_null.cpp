@@ -58,15 +58,27 @@ void QueryImplNull::bindValue(QueryBinding &&)
     throw std::logic_error("use of nulld sql driver");
 }
 
-bool QueryImplNull::next()
+bool QueryImplNull::next(bool)
 {
     throw std::logic_error("use of nulld sql driver");
     return {};
 }
 
+int QueryImplNull::rowCount() const
+{
+    throw std::logic_error("use of nulld sql driver");
+    return 0;
+}
+
 void QueryImplNull::setNamedQuery(std::string)
 {
     throw std::logic_error("use of nulld sql driver");
+}
+
+bool QueryImplNull::supportsImmediateResultSize() const
+{
+    throw std::logic_error("use of nulld sql driver");
+    return false;
 }
 
 bool QueryImplNull::supportsVectorizedBind() const

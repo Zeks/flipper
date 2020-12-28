@@ -17,6 +17,7 @@ public:
     bool transaction();
     bool commit();
     bool rollback();
+    bool hasOpenTransaction() const;
     void* internalPointer();
     void close();
     std::string connectionName();

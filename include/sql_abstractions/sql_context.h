@@ -211,7 +211,7 @@ struct SqlContext
         result.ExecAndCheck(q);
         if(!result.success)
             return false;
-        result.CheckDataAvailability(q);
+        result.CheckDataAvailability(q, true);
         if(!result.success)
             return false;
         return true;
@@ -234,21 +234,23 @@ struct SqlContext
     template <typename ValueType>
     void FetchLargeSelectIntoList(std::string&& actualQuery, std::function<ValueType(sql::Query&)>&& func, std::string&& countQuery = "")
     {
-        if(countQuery.length() == 0)
-            qs = "select count(*) from ( " + actualQuery + " ) as aliased_count";
-        else
-            qs = countQuery;
-        Prepare(qs);
-        if(!ExecAndCheck())
-            return;
+        int size = 0;
+        if(!q.supportsImmediateResultSize()){
+            if(countQuery.length() == 0)
+                qs = "select count(*) from ( " + actualQuery + " ) as aliased_count ";
+            else
+                qs = countQuery;
+            Prepare(qs);
+            if(!ExecAndCheck())
+                return;
 
-        if(!CheckDataAvailability())
-            return;
-        int size = q.value(0).toInt();
-        //qDebug () << "query size: " << size;
-        if(size == 0)
-            return;
-        result.data.reserve(size);
+
+            if(!CheckDataAvailability())
+                return;
+            size = q.value(0).toInt();
+            if(size == 0)
+                return;
+        }
 
         qs = actualQuery;
         Prepare(qs);
@@ -256,7 +258,12 @@ struct SqlContext
 
         if(!ExecAndCheck())
             return;
-        if(!CheckDataAvailability())
+
+        if(q.supportsImmediateResultSize())
+            size = q.rowCount();
+        result.data.reserve(size);
+
+        if(!CheckDataAvailability(true))
             return;
 
         do{
@@ -267,21 +274,26 @@ struct SqlContext
     template <typename ValueType>
     void FetchLargeSelectIntoList(std::string&& fieldName, std::string&& actualQuery, std::string&& countQuery = "")
     {
-        if(countQuery.length() == 0)
-            qs = "select count(*) from ( " + actualQuery + " ) as aliased_count ";
-        else
-            qs = countQuery;
-        Prepare(qs);
-        if(!ExecAndCheck())
-            return;
+        int size = 0;
+        if(!q.supportsImmediateResultSize()){
+            if(countQuery.length() == 0)
+                qs = "select count(*) from ( " + actualQuery + " ) as aliased_count ";
+            else
+                qs = countQuery;
+            Prepare(qs);
+            if(!ExecAndCheck())
+                return;
 
-        if(!CheckDataAvailability())
-            return;
-        int size = q.value(0).toInt();
+
+            if(!CheckDataAvailability(true))
+                return;
+            size = q.value(0).toInt();
+            if(size == 0)
+                return;
+        }
         //qDebug () << "query size: " << size;
-        if(size == 0)
-            return;
-        result.data.reserve(size);
+
+
 
         qs = actualQuery;
         Prepare(qs);
@@ -289,9 +301,12 @@ struct SqlContext
 
         if(!ExecAndCheck())
             return;
-        if(!CheckDataAvailability())
+        if(q.supportsImmediateResultSize())
+            size = q.rowCount();
+        if(!CheckDataAvailability(true))
             return;
 
+        result.data.reserve(size);
         do{
            result.data += q.value(fieldName.c_str()).template value<typename ResultType::value_type>();
         } while(q.next());
@@ -306,7 +321,7 @@ struct SqlContext
 
         if(!ExecAndCheck())
             return;
-        if(!CheckDataAvailability())
+        if(!CheckDataAvailability(true))
             return;
 
         do{
@@ -326,7 +341,7 @@ struct SqlContext
 
         if(!ExecAndCheck())
             return;
-        if(!CheckDataAvailability())
+        if(!CheckDataAvailability(true))
             return;
         do{
             result.data[q.value(idFieldName.c_str()).template value<typename ResultType::key_type>()] =  q.value(valueFieldName.c_str()).template value<typename ResultType::mapped_type>();
@@ -348,7 +363,7 @@ struct SqlContext
         }
         if(!ExecAndCheck())
             return;
-        if(!CheckDataAvailability())
+        if(!CheckDataAvailability(true))
         {
             if(!requireExisting)
                 result.success = true;

@@ -90,6 +90,11 @@ bool Database::rollback()
     return d->rollback();
 }
 
+bool Database::hasOpenTransaction() const
+{
+    return d->hasOpenTransaction();
+}
+
 void *Database::internalPointer()
 {
     return d->internalPointer();

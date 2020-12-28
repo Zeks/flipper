@@ -7,10 +7,10 @@ class DatabaseImplBase{
     public:
     DatabaseImplBase(){}
     virtual ~DatabaseImplBase(){};
-
     virtual void setConnectionToken(ConnectionToken) = 0;
     virtual bool open() = 0;
     virtual bool isOpen() const = 0;
+    virtual bool hasOpenTransaction() const = 0;
     virtual bool transaction() = 0;
     virtual bool commit() = 0;
     virtual bool rollback() = 0;

@@ -93,6 +93,16 @@ bool Query::next()
     return d->next();
 }
 
+int Query::rowCount() const
+{
+    return d->rowCount();
+}
+
+bool Query::supportsImmediateResultSize() const
+{
+    return d->supportsImmediateResultSize();
+}
+
 bool Query::supportsVectorizedBind() const
 {
     return d->supportsVectorizedBind();

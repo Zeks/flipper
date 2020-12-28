@@ -37,6 +37,11 @@ void DatabaseImplNull::close()
     // intentionally empty
 }
 
+bool DatabaseImplNull::hasOpenTransaction() const
+{
+    return false;
+}
+
 std::string DatabaseImplNull::connectionName()
 {
     return "";

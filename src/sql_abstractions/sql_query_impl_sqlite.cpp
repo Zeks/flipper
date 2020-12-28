@@ -119,9 +119,20 @@ void QueryImplSqlite::bindValue(QueryBinding && bind)
     q.bindValue(":" + QString::fromStdString(bind.key), bind.value.toQVariant());
 }
 
-bool QueryImplSqlite::next()
+bool QueryImplSqlite::next(bool warnOnEmpty)
 {
+    Q_UNUSED(warnOnEmpty);
     return q.next();
+}
+
+int QueryImplSqlite::rowCount() const
+{
+    return 0;
+}
+
+bool QueryImplSqlite::supportsImmediateResultSize() const
+{
+    return false;
 }
 
 constexpr bool QueryImplSqlite::supportsVectorizedBind() const

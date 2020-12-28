@@ -22,7 +22,6 @@ struct Statement{
 struct QueryImplPqImpl{
     std::shared_ptr<DatabaseImplPq> database;
     Statement statement;
-    std::string originalStatement;
     std::optional<std::string> uniqueQueryIdentifier;
     std::vector<QueryBinding> bindings;
     std::vector<std::string> foundNamedPlaceholders;
@@ -82,9 +81,20 @@ void QueryImplPq::ReplaceNamedPlaceholders(std::string& statement)
     }
 }
 
+void QueryImplPq::ResetLocalData()
+{
+    d->statement = {};
+    d->bindings = {};
+    d->resultSet = {};
+    d->lastError = {};
+    d->uniqueQueryIdentifier = {};
+    d->foundNamedPlaceholders = {};
+    d->current_result_iterator = {};
+}
+
 bool QueryImplPq::prepare(const std::string & statement, const std::string & name)
 {
-    d->lastError = {};
+    ResetLocalData();
     d->statement = {statement,statement};
     ExtractNamedPlaceholders(d->statement.originalStatement);
     // if there are named placeholders this query by deafult needs preparing
@@ -300,13 +310,13 @@ void QueryImplPq::bindValue(QueryBinding && value)
     d->bindings.emplace_back(value);
 }
 
-bool QueryImplPq::next()
+bool QueryImplPq::next(bool warnOnEmpty)
 {
-    if(d->resultSet.size() == 0)
-    {
-        //QLOG_WARN() << "Requesting next value of empty resultset";
-        return false;
+    if(warnOnEmpty && !d->current_result_iterator.has_value() && d->resultSet.size() == 0){
+        QLOG_WARN() << "Requesting first value of empty resultset";
     }
+    if(d->resultSet.size() == 0)
+        return false;
     if(!d->current_result_iterator.has_value())
         d->current_result_iterator = d->resultSet.begin();
     else{
@@ -317,6 +327,16 @@ bool QueryImplPq::next()
             return false;
         }
     }
+    return true;
+}
+
+int QueryImplPq::rowCount() const
+{
+    return d->resultSet.size();
+}
+
+bool QueryImplPq::supportsImmediateResultSize() const
+{
     return true;
 }
 

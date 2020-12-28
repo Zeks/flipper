@@ -11,6 +11,7 @@ class DatabaseImplNull : public DatabaseImplBase{
     bool commit() override;
     bool rollback() override;
     void close() override;
+    bool hasOpenTransaction() const override;
     std::string connectionName() override;
     void *internalPointer() override;
     bool isNull() override;

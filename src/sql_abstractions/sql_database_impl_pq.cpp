@@ -70,11 +70,13 @@ bool DatabaseImplPq::transaction()
         d->transaction.reset(new pqxx::work(*d->connection));
     }
     catch (const pqxx::broken_connection& e) {
+        d->transaction.reset();
         d->lastError = Error(e.what(), ESqlErrors::se_broken_connection);
         QLOG_ERROR() << e.what();
         return false;
     }
     catch (const pqxx::failure& e) {
+        d->transaction.reset();
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
         return false;
@@ -82,16 +84,21 @@ bool DatabaseImplPq::transaction()
     return true;
 }
 
+bool DatabaseImplPq::hasOpenTransaction() const
+{
+    return d->transaction != nullptr;
+}
+
 bool DatabaseImplPq::commit()
 {
     try{
         d->transaction->commit();
-        d->transaction.reset();
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
         return false;
     }
+    d->transaction.reset();
     return true;
 }
 
@@ -99,12 +106,12 @@ bool DatabaseImplPq::rollback()
 {
     try{
         d->transaction->abort();
-        d->transaction.reset();
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
         return false;
     }
+    d->transaction.reset();
     return true;
 }
 

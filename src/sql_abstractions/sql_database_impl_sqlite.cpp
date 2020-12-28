@@ -27,21 +27,30 @@ bool sql::DatabaseImplSqlite::isOpen() const
 
 bool sql::DatabaseImplSqlite::transaction()
 {
-    return db.transaction();
+    _hasOpenTransaction = db.transaction();;
+    return _hasOpenTransaction;
+}
+
+bool sql::DatabaseImplSqlite::hasOpenTransaction() const
+{
+    return _hasOpenTransaction;
 }
 
 bool sql::DatabaseImplSqlite::commit()
 {
+    _hasOpenTransaction = false;
     return db.commit();
 }
 
 bool sql::DatabaseImplSqlite::rollback()
 {
+    _hasOpenTransaction = false;
     return db.rollback();
 }
 
 void sql::DatabaseImplSqlite::close()
 {
+    _hasOpenTransaction = false;
     db.close();
 }
 

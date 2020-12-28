@@ -30,7 +30,8 @@ public:
     void bindValue(const QueryBinding&);
     void bindValue(QueryBinding&&);
     bool next();
-
+    int rowCount() const;
+    bool supportsImmediateResultSize() const;
     bool supportsVectorizedBind() const;
     Variant value(int) const;
     Variant value(const std::string&)  const;

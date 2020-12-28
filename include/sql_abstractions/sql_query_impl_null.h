@@ -10,27 +10,29 @@ class QueryImplNull: public QueryImplBase{
 public:
     QueryImplNull() = default;
 
-    bool prepare(const std::string &, const std::string &);
-    bool exec();
-    void setForwardOnly(bool);
-    void bindVector(const std::vector<QueryBinding> &);
-    void bindVector(std::vector<QueryBinding> &&);
-    void bindValue(const std::string &, const Variant &);
-    void bindValue(const std::string &, Variant &&);
-    void bindValue(std::string &&, const Variant &);
-    void bindValue(std::string &&, Variant &&);
-    void bindValue(const QueryBinding &);
-    void bindValue(QueryBinding &&);
-    bool next();
+    bool prepare(const std::string &, const std::string &) override;
+    bool exec() override;
+    void setForwardOnly(bool) override;
+    void bindVector(const std::vector<QueryBinding> &) override;
+    void bindVector(std::vector<QueryBinding> &&) override;
+    void bindValue(const std::string &, const Variant &) override;
+    void bindValue(const std::string &, Variant &&) override;
+    void bindValue(std::string &&, const Variant &) override;
+    void bindValue(std::string &&, Variant &&) override;
+    void bindValue(const QueryBinding &) override;
+    void bindValue(QueryBinding &&) override;
+    bool next(bool warnOnEmpty) override;
+    int rowCount() const override;
     virtual void setNamedQuery(std::string);
-    bool supportsVectorizedBind() const;
-    Variant value(int) const;
-    Variant value(const std::string &) const;
-    Variant value(std::string &&) const;
-    Variant value(const char *) const;
+    bool supportsImmediateResultSize() const override;
+    bool supportsVectorizedBind() const override;
+    Variant value(int) const override;
+    Variant value(const std::string &) const override;
+    Variant value(std::string &&) const override;
+    Variant value(const char *) const override;
 
-    Error lastError() const;
-    std::string lastQuery() const;
-    std::string implType() const;
+    Error lastError() const override;
+    std::string lastQuery() const override;
+    std::string implType() const override;
 };
 }

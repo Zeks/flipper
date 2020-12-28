@@ -13,6 +13,7 @@ class DatabaseImplPq : public DatabaseImplBase, public inheritable_enable_shared
     bool open()override;
     bool isOpen() const override;
     bool transaction() override;
+    bool hasOpenTransaction() const override;
     bool commit() override;
     bool rollback() override;
     void close() override;
