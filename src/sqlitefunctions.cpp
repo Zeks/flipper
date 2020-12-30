@@ -698,12 +698,12 @@ QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
     else
         db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
     QString filename  = folder + "/" + file + ".sqlite";
+    qDebug () << "opening database:" << filename;
     db.setDatabaseName(filename);
     bool isOpen = db.open();
 
     InstallCustomFunctions(db);
 
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     ReadDbFile(sqlFile, setDefault ? "" : connectionName);
     bool uuidSuccess = database::puresql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
     QLOG_INFO() << "Database status: " << connectionName << ", open : " << isOpen << "uuid success: " << uuidSuccess;

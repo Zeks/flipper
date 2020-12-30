@@ -24,6 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "timeutils.h"
 #include "core/section.h"
 #include "core/fav_list_analysis.h"
+#include "pure_sql.h"
+#include "Interfaces/interface_sqlite.h"
+#include "sqlitefunctions.h"
 #include "in_tag_accessor.h"
 #include "logger/QsLog.h"
 #include "loggers/usage_statistics.h"
@@ -71,8 +74,9 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     rngData.reset(new core::RNGData);
 
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-    dbInterface->ReadDbFile("dbcode/dbinit.sql",GetDbNameFromCurrentThread());
+    qDebug() << "new version";
+    auto mainDb = database::sqlite::InitAndUpdateDatabaseForFile("database","CrawlerDB","dbcode/dbinit.sql", GetDbNameFromCurrentThread(), true);
+    dbInterface->SetDatabase(mainDb);
 
     An<core::RecCalculator> calculator;
     auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
