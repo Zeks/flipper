@@ -9,4 +9,4 @@
 	url = https://github.com/Zeks/ui-models.git
 [submodule "third_party/pqxx"]
 	path = third_party/pqxx
-	url = git@github.com:jtv/libpqxx.git
+	url = https://github.com/jtv/libpqxx.git
