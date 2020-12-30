@@ -62,6 +62,7 @@ ARG BRANCH
 
 RUN --mount=type=cache,target=/root/.cache/qbs \
     cd $PACKAGE_DIR/flipper  \ 
+    && git fetch origin \
     && git checkout $BRANCH \
     && git pull origin $BRANCH \
     && git submodule update --init \
