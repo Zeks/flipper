@@ -716,7 +716,7 @@ sql::Database InitAndUpdateSqliteDatabaseForFile(QString folder,
 
 
     sql::ConnectionToken token;
-    token.serviceName = filename.toStdString() + ".sqlite";
+    token.serviceName = filename.toStdString();
     db.setConnectionToken(token);
     bool isOpen = db.open();
 
