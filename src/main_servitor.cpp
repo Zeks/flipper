@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QApplication>
 #include "sql_abstractions/sql_database.h"
 #include "sql_abstractions/sql_query.h"
+#include "include/sqlitefunctions.h"
 #include <QSqlError>
 #include <QMetaType>
 #include <QSqlDriver>
@@ -55,41 +56,14 @@ int main(int argc, char *argv[])
     a.setApplicationName("servitor");
     //database::BackupDatabase();
     SetupLogger();
-    std::string path = "CrawlerDB.sqlite";
-    sql::Database db = sql::Database::addDatabase("QSQLITE");
-    db.setDatabaseName(path);
-    db.open();
 
+    auto db = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","CrawlerDB","dbcode/dbinit.sql", "CrawlerDB", true);
+    auto pcDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","PageCache","dbcode/pagecacheinit.sql", "PageCache", false);
+    auto tasksDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","Tasks","dbcode/tasksinit.sql", "Tasks", false);
 
-    path = "PageCache.sqlite";
-    sql::Database pcDb = sql::Database::addDatabase("QSQLITE", "PageCache");
-    pcDb.setDatabaseName(path);
-    pcDb.open();
-
-
-//    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-//    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-//    dbInterface->ReadDbFile("dbcode/dbinit.sql");
-
-
-
-    ////////////////////////////////////
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-
-    sql::Database mainDb;
-    mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-
-    auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
-
-    dbInterface->ReadDbFile("dbcode/dbinit.sql", "CrawlerDB");
-
-    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
-    sql::Database tasksDb;
-    tasksDb = tasksInterface->InitDatabase("Tasks");
-    tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
-    ////////////////////////////////////
     QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
     auto userDb = userDbInterface->InitDatabase("UserDB");
     userDbInterface->ReadDbFile("dbcode/user_db_init.sql", "UserDB");
@@ -105,15 +79,5 @@ int main(int argc, char *argv[])
     w.env.userToken = QUuid::createUuid().toString();
 
     w.show();
-
-
-    //database::EnsureFandomsFilled();
-    //database::EnsureWebIdsFilled();
-//    database::CalculateFandomFicCounts();
-//    database::CalculateFandomAverages();
-    //database::EnsureFFNUrlsShort();
-    //auto result = database::EnsureTagForRecommendations();
-    //database::PassTagsIntoTagsTable();
-
     return a.exec();
 }

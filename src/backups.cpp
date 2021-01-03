@@ -16,16 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "backups.h"
+
 #include <QDir>
 #include <QFile>
 #include <QStandardPaths>
 #include <QMessageBox>
 
-sql::DiagnosticSQLResult<sql::DBVerificationResult> VerifyDatabase(QString name){
+sql::DiagnosticSQLResult<sql::DBVerificationResult> VerifyDatabase(sql::ConnectionToken connectionToken){
 
     sql::DiagnosticSQLResult<sql::DBVerificationResult>  result;
     auto db = sql::Database::addDatabase("QSQLITE","TEST");
-    db.setDatabaseName(name.toStdString());
+    db.setConnectionToken(connectionToken);
     bool open = db.open();
     if(!open)
     {

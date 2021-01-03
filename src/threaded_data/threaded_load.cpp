@@ -104,18 +104,18 @@ auto valueFetcher){
         QDataStream in(&data);
         int size;
         in >> size;
-        qDebug() << "Starting file: " << fileName.toStdString() << " of size: " << size;
+        qDebug() << "Starting file: " << fileName << " of size: " << size;
         resultHolder.reserve(size);
         for(int i = 0; i < size; i++)
         {
             if(i%10000 == 0)
-                qDebug() << "processing entity: " << fileName.toStdString() << " " << i;
+                qDebug() << "processing entity: " << fileName << " " << i;
             valueFetcher(resultHolder, in);
         }
     }
     else
-        qDebug() << "Could not open file: " << fileName.toStdString();
-    qDebug() << "finished file: " << fileName.toStdString();
+        qDebug() << "Could not open file: " << fileName;
+    qDebug() << "finished file: " << fileName;
     return resultHolder;
 };
 
@@ -252,42 +252,42 @@ void LoadFandomDataForFavLists(QString storage, QHash<int, core::AuthorFavFandom
 
 
 void LoadData(QString storageFolder, QString fileName, QHash<int, Roaring>& data){
-    qDebug() << "Loading:" << fileName.toStdString();
+    qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }
 void LoadData(QString storageFolder, QString fileName, QHash<int, QSet<int>>& data){
-    qDebug() << "Loading:" << fileName.toStdString();
+    qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }
 void LoadData(QString storageFolder, QString fileName, QHash<int, std::array<double, 22> > & data){
-    qDebug() << "Loading:" << fileName.toStdString();
+    qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genreLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }
 void LoadData(QString storageFolder, QString fileName, QHash<int, core::AuthorFavFandomStatsPtr>& data){
-    qDebug() << "Loading:" << fileName.toStdString();
+    qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }
 void LoadData(QString storageFolder, QString fileName, QVector<core::FicWeightPtr>& data){
-    qDebug() << "Loading:" << fileName.toStdString();
+    qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, vectorUnifier, storageFolder + QString("/") + fileName, data);
 }
 
 void LoadData(QString storageFolder, QString fileName, QHash<int, core::FicWeightPtr> & data)
 {
-    qDebug() << "Loading:" << fileName.toStdString();
+    qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }
 void LoadData(QString storageFolder, QString fileName, QHash<int, QList<genre_stats::GenreBit>>& data){
-    qDebug() << "Loading:" << fileName.toStdString();
+    qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }
 
 void LoadData(QString storageFolder, QString fileName, QHash<int, QString>& data){
-    qDebug() << "Loading:" << fileName.toStdString();
+    qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }
 void LoadData(QString storageFolder, QString fileName, QHash<uint32_t, genre_stats::ListMoodData> & data){
-    qDebug() << "Loading:" << fileName.toStdString();
+    qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }
 //void LoadData(QString storageFolder, QString fileName, QHash<int, double>& data){

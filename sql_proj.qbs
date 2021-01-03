@@ -23,20 +23,17 @@ import qbs.Environment
 import "BaseDefines.qbs" as Application
 
 Project {
-    name: "servitor_proj"
+    name: "sql_proj"
     qbsSearchPaths: [sourceDirectory + "/modules", sourceDirectory + "/repo_modules"]
     property string rootFolder: {
         var rootFolder = File.canonicalFilePath(sourceDirectory).toString();
         console.error("Source:" + rootFolder)
         return rootFolder.toString()
     }
-    property bool usePostgres: false
     references: [
-        "servitor.qbs",
-        "gui_condition.qbs",
-        "environment_plugs.qbs",
-        "libs/ui-models/UniversalModels.qbs",
-        "libs/Logger/logger.qbs",
         "libs/sql/sql.qbs",
+        "core_condition.qbs",
+        "environment_plugs.qbs",
+        "libs/Logger/logger.qbs",
     ]
 }

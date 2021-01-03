@@ -10,3 +10,6 @@
 [submodule "third_party/pqxx"]
 	path = third_party/pqxx
 	url = https://github.com/jtv/libpqxx.git
+[submodule "libs/sql"]
+	path = libs/sql
+	url = https://github.com/Zeks/sql.git

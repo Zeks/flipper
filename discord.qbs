@@ -15,6 +15,7 @@ App{
     Depends { name: "cpp" }
     Depends { name: "Environment" }
     Depends { name: "logger" }
+    Depends { name: "sql_abstractions" }
     Depends { name: "proto_generation" }
     Depends { name: "grpc_generation" }
 
@@ -55,23 +56,6 @@ App{
         "include/parsers/ffn/favparser_wrapper.h",
         "include/parsers/ffn/mobile_favparser.h",
         "include/sql/discord/discord_queries.h",
-        "include/sql_abstractions/sql_context.h",
-        "include/sql_abstractions/sql_database.h",
-        "include/sql_abstractions/sql_database_impl_base.h",
-        "include/sql_abstractions/sql_database_impl_null.h",
-        "include/sql_abstractions/sql_database_impl_pq.h",
-        "include/sql_abstractions/sql_database_impl_sqlite.h",
-        "include/sql_abstractions/sql_error.h",
-        "include/sql_abstractions/sql_query.h",
-        "include/sql_abstractions/sql_query_impl_base.h",
-        "include/sql_abstractions/sql_query_impl_null.h",
-        "include/sql_abstractions/sql_query_impl_pq.h",
-        "include/sql_abstractions/sql_query_impl_sqlite.h",
-        "include/sql_abstractions/sql_transaction.h",
-        "include/sql_abstractions/sql_variant.h",
-        "include/sql_abstractions/string_hasher.h",
-        "include/sql_abstractions/string_streamer.h",
-        "include/sql_abstractions/string_trimmer.h",
         "include/tasks/author_cache_reprocessor.h",
         "include/tasks/author_task_processor.h",
         "include/tasks/fandom_task_processor.h",
@@ -110,17 +94,6 @@ App{
         "src/parsers/ffn/mobile_favparser.cpp",
         "src/servers/token_processing.cpp",
         "src/sql/discord/discord_queries.cpp",
-        "src/sql_abstractions/sql_context.cpp",
-        "src/sql_abstractions/sql_database.cpp",
-        "src/sql_abstractions/sql_database_impl_null.cpp",
-        "src/sql_abstractions/sql_database_impl_pq.cpp",
-        "src/sql_abstractions/sql_database_impl_sqlite.cpp",
-        "src/sql_abstractions/sql_query.cpp",
-        "src/sql_abstractions/sql_query_impl_null.cpp",
-        "src/sql_abstractions/sql_query_impl_pq.cpp",
-        "src/sql_abstractions/sql_query_impl_sqlite.cpp",
-        "src/sql_abstractions/sql_transaction.cpp",
-        "src/sql_abstractions/sql_variant.cpp",
         "src/tasks/author_cache_reprocessor.cpp",
         "src/tasks/author_task_processor.cpp",
         "src/tasks/fandom_task_processor.cpp",
@@ -177,7 +150,7 @@ App{
         "include/core/recommendation_list.h",
         "src/core/recommendation_list.cpp",
     ]
-    cpp.defines: base.concat(["FMT_HEADER_ONLY"])
+    cpp.defines: base.concat(["FMT_HEADER_ONLY", project.usePostgres ? "USE_POSTGRES" : ""])
     Group{
     name: "sqlite"
     files: [
@@ -234,7 +207,7 @@ App{
 
     cpp.staticLibraries: {
         var libs = []
-        libs = ["dl", "protobuf", "sleepy-discord", "cpr", "curl", "crypto", "ssl", "pqxx", "pq"]
+        libs = ["dl", "protobuf", "sleepy-discord", "cpr", "curl", "crypto", "ssl"]
         libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
     }

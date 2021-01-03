@@ -34,6 +34,7 @@ Project {
         "feed_server.qbs",
         "core_condition.qbs",
         "environment_plugs.qbs",
+        "libs/sql/sql.qbs",
         "libs/Logger/logger.qbs",
     ]
 }

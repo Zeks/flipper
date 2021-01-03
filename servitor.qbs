@@ -38,6 +38,7 @@ App{
     Depends { name: "Qt.quickwidgets" }
     Depends { name: "cpp" }
     Depends { name: "logger" }
+    Depends { name: "sql_abstractions" }
     Depends { name: "UniversalModels" }
     Depends { name: "proto_generation" }
     Depends { name: "grpc_generation" }
@@ -75,18 +76,6 @@ App{
         "include/parsers/ffn/favparser_wrapper.h",
         "include/parsers/ffn/mobile_favparser.h",
         "include/servers/token_processing.h",
-        "include/sql_abstractions/sql_context.h",
-        "include/sql_abstractions/sql_database.h",
-        "include/sql_abstractions/sql_database_impl_base.h",
-        "include/sql_abstractions/sql_database_impl_null.h",
-        "include/sql_abstractions/sql_database_impl_sqlite.h",
-        "include/sql_abstractions/sql_error.h",
-        "include/sql_abstractions/sql_query.h",
-        "include/sql_abstractions/sql_query_impl_base.h",
-        "include/sql_abstractions/sql_query_impl_null.h",
-        "include/sql_abstractions/sql_query_impl_sqlite.h",
-        "include/sql_abstractions/sql_transaction.h",
-        "include/sql_abstractions/string_trimmer.h",
         "include/ui/servitorwindow.h",
         "include/tasks/author_cache_reprocessor.h",
         "include/tasks/author_genre_iteration_processor.h",
@@ -108,16 +97,6 @@ App{
         "src/rec_calc/rec_calculator_mood_adjusted.cpp",
         "src/rec_calc/rec_calculator_weighted.cpp",
         "src/servers/token_processing.cpp",
-        "src/sql_abstractions/sql_context.cpp",
-        "src/sql_abstractions/sql_database.cpp",
-        "src/sql_abstractions/sql_database_impl_base.cpp",
-        "src/sql_abstractions/sql_database_impl_null.cpp",
-        "src/sql_abstractions/sql_database_impl_sqlite.cpp",
-        "src/sql_abstractions/sql_query.cpp",
-        "src/sql_abstractions/sql_query_impl_null.cpp",
-        "src/sql_abstractions/sql_query_impl_sqlite.cpp",
-        "src/sql_abstractions/sql_transaction.cpp",
-        "src/sql_abstractions/sql_variant.cpp",
         "src/ui/servitorwindow.cpp",
         "src/Interfaces/data_source.cpp",
         "include/Interfaces/base.h",

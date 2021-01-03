@@ -87,8 +87,13 @@ int main(int argc, char *argv[])
     {
 
         VerificationResult verificationResult;
+        sql::ConnectionToken token;
+        token.folder = databaseFolderPath.toStdString();
+        token.initFileName = "dbcode/user_db_init";
+        token.serviceName = "UserDB";
+
         if(hasDBFile)
-            verificationResult = VerifyDatabase(currentDatabaseFile);
+            verificationResult = VerifyDatabase(token);
         bool validDbFile  = hasDBFile && verificationResult.success;
         if(!validDbFile)
         {

@@ -13,11 +13,13 @@ Project {
         console.error("Source:" + rootFolder)
         return rootFolder.toString()
     }
+    property bool usePostgres: true
 
     references: [
         "discord.qbs",
         "core_condition.qbs",
         "environment_plugs.qbs",
         "libs/Logger/logger.qbs",
+        "libs/sql/sql.qbs",
     ]
 }
