@@ -34,7 +34,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "pure_sql.h"
 #include "logger/QsLog.h"
 #include "GlobalHeaders/snippets_templates.h"
-#include <QSqlDatabase>
 
 namespace database{
 

@@ -1,0 +1,67 @@
+# syntax = docker/dockerfile:1.0-experimental
+FROM builder:base2 AS server_build
+SHELL ["bash", "-l", "-c"]
+
+ARG THREAD_COUNT=12
+
+# создаём общие директории
+ENV PACKAGE_DIR /build/downloads
+ENV BUILD_DIR /build/tmp
+ENV TARGET_DIR /build/libs
+ENV INCLUDES_DIR /build/includes
+
+RUN mkdir -p $PACKAGE_DIR $BUILD_DIR $TARGET_DIR
+
+ARG GRPC_PLUGIN=/usr/local/bin/grpc_cpp_plugin
+ARG LD_LIBRARY_PATH=/build/libs/grpc-1.30.2/lib::${LD_LIBRARY_PATH}
+ARG LIBNAME_PROTOBUF=protobuf
+ARG LINK_SSL=0
+ARG LINK_ZLIB=0
+ARG NO_AT_BRIDGE=1
+ARG PATH=${PATH}
+ARG PROTOC=/build/libs/grpc-1.30.2/bin/protoc
+ARG SQLITE_FOLDER=/build/libs
+ARG USE_ADDRESS_SORTING=1
+ARG USE_PRECOMPILED_HEADER=0
+ARG ZLIB_DEPENDENCIES=zlib,cares,crypto
+
+ENV GRPC_PLUGIN {$GRPC_PLUGIN}
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH 
+ENV LIBNAME_PROTOBUF $LIBNAME_PROTOBUF
+ENV LINK_SSL  $LINK_SSL
+ENV LINK_ZLIB  $LINK_ZLIB
+ENV NO_AT_BRIDGE $NO_AT_BRIDGE
+ENV PATH  $PATH
+ENV PROTOC $PROTOC
+ENV SQLITE_FOLDER $SQLITE_FOLDER
+ENV USE_ADDRESS_SORTING $USE_ADDRESS_SORTING
+ENV USE_PRECOMPILED_HEADER $USE_ADDRESS_SORTING
+ENV ZLIB_DEPENDENCIES $ZLIB_DEPENDENCIES
+ENV CPLUS_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
+ENV C_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
+
+ARG CACHEBUSTER
+ARG BRANCH
+
+RUN --mount=type=cache,target=/root/.cache/qbs \
+    cd $PACKAGE_DIR  \
+    && git clone https://github.com/Zeks/flipper.git  \ 
+    && cd flipper \
+    && git fetch origin \
+    && git checkout $BRANCH \
+    && git pull origin $BRANCH \
+    && git submodule update --init \
+    && qbs build -d build/server  -f feed_server_proj.qbs qbs.defaultBuildVariant:release profile:defaultqt
+
+RUN cd $PACKAGE_DIR/flipper  \
+    && chmod +x shell/deploy_server.sh \
+    && shell/deploy_server.sh
+
+FROM ubuntu:20.10 as server_runner
+SHELL ["bash", "-l", "-c"]
+
+WORKDIR /root/
+COPY --from=server_build /build/downloads/flipper/deployment .
+ENV LD_LIBRARY_PATH=/root/libs:$LD_LIBRARY_PATH
+RUN chmod +x feed_server
+CMD ["./feed_server"]  
