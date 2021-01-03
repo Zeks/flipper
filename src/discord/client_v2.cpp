@@ -67,15 +67,7 @@ void Client::InitClient()
 {
     fictionalDMServer.reset(new discord::Server());
     discord::InitDefaultCommandSet(this->parser);
-    // in case of frequent relaunches this could get rate limited
-//    std::vector<SleepyDiscord::Server>  sleepyServers = getServers();
-//    int i = 0;
-//    for(const auto& server : sleepyServers){
-//        i++;
-//        InitDiscordServerIfNecessary(server.ID);
-//        qDebug () << QString::fromStdString(server.name);
-//    }
-//    qDebug () << "scount" << i;
+
     InitTips();
 
     QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
@@ -200,7 +192,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(message.serverID.string().length() > 0 && !channelToServerHash.contains(message.channelID.number())){
             channelToServerHash.push(message.channelID.number(), message.serverID.number());
         }
-        QLOG_INFO() << "COMMAND:" << QString::fromStdString(message.serverID.string() + " " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " " + message.author.ID.string() + " " + message.content);
+        QLOG_INFO() << "\nCOMMAND:" << QString::fromStdString(message.serverID.string() + " " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " " + message.author.ID.string() + " " + message.content + "\n");
         executor->Push(std::move(commands));
     }
     catch(const rapidjson_exception& e){

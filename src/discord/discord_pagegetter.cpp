@@ -21,16 +21,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "GlobalHeaders/run_once.h"
 #include "logger/QsLog.h"
 #include <QNetworkAccessManager>
+#include <QRegularExpression>
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QUrl>
+#include <QFile>
+#include <QUuid>
+#include <QProcess>
+#include <QSettings>
+#include <QTextStream>
 #include <QObject>
 #include <QCoreApplication>
-#include <QSqlQuery>
 #include <QSqlRecord>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_query.h"
+#include "sql_abstractions/sql_database.h"
+#include "sql_abstractions/sql_error.h"
 #include <QDebug>
-#include <QSqlDatabase>
+
 #include <QSqlError>
 namespace discord {
 
@@ -62,14 +69,14 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 
     auto fetchPageFromNetwork = [&](){
         result = GetPageFromNetwork(url);
-        qDebug() << QStringLiteral("From network");
+        qDebug() << "From network";
         if(result.isValid)
             SavePageToDB(result);
     };
     if(useCache != ECacheMode::dont_use_cache)
     {
         result = GetPageFromDB(url);
-        QLOG_INFO() << QStringLiteral("Version from cache was generated: ") << result.generated;
+        QLOG_INFO() << "Version from cache was generated: " << result.generated;
         if(result.isValid)
              result.isFromCache = true;
         else
@@ -92,16 +99,16 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
         return result;
 
     // first we search for the exact page in the database
-    QSqlQuery q(dbToken->db);
-    q.prepare(QStringLiteral("select * from PageCache where url = :URL "));
-    q.bindValue(QStringLiteral(":URL"), url);
+    sql::Query q(dbToken->db);
+    q.prepare("select * from PageCache where url = :URL ");
+    q.bindValue("URL", url.toStdString());
     q.exec();
     bool dataFound = q.next();
 
     if(q.lastError().isValid())
     {
         qDebug() << "Reading url: " << url;
-        qDebug() << "Error getting page from database: " << q.lastError();
+        qDebug() << "Error getting page from database: " << q.lastError().text();
         return result;
     }
 
@@ -111,14 +118,14 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
     result.url = url;
     result.isValid = true;
     if(q.value("COMPRESSED").toInt() == 1)
-        result.content = QString::fromUtf8(qUncompress(q.value(QStringLiteral("CONTENT")).toByteArray()));
+        result.content = QString::fromUtf8(qUncompress(q.value("CONTENT").toByteArray()));
     else
-        result.content = q.value(QStringLiteral("CONTENT")).toByteArray();
+        result.content = q.value("CONTENT").toByteArray();
     //result.crossover= q.value("CROSSOVER").toInt();
     //result.fandom= q.value("FANDOM").toString();
-    result.generated= q.value(QStringLiteral("GENERATION_DATE")).toDateTime();
+    result.generated= q.value("GENERATION_DATE").toDateTime();
     result.source = EPageSource::cache;
-    result.type = static_cast<EPageType>(q.value(QStringLiteral("PAGE_TYPE")).toInt());
+    result.type = static_cast<EPageType>(q.value("PAGE_TYPE").toInt());
 
     return result;
 }
@@ -127,62 +134,90 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 {
     result = WebPage();
     result.url = url;
-    currentRequest = QNetworkRequest(QUrl(url));
-    auto reply = manager.get(currentRequest);
-    static const int maxNumberOfRetries = 40;
-    int retries = maxNumberOfRetries;
-    //qDebug() << "entering wait phase";
-    while(!reply->isFinished() && retries > 0)
+    QFile file("scripts/flare_post.js");
+    QString curlQuery;
+    if (file.open(QFile::ReadOnly))
     {
-//        if(retries%10 == 0)
-//            qDebug() << "retries left: " << retries;
-        if(reply->isFinished())
-            break;
-        retries--;
-        QThread::msleep(timeout);
-        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    }
-    if(!reply->isFinished())
-    {
-        qDebug() << "failed to get the page in time";
-        return result;
+        QTextStream in(&file);
+        curlQuery = in.readAll();
     }
 
-    QByteArray data=reply->readAll();
+    QStringList params;
+    QProcess process;
+    QSettings settings("settings/settings_solver.ini", QSettings::IniFormat);
+    QString servitorPort = settings.value("Settings/flarePort").toString();
+    QRegularExpression rxNum("[0-9]{1,15}");
+    auto match = rxNum.match(url);
+    QString userPart;
+    if(match.hasMatch())
+        userPart=match.captured(0);
+    else
+        userPart=QUuid::createUuid().toString();
 
-    error = reply->error();
-    reply->deleteLater();
-    if(error != QNetworkReply::NoError)
-        return result;
-    //QString str(data);
-    result.content = data;
+    QString filename = QString("tmpfaves/favourites_%1.html").arg(userPart);
+    params << "-c" << "curl" << "-L" << "-X" << "POST" << QString("http://%1/v1").arg(servitorPort)
+           << "-H" << "'Content-Type: application/json'"
+           << "--data-raw" << curlQuery.arg(url) << ">" << filename;
+    process.start("curl" , params);
+    process.waitForFinished(-1); // will wait forever until finished
+    QString stdoutResult = process.readAllStandardOutput();
+    QString stderrResult = process.readAllStandardError();
 
-    result.isValid = true;
-    result.url = url;
-    result.source = EPageSource::network;
+    QFile tempFIle(filename);
+    if(tempFIle.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        QTextStream out(&tempFIle);
+        out << stdoutResult;
+    }
+    file.close();
+
+    process.start("bash", QStringList() << "-c" << "scripts/page_fixer.sh " + QString("%1").arg(filename));
+    process.waitForFinished(-1); // will wait forever until finished
+
+
+    stdoutResult = process.readAllStandardOutput();
+    stderrResult = process.readAllStandardError();
+    qDebug() << stdoutResult;
+    qDebug() << stderrResult;
+
+    QThread::msleep(500);
+    QFile favouritesfile(filename);
+    if (favouritesfile.open(QFile::ReadOnly))
+    {
+        QTextStream in(&favouritesfile);
+        result.content = in.readAll();
+        result.isValid = true;
+        result.url = url;
+        result.source = EPageSource::network;
+    }
+    else{
+        result.isValid = false;
+        result.url = url;
+        result.source = EPageSource::network;
+    }
     return result;
 }
 
 void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
     auto dbToken = dbGetter();
-    QSqlQuery q(dbToken->db);
-    q.prepare(QStringLiteral("delete from pagecache where url = :url"));
-    q.bindValue(QStringLiteral(":url"), page.url);
+    sql::Query q(dbToken->db);
+    q.prepare("delete from pagecache where url = :url");
+    q.bindValue("url", page.url);
     q.exec();
-    QString insert = QStringLiteral("INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
-                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)");
+    auto insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
+                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)";
     q.prepare(insert);
-    q.bindValue(QStringLiteral(":URL"), page.url);
-    q.bindValue(QStringLiteral(":GENERATION_DATE"), QDateTime::currentDateTime());
-    q.bindValue(QStringLiteral(":CONTENT"), qCompress(page.content.toUtf8()));
-    q.bindValue(QStringLiteral(":COMPRESSED"), 1);
-    q.bindValue(QStringLiteral(":PAGE_TYPE"), static_cast<int>(page.type));
+    q.bindValue("URL", page.url);
+    q.bindValue("GENERATION_DATE", QDateTime::currentDateTime());
+    q.bindValue("CONTENT", qCompress(page.content.toUtf8()));
+    q.bindValue("COMPRESSED", 1);
+    q.bindValue("PAGE_TYPE", static_cast<int>(page.type));
     q.exec();
     if(q.lastError().isValid())
     {
-        qDebug() << QStringLiteral("Writing url: ") << page.url;
-        qDebug() << QStringLiteral("Error saving page to database: ")  << q.lastError();
+        qDebug() << "Writing url: " << page.url;
+        qDebug() << "Error saving page to database: "  << q.lastError().text();
     }
 }
 

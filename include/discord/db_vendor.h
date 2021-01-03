@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma once
 
 #include "GlobalHeaders/SingletonHolder.h"
+#include "sql_abstractions/sql_connection_token.h"
 
 #include "database.h"
 #include <mutex>
@@ -31,7 +32,7 @@ struct LockedDatabase : public core::Database{
     LockedDatabase(std::recursive_mutex& lock):core::Database(), lockGuard(lock){}
     ~LockedDatabase();
     std::lock_guard<std::recursive_mutex> lockGuard;
-    QSqlDatabase db;
+    sql::Database db;
 };
 
 
@@ -39,11 +40,11 @@ struct LockedDatabase : public core::Database{
 class DatabaseVendor{
 public:
     QSharedPointer<LockedDatabase> GetDatabase(QString name);
-    void AddConnectionToken(QString, const SqliteConnectionToken &);
+    void AddConnectionToken(QString, const sql::ConnectionToken &);
 private:
-    QSqlDatabase InstantiateDatabase(const SqliteConnectionToken&);
-    SqliteConnectionToken users;
-    SqliteConnectionToken pageCache;
+    sql::Database InstantiateDatabase(const sql::ConnectionToken&);
+    sql::ConnectionToken users;
+    sql::ConnectionToken pageCache;
     std::recursive_mutex usersLock;
     std::recursive_mutex pageCacheLock;
 };

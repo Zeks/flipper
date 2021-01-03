@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/url_utils.h"
 
 #include "include/grpc/grpc_source.h"
+#include "include/sqlitefunctions.h"
 
 #include "include/tasks/slash_task_processor.h"
 #include <QTextCodec>
@@ -698,7 +699,7 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
 
 
     //QVector<int> ficIds;
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     auto authors= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
@@ -817,7 +818,7 @@ void ServitorWindow::CreateAdjustedGenresForAuthors()
     interfaces::GenreConverter converter;
 
     //QVector<int> ficIds;
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     auto authors= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
@@ -860,7 +861,7 @@ void ServitorWindow::CreateSecondIterationOfGenresForFics(int minAuthorRecs, int
 {
     InputForGenresIteration2 inputs;
     //QVector<int> ficIds;
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     auto authors= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
@@ -933,7 +934,7 @@ void ServitorWindow::CreateSecondIterationOfGenresForFics(int minAuthorRecs, int
 }
 void ServitorWindow::on_pbLoadGenreDistributions_clicked()
 {
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     auto authors= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
@@ -978,7 +979,7 @@ void ServitorWindow::on_pbReprocessFics_clicked()
     //    auto result = database::GetAllFandoms(fandoms);
     //    if(!result)
     //        return;
-    //    QSqlDatabase db = QSqlDatabase::database();
+    //    sql::Database db = sql::Database::database();
     //    //db.transaction();
     //    database::ReprocessFics(" where fandom1 like '% CROSSOVER' and alive = 1 order by id asc", "ffn", [this,&pager, &parser, &fandoms](int ficId){
     //        //todo, get web_id from fic_id
@@ -1015,7 +1016,7 @@ void ServitorWindow::on_pbGenresIteration2_clicked()
 void ServitorWindow::on_pushButton_2_clicked()
 {
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
-    fanfics->db = QSqlDatabase::database();
+    fanfics->db = sql::Database::database();
     fanfics->ResetActionQueue();
     QSettings settings("settings/settings_servitor.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
@@ -1038,7 +1039,7 @@ void ServitorWindow::on_pbGetData_clicked()
 
 void ServitorWindow::on_pushButton_3_clicked()
 {
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
@@ -1112,7 +1113,7 @@ void ServitorWindow::on_pushButton_3_clicked()
 
 void ServitorWindow::on_pbUpdateFreshAuthors_clicked()
 {
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
@@ -1173,7 +1174,7 @@ void ServitorWindow::OnNewProgressString(QString )
 
 void ServitorWindow::on_pbUnpdateInterval_clicked()
 {
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
@@ -1220,7 +1221,7 @@ void ServitorWindow::on_pbUnpdateInterval_clicked()
 
 void ServitorWindow::on_pbReprocessAllFavPages_clicked()
 {
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
@@ -1275,90 +1276,90 @@ void ServitorWindow::on_pbReprocessCacheLinked_clicked()
     env.LoadAllLinkedAuthorsMultiFromCache();
 }
 
-void ServitorWindow::on_pbPCRescue_clicked()
-{
-    QString path = "PageCache.sqlite";
-    QSqlDatabase pcdb = QSqlDatabase::addDatabase("QSQLITE", "PageCache");
-    pcdb.setDatabaseName(path);
-    pcdb.open();
+//void ServitorWindow::on_pbPCRescue_clicked()
+//{
+//    QString path = "PageCache.sqlite";
+//    sql::Database pcdb = sql::Database::addDatabase("QSQLITE", "PageCache");
+//    pcdb.setDatabaseName(path.toStdString());
+//    pcdb.open();
 
 
-    path = "PageCache_export.sqlite";
-    QSqlDatabase pcExDb = QSqlDatabase::addDatabase("QSQLITE", "PageCache_Export");
-    pcExDb.setDatabaseName(path);
-    pcExDb.open();
+//    path = "PageCache_export.sqlite";
+//    sql::Database pcExDb = sql::Database::addDatabase("QSQLITE", "PageCache_Export");
+//    pcExDb.setDatabaseName(path.toStdString());
+//    pcExDb.open();
 
 
-    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-    QSharedPointer<database::IDBWrapper> pageCacheExportInterface (new database::SqliteInterface());
+//    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
+//    QSharedPointer<database::IDBWrapper> pageCacheExportInterface (new database::SqliteInterface());
 
-    pcdb = pageCacheInterface->InitDatabase("PageCache");
-    qDebug() << "Db open: " << pcdb.isOpen();
-    QSqlQuery testQuery("select * from pagecache where url = 'https://www.fanfiction.net/u/1000039'", pcdb);
-    bool readable = testQuery.next();
-    qDebug() << "Readable: " << readable;
-    qDebug() << "Data: " << testQuery.record();
+//    pcdb = pageCacheInterface->InitDatabase("PageCache");
+//    qDebug() << "Db open: " << pcdb.isOpen();
+//    sql::Query testQuery("select * from pagecache where url = 'https://www.fanfiction.net/u/1000039'", pcdb);
+//    bool readable = testQuery.next();
+//    qDebug() << "Readable: " << readable;
+//    qDebug() << "Data: " << testQuery.record();
 
-    pcExDb = pageCacheExportInterface->InitDatabase("PageCache_Export");
+//    pcExDb = pageCacheExportInterface->InitDatabase("PageCache_Export");
 
-    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
-    pageCacheExportInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache_Export");
-
-
-    int counter = 0;
-
-    QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
-                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)";
-    database::Transaction transactionMain(env.interfaces.db->GetDatabase());
-    //database::Transaction transactionRead(pcdb);
-    QSqlQuery exportQ(pcExDb);
-    exportQ.prepare(insert);
-    auto authors = env.interfaces.authors->GetAllAuthorsUrls("ffn");
-    std::sort(authors.begin(), authors.end());
-    qDebug() << "finished reading author urls";
-    QSqlQuery readQuery(pcdb);
-    readQuery.prepare("select * from pagecache where url = :url");
-
-    database::Transaction transaction(pcExDb);
-
-    for(const auto& author : authors)
-    {
-        //qDebug() << "Attempting to read url: " << author;
-        readQuery.bindValue(":url", author);
-        readQuery.exec();
-        bool result = readQuery.next();
-        if(!result || readQuery.value("url").toString().isEmpty())
-        {
-            qDebug() << "Attempting to read url: " << author;
-            qDebug() << readQuery.lastError().text();
-            continue;
-        }
-        if(counter%1000 == 0)
-        {
-            qDebug() << "committing: " << counter;
-            transaction.finalize();
-            transaction.start();
-        }
-
-        //qDebug() << "writing record: " << readQuery.value("url").toString();
-
-        counter++;
-        exportQ.bindValue(":URL", readQuery.value("url").toString());
-        exportQ.bindValue(":GENERATION_DATE", readQuery.value("GENERATION_DATE").toDateTime());
-        exportQ.bindValue(":CONTENT", readQuery.value("CONTENT").toByteArray());
-        exportQ.bindValue(":COMPRESSED", readQuery.value("COMPRESSED").toInt());
-        exportQ.bindValue(":PAGE_TYPE", readQuery.value("PAGE_TYPE").toString());
-        exportQ.exec();
-        if(exportQ.lastError().isValid())
-            qDebug() << "Error writing record: " << exportQ.lastError().text();
-    }
+//    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
+//    pageCacheExportInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache_Export");
 
 
-}
+//    int counter = 0;
+
+//    QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
+//                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)";
+//    database::Transaction transactionMain(env.interfaces.db->GetDatabase());
+//    //database::Transaction transactionRead(pcdb);
+//    sql::Query exportQ(pcExDb);
+//    exportQ.prepare(insert.toStdString());
+//    auto authors = env.interfaces.authors->GetAllAuthorsUrls("ffn");
+//    std::sort(authors.begin(), authors.end());
+//    qDebug() << "finished reading author urls";
+//    sql::Query readQuery(pcdb);
+//    readQuery.prepare("select * from pagecache where url = :url");
+
+//    database::Transaction transaction(pcExDb);
+
+//    for(const auto& author : authors)
+//    {
+//        //qDebug() << "Attempting to read url: " << author;
+//        readQuery.bindValue("url", author);
+//        readQuery.exec();
+//        bool result = readQuery.next();
+//        if(!result || readQuery.value("url").toString().length() == 0)
+//        {
+//            qDebug() << "Attempting to read url: " << author;
+//            qDebug() << readQuery.lastError().text();
+//            continue;
+//        }
+//        if(counter%1000 == 0)
+//        {
+//            qDebug() << "committing: " << counter;
+//            transaction.finalize();
+//            transaction.start();
+//        }
+
+//        //qDebug() << "writing record: " << readQuery.value("url").toString();
+
+//        counter++;
+//        exportQ.bindValue("URL", readQuery.value("url").toString());
+//        exportQ.bindValue("GENERATION_DATE", readQuery.value("GENERATION_DATE").toDateTime());
+//        exportQ.bindValue("CONTENT", readQuery.value("CONTENT").toByteArray());
+//        exportQ.bindValue("COMPRESSED", readQuery.value("COMPRESSED").toInt());
+//        exportQ.bindValue("PAGE_TYPE", readQuery.value("PAGE_TYPE").toString());
+//        exportQ.exec();
+//        if(exportQ.lastError().isValid())
+//            qDebug() << "Error writing record: " << exportQ.lastError().text();
+//    }
+
+
+//}
 
 void ServitorWindow::on_pbSlashCalc_clicked()
 {
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     database::Transaction transaction(db);
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
@@ -1401,7 +1402,7 @@ void ServitorWindow::on_pbFindSlashSummary_clicked()
 
 void ServitorWindow::LoadDataForCalculation(CalcDataHolder& cdh)
 {
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     auto genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     auto fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     auto authorsInterface= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
@@ -1793,7 +1794,7 @@ void ServitorWindow::on_pbCompareGenres_clicked()
     QLOG_INFO() << "on_pbCompareGenres_clicked 1.1";
 
 
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     QLOG_INFO() << "on_pbCompareGenres_clicked 1.2";
     auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
@@ -2034,11 +2035,11 @@ void ServitorWindow::on_cbUserIDs_currentIndexChanged(const QString &arg1)
 //void ServitorWindow::on_pbExtractDiscords_clicked()
 //{
 //    QString path = "PageCache.sqlite";
-//    QSqlDatabase pcdb = QSqlDatabase::addDatabase("QSQLITE", "PageCache");
+//    sql::Database pcdb = sql::Database::addDatabase("QSQLITE", "PageCache");
 //    pcdb.setDatabaseName(path);
 //    pcdb.open();
 
-//    QSqlQuery testQuery("select * from pagecache order by url desc", pcdb);
+//    sql::Query testQuery("select * from pagecache order by url desc", pcdb);
 //    ui->tbrDiscords->setOpenExternalLinks(true);
 //    int i = 0;
 //    while(testQuery.next())
@@ -2064,11 +2065,11 @@ void ServitorWindow::on_cbUserIDs_currentIndexChanged(const QString &arg1)
 //void ServitorWindow::on_pbExtractDiscords_clicked()
 //{
 //    QString path = "PageCache.sqlite";
-//    QSqlDatabase pcdb = QSqlDatabase::addDatabase("QSQLITE", "PageCache");
+//    sql::Database pcdb = sql::Database::addDatabase("QSQLITE", "PageCache");
 //    pcdb.setDatabaseName(path);
 //    pcdb.open();
 
-//    QSqlQuery testQuery("select * from pagecache order by url desc", pcdb);
+//    sql::Query testQuery("select * from pagecache order by url desc", pcdb);
 //    ui->tbrDiscords->setOpenExternalLinks(true);
 //    int i = 0;
 //    while(testQuery.next())
@@ -2111,11 +2112,9 @@ void ServitorWindow::on_cbUserIDs_currentIndexChanged(const QString &arg1)
 void ServitorWindow::on_pbExtractDiscords_clicked()
 {
     QString path = "PageCache.sqlite";
-    QSqlDatabase pcdb = QSqlDatabase::addDatabase("QSQLITE", "PageCache");
-    pcdb.setDatabaseName(path);
-    pcdb.open();
+    auto pcDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","PageCache","dbcode/pagecacheinit.sql", "PageCache", false);
 
-    QSqlQuery testQuery("select * from pagecache order by url desc", pcdb);
+    sql::Query testQuery("select * from pagecache order by url desc", pcDb);
     ui->tbrDiscords->setOpenExternalLinks(true);
     int i = 0;
     while(testQuery.next())
@@ -2169,7 +2168,7 @@ void ServitorWindow::on_pbExtractDiscords_clicked()
                     if(found)
                     {
                         auto url = testQuery.value("URL").toString();
-                        qDebug() << match.capturedTexts() << " " << url;
+                        qDebug() << match.capturedTexts() << " " << QString::fromStdString(url);
                     }
                 }
             }

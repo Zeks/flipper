@@ -38,6 +38,7 @@ App{
     Depends { name: "Qt.quickwidgets" }
     Depends { name: "cpp" }
     Depends { name: "logger" }
+    Depends { name: "sql_abstractions" }
     Depends { name: "UniversalModels" }
     Depends { name: "proto_generation" }
     Depends { name: "grpc_generation" }

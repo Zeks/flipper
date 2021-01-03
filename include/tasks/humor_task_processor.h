@@ -39,7 +39,7 @@ typedef QSharedPointer<PageTask> PageTaskPtr;
 class HumorProcessor : public QObject{
 Q_OBJECT
 public:
-    HumorProcessor(QSqlDatabase db,
+    HumorProcessor(sql::Database db,
                         QSharedPointer<interfaces::Fanfics> fanficInterface,
                         QSharedPointer<interfaces::Fandoms> fandomsInterface,
                         QSharedPointer<interfaces::PageTask> pageInterface,
@@ -65,7 +65,7 @@ public:
     void CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors);
 
     private:
-    QSqlDatabase db;
+    sql::Database db;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Authors> authorsInterface;

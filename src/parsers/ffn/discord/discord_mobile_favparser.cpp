@@ -32,7 +32,7 @@ QSet<QString> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECa
     fetchAction.run(false);
 
     //QString content;
-    QRegularExpression rx("p[=](\\d+)['][>]Last[<][/]a[>]");
+    QRegularExpression rx("p[=](\\d+)[\"][>]Last[<][/]a[>]");
     auto match = rx.match(mobilePage.content);
     QSet<QString> urlResult;
     // failed to grab the last record, exiting with info from just basic page

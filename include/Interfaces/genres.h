@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "GlobalHeaders/SingletonHolder.h"
 #include <QScopedPointer>
 #include <QSharedPointer>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QReadWriteLock>
 #include <QSet>
 #include <optional>
@@ -138,7 +138,7 @@ public:
 
 
     GenreIndex index;
-    QSqlDatabase db;
+    sql::Database db;
     bool loadOriginalGenresOnly = false;
 private:
 

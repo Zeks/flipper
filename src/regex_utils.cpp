@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QString>
 #include <QDebug>
 #include "core/section.h"
+
 NarrowResult GetNextInstanceOf(QString text, QString regex1, QString regex2, bool forward)
 {
     QRegExp rx1(regex1);

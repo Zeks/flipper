@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:1.0-experimental
-FROM builder:base AS bot_build
+FROM builder:base2 AS bot_build
 SHELL ["bash", "-l", "-c"]
 
 ARG THREAD_COUNT=12
@@ -62,6 +62,7 @@ ARG BRANCH
 
 RUN --mount=type=cache,target=/root/.cache/qbs \
     cd $PACKAGE_DIR/flipper  \ 
+    && git fetch origin \
     && git checkout $BRANCH \
     && git pull origin $BRANCH \
     && git submodule update --init \
@@ -71,7 +72,7 @@ RUN cd $PACKAGE_DIR/flipper  \
     && chmod +x shell/deploy_bot.sh \
     && shell/deploy_bot.sh
 
-FROM ubuntu:latest as bot_runner
+FROM ubuntu:20.10 as bot_runner
 SHELL ["bash", "-l", "-c"]
 RUN apt-get update && apt-get -y install curl libssl-dev \
  && echo 'openssl_conf = default_conf' > /etc/ssl/openssl.cnf \
@@ -83,10 +84,12 @@ RUN apt-get update && apt-get -y install curl libssl-dev \
    &&  echo 'MinProtocol = TLSv1.2' >> /etc/ssl/openssl.cnf \
    &&  echo 'CipherString = DEFAULT:@SECLEVEL=1' >> /etc/ssl/openssl.cnf 
 
+RUN mkdir /tmp/faves 
+
+ 
 WORKDIR /root/
 COPY --from=bot_build /build/downloads/flipper/deployment .
 ENV LD_LIBRARY_PATH=/root/libs:$LD_LIBRARY_PATH
+RUN chmod +x scripts/page_fixer.sh
 RUN chmod +x discord
 CMD ["./discord"]  
-
-

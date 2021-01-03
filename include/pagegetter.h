@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDateTime>
 #include <QByteArray>
 #include <QScopedPointer>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QThread>
 #include "GlobalHeaders/SingletonHolder.h"
 #include "include/tasks/fandom_task_processor.h"
@@ -44,7 +44,7 @@ class PageManager
     public:
     PageManager();
     ~PageManager();
-    void SetDatabase(QSqlDatabase _db);
+    void SetDatabase(sql::Database _db);
     void SetCachedMode(bool value);
     bool GetCachedMode() const;
     WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::dont_use_cache);
@@ -69,7 +69,7 @@ public:
     void SetAutomaticCache(QDate);
     void SetAutomaticCacheForCurrentDate(bool);
 
-    std::atomic<bool> working;
+    std::atomic<bool> working = false;
     QDate automaticCache;
     bool automaticCacheForCurrentDate = true;
 public slots:

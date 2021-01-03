@@ -24,20 +24,20 @@ QString GetWebId(QString url, QString source)
 {
     if(source == QStringLiteral("ffn"))
         return ffn::GetWebId(url);
-    return QStringLiteral("");
+    return "";
 }
 
 QString GetStoryUrlFromWebId(int id, QString source)
 {
     if(source == QStringLiteral("ffn"))
         return ffn::GetStoryUrlFromWebId(id);
-    return QStringLiteral("");
+    return "";
 }
 QString GetAuthorUrlFromWebId(int id, QString source)
 {
     if(source == QStringLiteral("ffn"))
         return ffn::GetAuthorUrlFromWebId(id);
-    return QStringLiteral("");
+    return "";
 }
 
 namespace ffn{

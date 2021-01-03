@@ -144,8 +144,8 @@ void FFNParserBase::GetCrossoverFandomList(core::FanficSectionInFFNFavourites & 
 void FFNParserBase::GetUrl(core::FanficSectionInFFNFavourites & section, int& startfrom, QString text)
 {
     // looking for first href
-    thread_local QRegExp rxStart(QRegExp::escape("href=\""));
-    thread_local QRegExp rxEnd(QRegExp::escape("\"><img"));
+    thread_local QRegExp rxStart(QRegExp::escape("href=\'"));
+    thread_local QRegExp rxEnd(QRegExp::escape("\'><img"));
     int indexStart = rxStart.indexIn(text,startfrom);
     int indexEnd = rxEnd.indexIn(text, indexStart);
     section.result->SetUrl(QStringLiteral("ffn"),text.mid(indexStart + 6,indexEnd - (indexStart + 6)));
@@ -159,7 +159,7 @@ void FFNParserBase::GetAuthor(core::FanficSectionInFFNFavourites & section, int 
 {
     text = text.mid(startfrom);
     auto full = GetDoubleNarrow(text,QStringLiteral("/u/\\d+/"), QStringLiteral("</a>"), true,
-                                QStringLiteral(""),  QStringLiteral("\">"), false,
+                                QStringLiteral(""),  QStringLiteral("'>"), false,
                                 2);
 
     thread_local QRegExp rxEnd("(/u/(\\d+)/)(.*)(?='>)");
@@ -219,6 +219,7 @@ std::once_flag settingsFlag;
 void FFNParserBase::ProcessSection(core::FanficSectionInFFNFavourites &section, int &currentPosition, QString str)
 {
     section.result->isValid = true;
+    //qDebug() << str;
     GetTitleAndUrl(section, currentPosition, str);
     if(section.result->ficSource != core::Fanfic::efs_own_works)
         GetAuthor(section, currentPosition, str);

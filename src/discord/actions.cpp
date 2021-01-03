@@ -108,7 +108,6 @@ QSharedPointer<core::RecommendationList> CreateRecommendationParams(QString ffnI
 {
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
     list->minimumMatch = 1;
-    list->maxUnmatchedPerMatch = 50;
     list->isAutomatic = true;
     list->useWeighting = true;
     list->alwaysPickAt = 9999;
@@ -124,7 +123,6 @@ QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
 {
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
     list->minimumMatch = 1;
-    list->maxUnmatchedPerMatch = 5000;
     list->isAutomatic = false;
     list->useWeighting = false;
     list->alwaysPickAt = 9999;
@@ -243,9 +241,9 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     auto largeListToken =  command.user->GetLargeListToken();
     An<interfaces::Users> usersDbInterface;
     if(!refreshing){
-        if(largeListToken.date == QDate::currentDate() && largeListToken.counter == 2)
+        if(largeListToken.date == QDate::currentDate() && largeListToken.counter == 1)
         {
-            action->text = "Only two profile reparses per day are allowed for lists over 500 fics.";
+            action->text = "Only one profile reparse per day are allowed for lists over 500 fics.";
             action->stopChain = true;
             return action;
         }
@@ -267,7 +265,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
         pages->LoadPage(ffnId.toStdString());
         auto page = pages->GetPage(ffnId.toStdString());
         if(page && page->getLastParsed() == QDate::currentDate() && page->getDailyParseCounter() >=2){
-            action->text = "Only two ffn profile reparses per day are allowed for lists over 500 fics and this ID has already reached reparse limit.";
+            action->text = "Only one ffn profile reparse per day is allowed for lists over 500 fics and this ID has already reached reparse limit.";
             action->stopChain = true;
             return action;
         }
@@ -335,12 +333,10 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
 
     QString ffnId;
     bool isId = false;
-    bool isHttp = false;
     bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
     bool keepPage = command.variantHash.contains(QStringLiteral("keep_page"));
 
     if(command.variantHash.contains(QStringLiteral("url"))){
-        isHttp = true;
         ffnId = command.variantHash[QStringLiteral("url")].toString().trimmed();
     }
     else if(command.variantHash.contains(QStringLiteral("user"))){
@@ -353,20 +349,23 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         ffnId = QString::number(command.ids.at(0));
     }
     An<FfnPages> pages;
+    bool knowsPage = false;
     if(isId)
     {
         if(!pages->HasPage(ffnId.toStdString()))
             pages->LoadPage(ffnId.toStdString());
         auto page = pages->GetPage(ffnId.toStdString());
-        if(refreshing && page && page->getLastParsed() != QDate::currentDate())
-            refreshing = false;
+        if(page)
+            knowsPage = true;
+//        if(refreshing && page && page->getLastParsed() != QDate::currentDate())
+//            refreshing = false;
     }
 
 
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
 
-    FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
+    FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing && knowsPage ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
     ffnId = userFavourites.ffnId;
 
 
@@ -714,15 +713,15 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     static constexpr uint8_t promoFrequency = 7;
     bool showAppOrPatreon = rand() % promoFrequency == 0;
     SleepyDiscord::EmbedFooter footer;
+    //QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest"),
     if(showAppOrPatreon){
-        QStringList appPromo =  {QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest"),
-                                 QStringLiteral("If you would like to support the bot, you can do it on https://www.patreon.com/Zekses")};
-        int shownId = rand() %2 == 0;
-        footer.text = appPromo.at(shownId).toStdString();
-        if(shownId == 1)
-            footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
-        else
-            footer.iconUrl = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
+        QStringList appPromo =  {QStringLiteral("If you would like to support the bot, you can do it on https://www.patreon.com/Zekses")};
+//        int shownId = rand() %2 == 0;
+        footer.text = appPromo.at(0).toStdString();
+//        if(shownId == 1)
+        footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
+//        else
+//            footer.iconUrl = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
     }
     else{
         if(tips.size() > 0)
@@ -739,7 +738,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 
     QHash<int, int> positionToId;
     int i = 0;
-    for(auto fic: std::as_const(fics))
+    for(const auto& fic: std::as_const(fics))
     {
         positionToId[i+1] = fic.identity.id;
         i++;

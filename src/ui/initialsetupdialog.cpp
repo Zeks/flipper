@@ -82,7 +82,6 @@ bool InitialSetupDialog::CreateRecommendationsFromProfile()
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 1;
-    params->maxUnmatchedPerMatch = 50;
     params->alwaysPickAt = 9999;
     params->isAutomatic = true;
     params->useWeighting = true;
@@ -106,7 +105,6 @@ bool InitialSetupDialog::CreateRecommendationsFromUrls(QVector<int> ids)
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 1;
-    params->maxUnmatchedPerMatch = 50;
     params->alwaysPickAt = 9999;
     params->isAutomatic = true;
     params->useWeighting = true;

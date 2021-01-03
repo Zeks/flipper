@@ -30,6 +30,7 @@ Project {
         console.error("Source:" + rootFolder)
         return rootFolder.toString()
     }
+    property bool usePostgres: false
 
     references: [
         "flipper.qbs",
@@ -37,5 +38,6 @@ Project {
         "environment_plugs.qbs",
         "libs/ui-models/UniversalModels.qbs",
         "libs/Logger/logger.qbs",
+        "libs/sql/sql.qbs",
     ]
 }

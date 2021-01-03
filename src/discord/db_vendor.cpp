@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/db_vendor.h"
 #include "logger/QsLog.h"
 #include <QUuid>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QSqlError>
 
 namespace discord {
@@ -24,7 +24,7 @@ namespace discord {
 QSharedPointer<LockedDatabase> DatabaseVendor::GetDatabase(QString name)
 {
     QSharedPointer<LockedDatabase> databaseWrapper;
-    if(name == QStringLiteral("users"))
+    if(name == "users")
     {
         databaseWrapper.reset(new LockedDatabase(usersLock));
         auto db = InstantiateDatabase(users);
@@ -38,20 +38,27 @@ QSharedPointer<LockedDatabase> DatabaseVendor::GetDatabase(QString name)
     return databaseWrapper;
 }
 
-void DatabaseVendor::AddConnectionToken(QString name, const SqliteConnectionToken& token)
+void DatabaseVendor::AddConnectionToken(QString name, const sql::ConnectionToken& token)
 {
-    if(name == QStringLiteral("users"))
+    if(name == "users")
         users = token;
     else
         pageCache = token;
 }
 
-QSqlDatabase DatabaseVendor::InstantiateDatabase(const SqliteConnectionToken & token)
+sql::Database DatabaseVendor::InstantiateDatabase(const sql::ConnectionToken & token)
 {
-    QSqlDatabase db;
-    db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), token.databaseName + QUuid::createUuid().toString());
-    QString filename = token.folder.isEmpty() ? token.databaseName : token.folder + "/" + token.databaseName;
-    db.setDatabaseName(filename + QStringLiteral(".sqlite"));
+    sql::Database db;
+    db = sql::Database::addDatabase(token.tokenType, token.serviceName + QUuid::createUuid().toString().toStdString());
+    if(token.tokenType == "QSQLITE"){
+        auto filename = token.folder.empty() ? token.serviceName : token.folder + "/" + token.serviceName;
+        sql::ConnectionToken databaseToken;
+        databaseToken.serviceName = filename + ".sqlite";
+        db.setConnectionToken(databaseToken);
+    }
+    else if(token.tokenType == "PQXX"){
+        db.setConnectionToken(token);
+    }
     db.open();
     return db;
 }

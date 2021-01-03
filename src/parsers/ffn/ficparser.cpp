@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/authors.h"
 #include "Interfaces/genres.h"
 #include <QDebug>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <algorithm>
 #include <chrono>
 

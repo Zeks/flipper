@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QThread>
 #include <QtConcurrent>
 
-AuthorStatsProcessor::AuthorStatsProcessor(QSqlDatabase db,
+AuthorStatsProcessor::AuthorStatsProcessor(sql::Database db,
                                            QSharedPointer<interfaces::Fanfics> fanficInterface,
                                            QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                            QSharedPointer<interfaces::Authors> authorsInterface,

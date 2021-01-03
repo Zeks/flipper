@@ -21,13 +21,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QWriteLocker>
 #include <QDebug>
 QReadWriteLock database::Transaction::lock;
-QSet<QString>  database::Transaction::transactionSet;
-database::Transaction::Transaction(QSqlDatabase db)
+QSet<std::string>  database::Transaction::transactionSet;
+database::Transaction::Transaction(sql::Database db)
 {
     this->db = db;
     QWriteLocker locker(&lock);
-    QString connetionName = db.connectionName();
-    if(!transactionSet.contains(connetionName))
+    auto connectionName = db.connectionName();
+    if(!transactionSet.contains(connectionName))
     {
         //qDebug() << "opening transaction";
         start();

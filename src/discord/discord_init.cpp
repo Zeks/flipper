@@ -29,14 +29,12 @@ namespace discord {
         RegisterCommand<SetFandomCommand>(parser);
         RegisterCommand<IgnoreFandomCommand>(parser);
         RegisterCommand<IgnoreFicCommand>(parser);
-        //RegisterCommand<SetIdentityCommand>(parser);
         RegisterCommand<DisplayHelpCommand>(parser);
         RegisterCommand<RngCommand>(parser);
         RegisterCommand<StatsCommand>(parser);
         RegisterCommand<GemsCommand>(parser);
         RegisterCommand<ChangeServerPrefixCommand>(parser);
         RegisterCommand<ChangePermittedChannelCommand>(parser);
-        //RegisterCommand<ForceListParamsCommand>(parser);
         RegisterCommand<FilterLikedAuthorsCommand>(parser);
         RegisterCommand<ShowFreshRecsCommand>(parser);
         RegisterCommand<ShowCompletedCommand>(parser);
@@ -47,8 +45,10 @@ namespace discord {
         RegisterCommand<SendMessageToChannelCommand>(parser);
         RegisterCommand<ToggleBanCommand>(parser);
         RegisterCommand<ResetFiltersCommand>(parser);
-        //RegisterCommand<SimilarFicsCommand>(parser);
         RegisterCommand<WordcountCommand>(parser);
+        //RegisterCommand<ForceListParamsCommand>(parser);
+        //RegisterCommand<SetIdentityCommand>(parser);
+        //RegisterCommand<SimilarFicsCommand>(parser);
         // this command requires actually implementing full mobile parser
         // RegisterCommand<ShowFullFavouritesCommand>(parser);
     }

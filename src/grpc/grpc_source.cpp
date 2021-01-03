@@ -87,7 +87,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
 {
     ProtoSpace::Filter result;
 
-    ProtoSpace::Filter::ESortDirection sortDirection = static_cast<ProtoSpace::Filter::ESortDirection>(static_cast<int>(filter.descendingDirection));
+    auto sortDirection = static_cast<ProtoSpace::Filter::ESortDirection>(static_cast<int>(filter.descendingDirection));
     result.set_sort_direction(sortDirection);
 
     auto* basicFilters = result.mutable_basic_filters();
@@ -367,7 +367,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
         token.id = item.id();
         token.inclusionMode = static_cast<core::fandom_lists::EInclusionMode>(item.inclusion_mode());
         token.crossoverInclusionMode = static_cast<core::fandom_lists::ECrossoverInclusionMode>(item.crossover_inclusion_mode());
-        result.fandomStates.insert_or_assign(item.id(), std::move(token));
+        result.fandomStates.insert_or_assign(item.id(), token);
     }
 
     return result;

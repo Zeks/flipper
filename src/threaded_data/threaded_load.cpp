@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QFuture>
 #include <QFutureWatcher>
 #include <QtConcurrent>
+#include <iostream>
 namespace thread_boost{
 namespace  Impl{
 template<class T, class Enable = void>

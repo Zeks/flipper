@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "querybuilder.h"
 #include "regex_utils.h"
 #include "in_tag_accessor.h"
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 
 class FicFilter
 {
@@ -67,8 +67,8 @@ public:
     FicSourceDirect(QSharedPointer<database::IDBWrapper> db, QSharedPointer<core::RNGData> rngData);
     virtual ~FicSourceDirect() = default;
     virtual void FetchData(const core::StoryFilter &filter, QVector<core::Fanfic>*) override;
-    QSqlQuery BuildQuery(const core::StoryFilter &filter, bool countOnly = false);
-    inline core::Fanfic LoadFanfic(QSqlQuery& q);
+    sql::Query BuildQuery(const core::StoryFilter &filter, bool countOnly = false);
+    inline core::Fanfic LoadFanfic(sql::Query& q);
     int GetFicCount(const core::StoryFilter &filter) override;
     //QSet<int> GetAuthorsForFics(QSet<int> ficIDsForActivetags);
     void InitQueryType(bool client = false, QString userToken = QString());

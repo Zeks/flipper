@@ -39,6 +39,7 @@ App{
     Depends { name: "cpp" }
     Depends { name: "UniversalModels" }
     Depends { name: "logger" }
+    Depends { name: "sql_abstractions" }
     Depends { name: "Environment" }
     Depends { name: "proto_generation" }
     Depends { name: "grpc_generation" }

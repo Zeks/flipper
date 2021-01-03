@@ -48,7 +48,7 @@ CREATE INDEX if not exists  I_LIST_SOURCES_PK ON list_sources (list_id asc, fic_
 
 CREATE TABLE if not exists fic_tags(
 user_id integer,fic_id integer, fic_tag varchar, PRIMARY KEY (user_id asc, fic_id asc, fic_tag));
-CREATE INDEX if not exists  I_fic_tags_PK ON list_sources (user_id asc, fic_id asc, fic_tag);
+CREATE INDEX if not exists  I_fic_tags_PK ON fic_tags (user_id asc, fic_id asc, fic_tag);
 
 CREATE TABLE if not exists ignored_fandoms(user_id varchar, fandom_id INTEGER, including_crossovers integer default 0, PRIMARY KEY (user_id asc, fandom_id asc));
 CREATE TABLE if not exists filtered_fandoms(user_id varchar, fandom_id INTEGER, including_crossovers integer default 0, PRIMARY KEY (user_id asc, fandom_id asc));

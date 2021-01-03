@@ -19,10 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/transaction.h"
 #include "GlobalHeaders/run_once.h"
 #include "logger/QsLog.h"
+
+#include <QFile>
+#include <QTextStream>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QRegularExpression>
 #include <QUrl>
+#include <QUuid>
 #include <QObject>
 #include <QSqlQuery>
 #include <QSqlRecord>
@@ -34,6 +39,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QThread>
 #include <QCoreApplication>
 #include <QSettings>
+#include <QProcess>
+#include "sql_abstractions/sql_query.h"
+#include "sql_abstractions/sql_error.h"
+#include "sql_abstractions/sql_transaction.h"
 
 
 
@@ -48,17 +57,17 @@ public:
     QEventLoop waitLoop;
     WebPage result;
     bool cachedMode = false;
-    QNetworkReply::NetworkError error;
+    QNetworkReply::NetworkError error = QNetworkReply::NoError;
     WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::use_cache);
     WebPage GetPageFromDB(QString url);
     WebPage GetPageFromNetwork(QString url);
     void SavePageToDB(const WebPage&);
-    void SetDatabase(QSqlDatabase _db);
+    void SetDatabase(sql::Database _db);
     void WipeOldCache();
     void WipeAllCache();
     QDate automaticCacheDateCutoff;
     bool autoCacheForCurrentDate = true;
-    QSqlDatabase db;
+    sql::Database db;
 
 public slots:
     //void OnNetworkReply(QNetworkReply*);
@@ -114,22 +123,22 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 WebPage PageGetterPrivate::GetPageFromDB(QString url)
 {
     WebPage result;
-//    auto db = QSqlDatabase::database("PageCache");
+    //    auto db = QSqlDatabase::database("PageCache");
     bool dbOpen = db.isOpen();
     if(!dbOpen)
         return result;
     {
         // first we search for the exact page in the database
-        QSqlQuery q(db);
+        sql::Query q(db);
         q.prepare("select * from PageCache where url = :URL ");
-        q.bindValue(":URL", url);
+        q.bindValue("URL", url);
         q.exec();
         bool dataFound = q.next();
 
         if(q.lastError().isValid())
         {
             qDebug() << "Reading url: " << url;
-            qDebug() << "Error getting page from database: " << q.lastError();
+            qDebug() << "Error getting page from database: " << q.lastError().text();
             return result;
         }
 
@@ -155,65 +164,95 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 {
     result = WebPage();
     result.url = url;
-    currentRequest = QNetworkRequest(QUrl(url));
-    auto reply = manager.get(currentRequest);
-    int retries = 80;
-    //qDebug() << "entering wait phase";
-    while(!reply->isFinished() && retries > 0)
+    QFile file("scripts/flare_post.js");
+    QString curlQuery;
+    if (file.open(QFile::ReadOnly))
     {
-//        if(retries%10 == 0)
-//            qDebug() << "retries left: " << retries;
-        if(reply->isFinished())
-            break;
-        retries--;
-        QThread::msleep(500);
-        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    }
-    if(!reply->isFinished())
-    {
-        qDebug() << "failed to get the page in time";
-        return result;
+        QTextStream in(&file);
+        curlQuery = in.readAll();
     }
 
-    QByteArray data=reply->readAll();
+    QStringList params;
+    QProcess process;
+    QSettings settings("settings/settings_solver.ini", QSettings::IniFormat);
+    QString servitorPort = settings.value("Settings/flarePort").toString();
 
-    error = reply->error();
-    reply->deleteLater();
-    if(error != QNetworkReply::NoError)
-        return result;
-    //QString str(data);
-    result.content = data;
+    QRegularExpression rxNum("[0-9]{1,15}");
+    auto match = rxNum.match(url);
+    QString userPart;
+    if(match.hasMatch())
+        userPart=match.captured(0);
+    else
+        userPart=QUuid::createUuid().toString();
 
-    result.isValid = true;
-    result.url = url;
-    result.source = EPageSource::network;
+
+    QString filename = QString("tmpfaves/favourites_%1.html").arg(userPart);
+    params << "-c" << "curl" << "-L" << "-X" << "POST" << QString("http://%1/v1").arg(servitorPort)
+           << "-H" << "'Content-Type: application/json'"
+           << "--data-raw" << curlQuery.arg(url) << ">" << filename;
+    process.start("curl" , params);
+    process.waitForFinished(-1); // will wait forever until finished
+    QString stdoutResult = process.readAllStandardOutput();
+    QString stderrResult = process.readAllStandardError();
+
+    QFile tempFIle(filename);
+    if(tempFIle.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        QTextStream out(&tempFIle);
+        out << stdoutResult;
+    }
+    file.close();
+
+    process.start("bash", QStringList() << "-c" << "scripts/page_fixer.sh " + QString("%1").arg(filename));
+    process.waitForFinished(-1); // will wait forever until finished
+
+    stdoutResult = process.readAllStandardOutput();
+    stderrResult = process.readAllStandardError();
+    qDebug() << stdoutResult;
+    qDebug() << stderrResult;
+
+    QThread::msleep(500);
+    QFile favouritesfile(filename);
+    if (favouritesfile.open(QFile::ReadOnly))
+    {
+        QTextStream in(&favouritesfile);
+        result.content = in.readAll();
+        result.isValid = true;
+        result.url = url;
+        result.source = EPageSource::network;
+    }
+    else{
+        result.isValid = false;
+        result.url = url;
+        result.source = EPageSource::network;
+    }
     return result;
 }
 
 void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    QSqlQuery q(db);
+    sql::Query q(db);
     q.prepare("delete from pagecache where url = :url");
-    q.bindValue(":url", page.url);
+    q.bindValue("url", page.url);
     q.exec();
-    QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
+    auto insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
                      "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)";
     q.prepare(insert);
-    q.bindValue(":URL", page.url);
-    q.bindValue(":GENERATION_DATE", QDateTime::currentDateTime());
-    q.bindValue(":CONTENT", qCompress(page.content.toUtf8()));
-    q.bindValue(":COMPRESSED", 1);
-    q.bindValue(":PAGE_TYPE", static_cast<int>(page.type));
+    q.bindValue("URL", page.url);
+    q.bindValue("GENERATION_DATE", QDateTime::currentDateTime());
+    q.bindValue("CONTENT", qCompress(page.content.toUtf8()));
+    q.bindValue("COMPRESSED", 1);
+    q.bindValue("PAGE_TYPE", static_cast<int>(page.type));
     q.exec();
     if(q.lastError().isValid())
     {
         qDebug() << "Writing url: " << page.url;
-        qDebug() << "Error saving page to database: "  << q.lastError();
+        qDebug() << "Error saving page to database: "  << q.lastError().text();
     }
 }
 
-void PageGetterPrivate::SetDatabase(QSqlDatabase _db)
+void PageGetterPrivate::SetDatabase(sql::Database _db)
 {
     db  = _db;
 }
@@ -252,7 +291,7 @@ PageManager::~PageManager()
     qDebug() << "deleting page manager";
 }
 
-void PageManager::SetDatabase(QSqlDatabase _db)
+void PageManager::SetDatabase(sql::Database _db)
 {
     d->SetDatabase(_db);
 }
@@ -324,7 +363,7 @@ void PageThreadWorker::Task(QString url,
 {
     FuncCleanup f([&](){working = false;});
     //qDebug() << updateLimit;
-    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
+    sql::Transaction pcTransaction(sql::Database::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     pager->WipeOldCache();
@@ -420,7 +459,7 @@ void PageThreadWorker::FandomTask(const FandomParseTask& task)
 {
     FuncCleanup f([&](){working = false;});
     //qDebug() << updateLimit;
-    database::Transaction pcTransaction(QSqlDatabase::database(QStringLiteral("PageCache")));
+    sql::Transaction pcTransaction(sql::Database::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     pager->WipeOldCache();
@@ -449,8 +488,7 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode,  int del
     // kinda have to split pagecache db from service db I guess
     // which is only natural anyway... probably
     // still not helping for multithreading later on
-    auto db = QSqlDatabase::database(QStringLiteral("PageCache"));
-    database::Transaction pcTransaction(db);
+    sql::Transaction pcTransaction(sql::Database::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     pager->WipeOldCache();

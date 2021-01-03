@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/in_tag_accessor.h"
 #include "include/url_utils.h"
 #include "include/Interfaces/interface_sqlite.h"
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QSqlError>
 #include <QTextCodec>
 #include <QSettings>
@@ -410,8 +410,8 @@ int CoreEnvironment::GetResultCount()
 }
 void CoreEnvironment::UseAuthorTask(PageTaskPtr task)
 {
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlDatabase tasksDb = QSqlDatabase::database("Tasks");
+    sql::Database db = sql::Database::database();
+    sql::Database tasksDb = sql::Database::database("Tasks");
     AuthorLoadProcessor authorLoader(db,
                                      tasksDb,
                                      interfaces.fanfics,
@@ -451,7 +451,7 @@ void CoreEnvironment::LoadAllLinkedAuthors(ECacheMode cacheMode)
     filter.mode = core::StoryFilter::filtering_in_recommendations;
     QStringList authorUrls;
 
-    auto db = QSqlDatabase::database();
+    auto db = sql::Database::database();
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
     authorInterface->portableDBInterface = interfaces.db;
@@ -479,7 +479,7 @@ void CoreEnvironment::LoadAllLinkedAuthors(ECacheMode cacheMode)
 
 void CoreEnvironment::LoadAllLinkedAuthorsMultiFromCache()
 {
-    QSqlDatabase db = QSqlDatabase::database();
+    sql::Database db = sql::Database::database();
     AuthorCacheReprocessor reprocessor(db,
                                        interfaces.fanfics,
                                        interfaces.fandoms,
@@ -527,7 +527,7 @@ void CoreEnvironment::ReprocessAuthorNamesFromTheirPages()
 void CoreEnvironment::ProcessListIntoRecommendations(QString list)
 {
     QFile data(list);
-    QSqlDatabase db = QSqlDatabase::database();
+    sql::Database db = sql::Database::database();
     QStringList usedList;
     QVector<int> usedIdList;
     if (data.open(QFile::ReadOnly))
@@ -561,7 +561,7 @@ void CoreEnvironment::ProcessListIntoRecommendations(QString list)
             auto id = interfaces.fanfics->GetIDFromWebID(webId, "ffn");
             if(id == -1)
                 continue;
-            qDebug()<< "Settign tag: " << "generictag" << " to: " << id;
+            qDebug() << "Settign tag: " << "generictag" << " to: " << id;
             usedList.push_back(str);
             usedIdList.push_back(id);
             interfaces.tags->SetTagForFic(id, "generictag");
@@ -611,7 +611,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 {
 
     qDebug() << "At start list id is: " << params->id;
-    FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
 
 
     params->ficData->fics = sourceFics;
@@ -700,7 +700,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 
 core::FavListDetails CoreEnvironment::GetStatsForFicList(QVector<int> sourceFics)
 {
-    FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     QVector<core::Identity> pack;
     pack.resize(sourceFics.size());
     int i = 0;
@@ -717,7 +717,7 @@ core::FavListDetails CoreEnvironment::GetStatsForFicList(QVector<int> sourceFics
 
 int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
 {
-    QSqlDatabase db = QSqlDatabase::database();
+    sql::Database db = sql::Database::database();
     database::Transaction transaction(db);
 
     if(clearAuthors)
@@ -782,7 +782,7 @@ int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::Recommendat
 {
     list->id = interfaces.recs->GetListIdForName(list->name);
     qDebug() << "At start list id is: " << list->id;
-    FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     list->ficData->fics = sourceFics;
 
     database::Transaction transaction(interfaces.recs->db);
@@ -836,6 +836,7 @@ bool CoreEnvironment::ResumeUnfinishedTasks()
         return false;
     auto tasks = interfaces.pageTask->GetUnfinishedTasks();
     TaskList tasksToResume;
+    tasksToResume.reserve(tasks.size());
     for(const auto& task : std::as_const(tasks))
     {
         QString diagnostics;
@@ -863,7 +864,7 @@ bool CoreEnvironment::ResumeUnfinishedTasks()
                 if(!task)
                     return false;
 
-                QSqlDatabase db = QSqlDatabase::database();
+                sql::Database db = sql::Database::database();
                 FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask, interfaces.db);
 
                 proc.Run(fullTask);
@@ -880,7 +881,7 @@ bool CoreEnvironment::ResumeUnfinishedTasks()
     return true;
 }
 
-void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
+void CoreEnvironment::CreateSimilarListForGivenFic(int id, sql::Database db)
 {
     database::Transaction transaction(db);
     QSharedPointer<core::RecommendationList> params = core::RecommendationList::NewRecList();
@@ -888,7 +889,6 @@ void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
     params->minimumMatch = 1;
     params->name = "similar";
     params->tagToUse = "generictag";
-    params->maxUnmatchedPerMatch = 9999;
     interfaces.tags->SetTagForFic(id, "generictag");
     BuildRecommendations(params, {id});
     interfaces.tags->DeleteTag("generictag");
@@ -938,7 +938,7 @@ QVector<int> CoreEnvironment::GetFFNIds(QSet<int> sources)
     return result;
 }
 
-core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
+core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, sql::Database db)
 {
     WebPage page;
     TimedAction fetchAction("Author page fetch", [&](){
@@ -1032,6 +1032,7 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
     QStringList mobileUrls;
     // 26th page onwards can't be reached without m.
     const int startOfUnreachablePart = 26;
+    mobileUrls.reserve(amountOfPagesToGrab);
     for(int i = startOfUnreachablePart; i <= amountOfPagesToGrab; i++)
         mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
 
@@ -1132,7 +1133,7 @@ PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDat
 {
     interfaces.fanfics->ClearProcessedHash();
     auto fandoms = interfaces.fandoms->ListOfTrackedFandoms();
-    qDebug() << "Tracked fandoms: " << fandoms;
+    //qDebug()  << "Tracked fandoms: " << fandoms;
     emit resetEditorText();
 
     QStringList nameList;
@@ -1177,6 +1178,7 @@ QList<int> CoreEnvironment::GetDBIDsForFics(QVector<int> ids)
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     grpcSource->GetInternalIDsForFics(&pack);
     QList<int> result;
+    result.reserve(pack.size());
     for(const auto& source: std::as_const(pack))
     {
         result.push_back(source.id);
@@ -1274,7 +1276,6 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 1;
-    params->maxUnmatchedPerMatch = 50;
     params->alwaysPickAt = 9999;
     params->isAutomatic = true;
     params->useWeighting = true;
@@ -1282,6 +1283,7 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
     params->name = "Recommendations";
     params->userFFNId = interfaces.recs->GetUserProfile();
     QVector<int> sourceFics;
+    sourceFics.reserve(sourceFicsSet.size());
     for(const auto& fic : sourceFicsSet)
         sourceFics.push_back(fic.toInt());
 
@@ -1304,7 +1306,7 @@ void CoreEnvironment::RefreshSnoozes()
 
 void CoreEnvironment::UseFandomTask(PageTaskPtr task)
 {
-    QSqlDatabase db = QSqlDatabase::database();
+    sql::Database db = sql::Database::database();
     FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask, interfaces.db);
 
     connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &CoreEnvironment::requestProgressbar);
@@ -1334,7 +1336,7 @@ PageTaskPtr CoreEnvironment::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms
                                                   ForcedFandomUpdateDate forcedDate)
 {
     interfaces.fanfics->ClearProcessedHash();
-    QSqlDatabase db = QSqlDatabase::database();
+    sql::Database db = sql::Database::database();
     FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask, interfaces.db);
 
     connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &CoreEnvironment::requestProgressbar);
@@ -1364,14 +1366,14 @@ WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
 {
     WebPage result;
     An<PageManager> pager;
-    pager->SetDatabase(QSqlDatabase::database("PageCache"));
+    pager->SetDatabase(sql::Database::database("PageCache"));
     result = pager->GetPage(pageUrl, cacheMode);
     if(autoSaveToDB)
         pager->SavePageToDB(result);
     return result;
 }
 
-WebPage RequestPage(QString pageUrl, QSqlDatabase db, ECacheMode cacheMode,  bool autoSaveToDB)
+WebPage RequestPage(QString pageUrl, sql::Database db, ECacheMode cacheMode,  bool autoSaveToDB)
 {
     WebPage result;
     An<PageManager> pager;

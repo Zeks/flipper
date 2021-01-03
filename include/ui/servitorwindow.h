@@ -168,7 +168,7 @@ private slots:
 
     void on_pbReprocessCacheLinked_clicked();
 
-    void on_pbPCRescue_clicked();
+    //void on_pbPCRescue_clicked();
 
     void on_pbSlashCalc_clicked();
 

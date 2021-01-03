@@ -43,8 +43,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QReadLocker>
 #include <QRegExp>
 #include <QDebug>
-#include <QSqlQuery>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_query.h"
+#include "sql_abstractions/sql_database.h"
 #include <QSqlError>
 #include <QPair>
 #include <QPoint>
@@ -1064,7 +1064,7 @@ void MainWindow::OnDoFormattedListByFandoms()
         result+= "<li><a href=\"#" + name.toLower().replace(" ","_") +"\">" + name + "</a></li>";
     }
     An<PageManager> pager;
-    pager->SetDatabase(QSqlDatabase::database());
+    pager->SetDatabase(sql::Database::database());
 
     for(auto i = byFandoms.begin(); i != byFandoms.end(); i++)
     {
@@ -2078,7 +2078,7 @@ void MainWindow::FillRecommenderListView(bool forceRefresh)
 core::AuthorPtr MainWindow::LoadAuthor(QString url)
 {
     TaskProgressGuard guard(this);
-    return env->LoadAuthor(url, QSqlDatabase::database());
+    return env->LoadAuthor(url, sql::Database::database());
 }
 
 ECacheMode MainWindow::GetCurrentCacheMode() const
@@ -2092,11 +2092,10 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
         reclistToReturn = ui->cbRecGroup->currentText();
 
     TaskProgressGuard guard(this);
-    QSqlDatabase db = QSqlDatabase::database();
+    sql::Database db = sql::Database::database();
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 1;
-    params->maxUnmatchedPerMatch = 9999;
     params->alwaysPickAt = 1;
     params->name = "#similarfics";
     params->userFFNId = env->interfaces.recs->GetUserProfile();
@@ -2213,6 +2212,7 @@ int SortRecoderToUi(QComboBox* cb, core::StoryFilter::ESortMode index){
     for(auto i = 0; i < cb->count(); i++)
         if(cb->itemData(i).toUInt() == index)
             return i;
+    return 0;
 }
 
 
@@ -2737,7 +2737,7 @@ void MainWindow::UpdateFandomList(UpdateFandomTask )
 
     ui->edtResults->clear();
 
-    QSqlDatabase db = QSqlDatabase::database();
+    sql::Database db = sql::Database::database();
     FandomListReloadProcessor proc(db, env->interfaces.fanfics, env->interfaces.fandoms, env->interfaces.pageTask, env->interfaces.db);
     connect(&proc, &FandomListReloadProcessor::displayWarning, this, &MainWindow::OnWarningRequested);
     connect(&proc, &FandomListReloadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);

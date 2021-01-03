@@ -32,9 +32,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include <QThread>
 #include <QtConcurrent>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 
-AuthorCacheReprocessor::AuthorCacheReprocessor(QSqlDatabase db,
+AuthorCacheReprocessor::AuthorCacheReprocessor(sql::Database db,
                                            QSharedPointer<interfaces::Fanfics> fanficInterface,
                                            QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                            QSharedPointer<interfaces::Authors> authorsInterface,
@@ -45,7 +45,7 @@ AuthorCacheReprocessor::AuthorCacheReprocessor(QSqlDatabase db,
     this->authorsInterface = authorsInterface;
 
     this->db = db;
-//    QSqlQuery q("PRAGMA synchronous = OFF", db);
+//    sql::Query q("PRAGMA synchronous = OFF", db);
 //    bool result = q.exec();
 //    qDebug() << "synchro result: " << result;
     CreatePageThreadWorker();

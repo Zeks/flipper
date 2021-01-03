@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include "include/queryinterfaces.h"
 
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QReadWriteLock>
 #include <queue>
 
@@ -28,13 +28,13 @@ namespace core{
 
 struct IRNGGenerator{
     virtual ~IRNGGenerator(){}
-    virtual QStringList Get(QSharedPointer<Query>, QString userToken, QSqlDatabase db, StoryFilter& filter)  = 0;
+    virtual QStringList Get(QSharedPointer<Query>, QString userToken, sql::Database db, StoryFilter& filter)  = 0;
 };
 
 struct RNGList{
     QDateTime generationTimestamp;
     QDateTime lastAccessTimestamp;
-    QString sequenceIdentifier;
+    std::string sequenceIdentifier;
     QStringList ids;
 };
 
@@ -42,7 +42,7 @@ struct RNGData{
     RNGData();
     void Log(QString prefix);
     typedef QSharedPointer<RNGList> ListPtr;
-    QHash<QString, ListPtr> randomIdLists;
+    std::unordered_map<std::string, ListPtr> randomIdLists;
     std::priority_queue<ListPtr,std::vector<ListPtr>, std::function<bool(ListPtr, ListPtr)>> queue;
     QReadWriteLock lock;
 };
@@ -50,7 +50,7 @@ struct RNGData{
 struct DefaultRNGgenerator : public IRNGGenerator{
     virtual QStringList Get(QSharedPointer<Query> where,
                         QString userToken,
-                        QSqlDatabase db, StoryFilter& filter);
+                        sql::Database db, StoryFilter& filter);
 
     void RemoveOutdatedRngSequences();
     void RemoveOlderRngSequencesPastTheLimit(uint32_t limit);

@@ -15,6 +15,7 @@ App{
     Depends { name: "cpp" }
     Depends { name: "Environment" }
     Depends { name: "logger" }
+    Depends { name: "sql_abstractions" }
     Depends { name: "proto_generation" }
     Depends { name: "grpc_generation" }
 
@@ -149,7 +150,7 @@ App{
         "include/core/recommendation_list.h",
         "src/core/recommendation_list.cpp",
     ]
-    cpp.defines: base.concat(["FMT_HEADER_ONLY"])
+    cpp.defines: base.concat(["FMT_HEADER_ONLY", project.usePostgres ? "USE_POSTGRES" : ""])
     Group{
     name: "sqlite"
     files: [

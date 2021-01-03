@@ -38,13 +38,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 namespace database{
 
 namespace sqlite {
-int GetLastIdForTable(QString tableName, QSqlDatabase db)
+int GetLastIdForTable(QString tableName, sql::Database db)
 {
     QString qs = QString("select seq from sqlite_sequence where name=:table_name");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":table_name", tableName);
-    if(!database::puresql::ExecAndCheck(q))
+    sql::Query q(db);
+    q.prepare(qs.toStdString());
+    q.bindValue("table_name", tableName);
+    if(!sql::ExecAndCheck(q))
         return -1;
     q.next();
     return q.value("seq").toInt();
@@ -410,6 +410,10 @@ void cfGetSecondFandom(sqlite3_context* ctx, int , sqlite3_value** argv)
     sqlite3_result_text(ctx, qPrintable(result), result.length(), SQLITE_TRANSIENT);
 }
 
+bool InstallCustomFunctions(sql::Database db){
+    return InstallCustomFunctions(*static_cast<QSqlDatabase*>(db.internalPointer()));
+}
+
 bool InstallCustomFunctions(QSqlDatabase db)
 {
     //QLOG_INFO() << "Installing custom sqlite functions";
@@ -417,7 +421,7 @@ bool InstallCustomFunctions(QSqlDatabase db)
     if (v.isValid() && qstrcmp(v.typeName(), "sqlite3*")==0)
     {
         sqlite3 *db_handle = *static_cast<sqlite3 **>(v.data());
-        if (db_handle != 0) {
+        if (db_handle != nullptr) {
             sqlite3_initialize();
 
             sqlite3_create_function(db_handle, "cfRegexp", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, nullptr, &cfRegexp, nullptr, nullptr);
@@ -462,14 +466,14 @@ bool ReadDbFile(QString file, QString connectionName)
         QString dbCode = in.readAll();
         data.close();
         QStringList statements = dbCode.split(";");
-        QSqlDatabase db;
+        sql::Database db;
         if(!connectionName.isEmpty())
-            db = QSqlDatabase::database(connectionName);
+            db = sql::Database::database(connectionName.toStdString());
         else
-            db = QSqlDatabase::database();
-
+            db = sql::Database::database();
+        auto isOpen = db.isOpen();
         db.transaction();
-        QSqlQuery q(db);
+        sql::Query q(db);
         for(QString statement: statements)
         {
             statement = statement.replace(QRegExp("\\t"), " ");
@@ -481,9 +485,9 @@ bool ReadDbFile(QString file, QString connectionName)
 
             //bool isOpen = db.isOpen();
 
-            q.prepare(statement.trimmed());
+            q.prepare(statement.trimmed().toStdString());
             QLOG_TRACE() << "Executing: " << statement;
-            database::puresql::ExecAndCheck(q, reportSchemaErrors);
+            sql::ExecAndCheck(q, reportSchemaErrors, {sql::ESqlErrors::se_duplicate_column,sql::ESqlErrors::se_unique_row_violation});
         }
         db.commit();
 
@@ -493,14 +497,14 @@ bool ReadDbFile(QString file, QString connectionName)
     return true;
 }
 
-QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db)
+QStringList GetIdListForQuery(QSharedPointer<core::Query> query, sql::Database db)
 {
-    QString where = query->str;
+    auto where = query->str;
     QStringList result;
-    QString qs = QString("select group_concat(id, ',') as merged, " + where);
+    auto qs = "select group_concat(id, ',') as merged, " + where;
     //qs= qs.arg(where);
 
-    QSqlQuery q(db);
+    sql::Query q(db);
     q.prepare(qs);
     auto it = query->bindings.cbegin();
     auto end = query->bindings.cend();
@@ -510,16 +514,16 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
         q.bindValue(it->key, it->value);
         ++it;
     }
-    QLOG_INFO_PURE() << "RANDOM: " << qs;
-    if(!database::puresql::ExecAndCheck(q))
+    QLOG_INFO_PURE() << "RANDOM: " << QString::fromStdString(qs);
+    if(!sql::ExecAndCheck(q))
         return result;
     QLOG_INFO_PURE() << "RANDOM FINISHED";
 
     q.next();
     auto temp = q.value("merged").toString();
-    if(temp.trimmed().isEmpty())
+    if(trim_copy(temp).length() == 0)
         return result;
-    result = temp.split(",");
+    result = QString::fromStdString(temp).split(",");
     return result;
 }
 
@@ -558,69 +562,73 @@ bool BackupSqliteDatabase(QString dbName)
     return success;
 }
 
-bool PushFandomToTopOfRecent(QString fandom, QSqlDatabase db)
+bool PushFandomToTopOfRecent(QString fandom, sql::Database db)
 {
     QString upsert1 ("UPDATE recent_fandoms SET seq_num= (select max(seq_num) +1 from  recent_fandoms ) WHERE fandom = '%1'; ");
     QString upsert2 ("INSERT INTO recent_fandoms(fandom, seq_num) select '%1',  (select max(seq_num)+1 from recent_fandoms) WHERE changes() = 0;");
-    QSqlQuery q1(db);
+    sql::Query q1(db);
     upsert1 = upsert1.arg(fandom);
-    q1.prepare(upsert1);
-    if(!database::puresql::ExecAndCheck(q1))
+    q1.prepare(upsert1.toStdString());
+    if(!sql::ExecAndCheck(q1))
         return false;
     upsert2 = upsert2.arg(fandom);
-    q1.prepare(upsert2);
-    if(!database::puresql::ExecAndCheck(q1))
+    q1.prepare(upsert2.toStdString());
+    if(!sql::ExecAndCheck(q1))
         return false;
     return true;
 }
 
-QStringList FetchRecentFandoms(QSqlDatabase db)
+QStringList FetchRecentFandoms(sql::Database db)
 {
-    QSqlQuery q1(db);
+    sql::Query q1(db);
     QString qsl = "select fandom from recent_fandoms where fandom is not 'base' order by seq_num desc";
-    q1.prepare(qsl);
+    q1.prepare(qsl.toStdString());
     q1.exec();
     QStringList result;
     while(q1.next())
     {
-        result.push_back(q1.value(0).toString());
+        result.push_back(QString::fromStdString(q1.value(0).toString()));
     }
-    database::puresql::CheckExecution(q1);
+    sql::CheckExecution(q1);
     return result;
 }
 
-bool RebaseFandomsToZero(QSqlDatabase db)
+bool RebaseFandomsToZero(sql::Database db)
 {
-    QSqlQuery q1(db);
+    sql::Query q1(db);
     QString qsl = "UPDATE recent_fandoms SET seq_num = seq_num - (select min(seq_num) from recent_fandoms where fandom is not 'base') where fandom is not 'base'";
-    q1.prepare(qsl);
-    if(!database::puresql::ExecAndCheck(q1))
+    q1.prepare(qsl.toStdString());
+    if(!sql::ExecAndCheck(q1))
         return false;
     return true;
 }
 
-QDateTime GetCurrentDateTime(QSqlDatabase db)
+QDateTime GetCurrentDateTime(sql::Database db)
 {
     QDateTime dt;
-    QSqlQuery q(db);
+    sql::Query q(db);
     QString qsl = "select CURRENT_TIMESTAMP";
-    q.prepare(qsl);
-    if(!database::puresql::ExecAndCheck(q))
+    q.prepare(qsl.toStdString());
+    if(!sql::ExecAndCheck(q))
         return dt;
     q.next();
     dt = q.value(0).toDateTime();
     return dt;
 }
 
-QSqlDatabase InitDatabase(QString name, bool setDefault)
+sql::Database InitSqliteDatabase(QString name, bool setDefault)
 {
     QString path = name;
-    QSqlDatabase db;
+    sql::Database db;
     if(setDefault)
-        db = QSqlDatabase::addDatabase("QSQLITE");
+        db = sql::Database::addDatabase("QSQLITE");
     else
-        db = QSqlDatabase::addDatabase("QSQLITE", name);
-    db.setDatabaseName(path + ".sqlite");
+        db = sql::Database::addDatabase("QSQLITE", name.toStdString());
+
+    sql::ConnectionToken token;
+    token.serviceName = path.toStdString() + ".sqlite";
+    db.setConnectionToken(token);
+
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
     InstallCustomFunctions(db);
@@ -628,41 +636,43 @@ QSqlDatabase InitDatabase(QString name, bool setDefault)
     return db;
 }
 
-int CreateNewTask(QSqlDatabase db)
+int CreateNewTask(sql::Database db)
 {
     Transaction tr(db);
-    QSqlQuery q(db);
+    sql::Query q(db);
     QString qsl = "insert into PageTasks(type) values(0)";
-    q.prepare(qsl);
-    if(!database::puresql::ExecAndCheck(q))
+    q.prepare(qsl.toStdString());
+    if(!sql::ExecAndCheck(q))
         return -1;
     auto id = GetLastIdForTable("PageTasks", db);
     tr.finalize();
     return id;
 }
 
-int CreateNewSubTask(int taskId, QSqlDatabase db)
+int CreateNewSubTask(int taskId, sql::Database db)
 {
     Transaction tr(db);
-    QSqlQuery q(db);
+    sql::Query q(db);
     QString qsl = "insert into PageTaskParts(task_id) values(:task_id)";
-    q.prepare(qsl);
-    q.bindValue(":task_id", taskId);
-    if(!database::puresql::ExecAndCheck(q))
+    q.prepare(qsl.toStdString());
+    q.bindValue("task_id", taskId);
+    if(!sql::ExecAndCheck(q))
         return -1;
     auto id = GetLastIdForTable("PageTaskParts", db);
     tr.finalize();
     return id;
 }
 
-QSqlDatabase InitNamedDatabase(QString dbName, QString filename, bool setDefault)
+sql::Database InitNamedSqliteDatabase(QString dbName, QString filename, bool setDefault)
 {
-    QSqlDatabase db;
+    sql::Database db;
     if(setDefault)
-        db = QSqlDatabase::addDatabase("QSQLITE");
+        db = sql::Database::addDatabase("QSQLITE");
     else
-        db = QSqlDatabase::addDatabase("QSQLITE", dbName);
-    db.setDatabaseName(filename + ".sqlite");
+        db = sql::Database::addDatabase("QSQLITE", dbName.toStdString());
+    sql::ConnectionToken token;
+    token.serviceName = filename.toStdString() + ".sqlite";
+    db.setConnectionToken(token);
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << dbName << ", open : " << isOpen;
     InstallCustomFunctions(db);
@@ -670,15 +680,19 @@ QSqlDatabase InitNamedDatabase(QString dbName, QString filename, bool setDefault
     return db;
 }
 
-QSqlDatabase InitDatabase2(QString file, QString name, bool setDefault)
+sql::Database InitSqliteDatabase2(QString file, QString name, bool setDefault)
 {
     //QString path = name;
-    QSqlDatabase db;
+    sql::Database db;
     if(setDefault)
-        db = QSqlDatabase::addDatabase("QSQLITE");
+        db = sql::Database::addDatabase("QSQLITE");
     else
-        db = QSqlDatabase::addDatabase("QSQLITE", name);
-    db.setDatabaseName(file + ".sqlite");
+        db = sql::Database::addDatabase("QSQLITE", name.toStdString());
+
+    sql::ConnectionToken token;
+    token.serviceName = file.toStdString() + ".sqlite";
+    db.setConnectionToken(token);
+
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
     InstallCustomFunctions(db);
@@ -686,26 +700,30 @@ QSqlDatabase InitDatabase2(QString file, QString name, bool setDefault)
     return db;
 }
 
-QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
+sql::Database InitAndUpdateSqliteDatabaseForFile(QString folder,
                                           QString file,
                                           QString sqlFile,
                                           QString connectionName,
                                           bool setDefault)
 {
-    QSqlDatabase db;
+    sql::Database db;
     if(setDefault)
-        db = QSqlDatabase::addDatabase("QSQLITE");
+        db = sql::Database::addDatabase("QSQLITE");
     else
-        db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+        db = sql::Database::addDatabase("QSQLITE", connectionName.toStdString());
     QString filename  = folder + "/" + file + ".sqlite";
-    db.setDatabaseName(filename);
+
+
+    sql::ConnectionToken token;
+    token.serviceName = filename.toStdString();
+    db.setConnectionToken(token);
     bool isOpen = db.open();
 
     InstallCustomFunctions(db);
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     ReadDbFile(sqlFile, setDefault ? "" : connectionName);
-    bool uuidSuccess = database::puresql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
+    bool uuidSuccess = sql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
     QLOG_INFO() << "Database status: " << connectionName << ", open : " << isOpen << "uuid success: " << uuidSuccess;
     return db;
 }

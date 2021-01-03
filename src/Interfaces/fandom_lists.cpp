@@ -25,7 +25,7 @@ FandomLists::FandomLists():d(new FandomListsImpl)
 
 void FandomLists::ProcessIgnoreListIntoFandomList()
 {
-    database::puresql::ProcessIgnoresIntoFandomLists(db);
+    sql::ProcessIgnoresIntoFandomLists(db);
 }
 
 void FandomLists::Clear()
@@ -35,12 +35,12 @@ void FandomLists::Clear()
 
 void FandomLists::LoadFandomLists()
 {
-    auto fandomLists = database::puresql::FetchFandomLists(db);
+    auto fandomLists = sql::FetchFandomLists(db);
 
-    for(auto list : fandomLists.data){
+    for(const auto& list : fandomLists.data){
         d->idToList[list->id] =  list;
         d->nameToList[list->name] =  list;
-        auto fandomStates = database::puresql::FetchFandomStatesInUserList(list->id, db);
+        auto fandomStates = sql::FetchFandomStatesInUserList(list->id, db);
         d->fandomStatesPerList[list->id].reserve(fandomStates.data.size());
         for(auto&& fandomState: fandomStates.data){
             d->fandomToLists[fandomState.id].insert(list->id);
@@ -51,32 +51,32 @@ void FandomLists::LoadFandomLists()
 
 void FandomLists::AddFandomToList(uint32_t listId, uint32_t fandomId, QString fandomName)
 {
-    database::puresql::AddFandomToUserList(listId, fandomId, fandomName, db);
+    sql::AddFandomToUserList(listId, fandomId, fandomName, db);
 }
 
 void FandomLists::RemoveFandomFromList(uint32_t listId, uint32_t fandomId)
 {
-    database::puresql::RemoveFandomFromUserList(listId, fandomId, db);
+    sql::RemoveFandomFromUserList(listId, fandomId, db);
 }
 
 void FandomLists::EditFandomStateForList(const FandomLists::FandomState& fandomState)
 {
-    database::puresql::EditFandomStateForList(fandomState, db);
+    sql::EditFandomStateForList(fandomState, db);
 }
 
 int FandomLists::AddFandomList(QString name)
 {
-    return database::puresql::AddNewFandomList(name, db).data;
+    return sql::AddNewFandomList(name, db).data;
 }
 
 void FandomLists::RemoveFandomList(uint32_t listId)
 {
-    database::puresql::RemoveFandomList(listId, db);
+    sql::RemoveFandomList(listId, db);
 }
 
 void FandomLists::EditListState(const core::fandom_lists::List& list)
 {
-    database::puresql::EditListState(list, db);
+    sql::EditListState(list, db);
 }
 
 QStringList FandomLists::GetLoadedFandomLists() const
@@ -106,7 +106,7 @@ const std::vector<FandomLists::FandomState> &FandomLists::GetFandomStatesForList
 
 void FandomLists::FlipValuesForList(uint32_t id)
 {
-    database::puresql::FlipListValues(id, db);
+    sql::FlipListValues(id, db);
 }
 
 void FandomListsImpl::Clear()

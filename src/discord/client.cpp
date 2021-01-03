@@ -413,7 +413,7 @@ ListData CreateListData(RecRequest request, QString userToken){
     Task task;
     ListData actualResult;
 
-    QSqlDatabase pageCacheDb;
+    sql::Database pageCacheDb;
     //TimedAction dbInit("DB Init", [&](){
         QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
         pageCacheDb = pageCacheInterface->InitDatabase("PageCache");

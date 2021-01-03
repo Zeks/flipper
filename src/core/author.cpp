@@ -1,6 +1,7 @@
 #include "core/author.h"
 #include <QDebug>
 #include <QDataStream>
+#include <iostream>
 
 namespace core {
 

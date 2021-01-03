@@ -35,6 +35,7 @@ App{
     Depends { name: "Qt.concurrent" }
     Depends { name: "cpp" }
     Depends { name: "logger" }
+    Depends { name: "sql_abstractions" }
     Depends { name: "Environment" }
     Depends { name: "proto_generation" }
     Depends { name: "grpc_generation" }
@@ -69,6 +70,7 @@ App{
         "include/rec_calc/rec_calculator_mood_adjusted.h",
         "include/rec_calc/rec_calculator_weighted.h",
         "include/sqlcontext.h",
+        "include/sqlcontext_new.h",
         "include/sqlitefunctions.h",
         "include/tasks/author_genre_iteration_processor.h",
         "include/threaded_data/common_traits.h",

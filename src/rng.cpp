@@ -21,30 +21,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <random>
 
 namespace core{
-QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, QSqlDatabase, StoryFilter &filter)
+QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, sql::Database, StoryFilter &filter)
 {
-    QString where = userToken + query->str;
+    auto where = userToken.toStdString() + query->str;
     QStringList result;
     bool listIsOutdated = false, containsList = false;
     for(const auto& bind: std::as_const(query->bindings))
-        where += bind.key + bind.value.toString().left(30);
-    where += "Minrecs: " + QString::number(filter.minRecommendations);
-    where += "Rated: " + QString::number(filter.rating);
-    where += "Complete: " + QString::number(filter.ensureCompleted);
-    where += "Liked: " + QString::number(filter.likedAuthorsEnabled);
-    where += "Dead: " + QString::number(filter.allowUnfinished);
-    where += "Active tags: " + filter.activeTags.join(",");
-    where += "Displaying purged:" + QString::number(filter.displayPurgedFics);
-    where += "Disambiguator: " + filter.rngDisambiguator;
+        where += bind.key + bind.value.toString().substr(0,30);
+    where += "Minrecs: " + QString::number(filter.minRecommendations).toStdString();
+    where += "Rated: " + QString::number(filter.rating).toStdString();
+    where += "Complete: " + QString::number(filter.ensureCompleted).toStdString();
+    where += "Liked: " + QString::number(filter.likedAuthorsEnabled).toStdString();
+    where += "Dead: " + QString::number(filter.allowUnfinished).toStdString();
+    where += "Active tags: " + filter.activeTags.join(",").toStdString();
+    where += "Displaying purged:" + QString::number(filter.displayPurgedFics).toStdString();
+    where += "Disambiguator: " + filter.rngDisambiguator.toStdString();
     {
         // locking to make sure it's not modified when we search
         QReadLocker locker(&rngData->lock);
-        containsList = rngData->randomIdLists.contains(where);
+        containsList = rngData->randomIdLists.find(where) != rngData->randomIdLists.end();
         if(containsList)
             listIsOutdated = rngData->randomIdLists[where]->generationTimestamp < QDateTime::currentDateTimeUtc().addDays(-1);
     }
 
-    QLOG_INFO() << "RANDOM USING WHERE:" << where;
+    QLOG_INFO() << "RANDOM USING WHERE:" << QString::fromStdString(where);
     if(!containsList || listIsOutdated || filter.wipeRngSequence)
     {
         QWriteLocker locker(&rngData->lock);
@@ -79,6 +79,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
     auto& currentList = rngData->randomIdLists[where]->ids;
     rngData->randomIdLists[where]->lastAccessTimestamp = QDateTime::currentDateTimeUtc();
     std::uniform_int_distribution<> distr(0, currentList.size()-1); // define the range
+    result.reserve(filter.maxFics);
     for(auto i = 0; i < filter.maxFics; i++)
     {
         auto value = distr(eng);
@@ -95,7 +96,7 @@ void DefaultRNGgenerator::RemoveOutdatedRngSequences()
         auto item = rngData->queue.top();
         if(item->generationTimestamp < QDateTime::currentDateTimeUtc().addDays(-1))
         {
-            rngData->randomIdLists.remove(item->sequenceIdentifier);
+            rngData->randomIdLists.erase(item->sequenceIdentifier);
             rngData->queue.pop();
         }
         else
@@ -117,7 +118,7 @@ void DefaultRNGgenerator::RemoveOlderRngSequencesPastTheLimit(uint32_t limit)
     // HACK END
     while(rngData->queue.size() >= limit){
         auto item = rngData->queue.top();
-        rngData->randomIdLists.remove(item->sequenceIdentifier);
+        rngData->randomIdLists.erase(item->sequenceIdentifier);
         rngData->queue.pop();
     }
     //rngData->Log("post");
@@ -133,7 +134,10 @@ RNGData::RNGData(): queue([](ListPtr i1,ListPtr i2)->bool{
 void RNGData::Log(QString prefix)
 {
     QLOG_INFO() << "RNG SEQUENCE LOG:" << prefix;
-    auto values = randomIdLists.values();
+    std::vector<ListPtr> values;
+    values.reserve(randomIdLists.size());
+    for(auto& [key,value] : randomIdLists)
+        values.push_back(value);
     std::sort(values.begin(), values.end(), [](auto i1, auto i2){ return i1->lastAccessTimestamp < i2->lastAccessTimestamp;});
     for(auto& value: values){
         QLOG_INFO() << "ITEM:" << value->lastAccessTimestamp;

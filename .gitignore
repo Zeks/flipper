@@ -52,6 +52,10 @@ Run/gpr.lib
 Run/feed_server.lib
 Run/flipper.lib
 Run/database/*
+Run/tmp/*
+Run/curl
+Run/tmpfaves/*
+Run/scripts/*
 xcf/*
 *.qbs.user.*
 *.qbs.user

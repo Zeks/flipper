@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QQueue>
 #include <QReadWriteLock>
 #include <QReadLocker>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QWriteLocker>
 #include <QHash>
 #include <QUuid>
@@ -240,7 +240,7 @@ private:
     int perfectRngFicsSize = 0;
     int goodRngFicsSize = 0;
     int favouritesSize = 0;
-    int largeListCounter;
+    int largeListCounter = 0;
 
     QDate lastLargeListRegenerationDate;
 

@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "QScopedPointer"
 #include <QSet>
 #include "QSharedPointer"
-#include "QSqlDatabase"
+#include "sql_abstractions/sql_database.h"
 #include "QReadWriteLock"
 #include <functional>
 
@@ -138,7 +138,7 @@ class Fanfics : public IDBWebIDIndex {
 
     QSharedPointer<Fandoms> fandomInterface;
     QSharedPointer<Authors> authorInterface;
-    QSqlDatabase db;
+    sql::Database db;
 private:
     int GetIdFromDatabase(QString website, int id);
     int GetIdFromDatabase(core::SiteId);

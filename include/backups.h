@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
 #include "pure_sql.h"
+#include "sql_abstractions/sql_connection_token.h"
 
-database::puresql::DiagnosticSQLResult<database::puresql::DBVerificationResult> VerifyDatabase(QString name);
+sql::DiagnosticSQLResult<sql::DBVerificationResult> VerifyDatabase(sql::ConnectionToken connectionToken);
 bool ProcessBackupForInvalidDbFile(QString pathToFile, QString fileName,  QStringList error);
 void RemoveOlderBackups(QString fileName);;

@@ -37,6 +37,7 @@ QSet<QString> MobileFavouritesFetcher::Execute()
     // generating all of the urls that will need to be grabbed
     QStringList mobileUrls;
     // 26th page onwards can't be reached without m.
+    mobileUrls.reserve(amountOfPagesToGrab);
     for(int i = pageToStartFrom; i <= amountOfPagesToGrab; i++)
         mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
 
@@ -69,7 +70,7 @@ QSet<QString> MobileFavouritesFetcher::Execute()
     return urlResult;
 }
 
-QSet<QString> MobileFavouritesFetcher::Execute(QSqlDatabase db, ECacheMode cacheMode)
+QSet<QString> MobileFavouritesFetcher::Execute(sql::Database db, ECacheMode cacheMode)
 {
     // first we need to create an m. link
     QString url = QString("https://m.fanfiction.net/u/%1//?a=fs").arg(userId);
@@ -96,6 +97,7 @@ QSet<QString> MobileFavouritesFetcher::Execute(QSqlDatabase db, ECacheMode cache
     // generating all of the urls that will need to be grabbed
     QStringList mobileUrls;
     // 26th page onwards can't be reached without m.
+    mobileUrls.reserve(amountOfPagesToGrab);
     for(int i = pageToStartFrom; i <= amountOfPagesToGrab; i++)
         mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
 

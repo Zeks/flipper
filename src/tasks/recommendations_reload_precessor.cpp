@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QFutureWatcher>
 #include <QtConcurrent>
 
-RecommendationsProcessor::RecommendationsProcessor(QSqlDatabase db,
+RecommendationsProcessor::RecommendationsProcessor(sql::Database db,
                                                    QSharedPointer<interfaces::Fanfics> fanficInterface,
                                                    QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                                    QSharedPointer<interfaces::Authors> authorsInterface,
@@ -85,6 +85,8 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
     QLOG_INFO() << " Scheduled authors size: " << authors.size();
     for(auto author: authors)
     {
+//        if(counter > 0)
+//            break;
         if(counter%50 == 0)
         {
             QLOG_INFO() << "=========================================================================";

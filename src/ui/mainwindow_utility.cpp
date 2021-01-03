@@ -27,8 +27,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "parsers/ffn/fandomindexparser.h"
 #include "transaction.h"
 
-#include <QSqlQuery>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_query.h"
+#include "sql_abstractions/sql_database.h"
 #include <QSqlError>
 #include <QPair>
 #include <QPoint>
@@ -42,11 +42,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 //QStringList MainWindow::GetNormalUrl(QString fandom)
 //{
-//    QSqlDatabase db = QSqlDatabase::database();
+//    sql::Database db = sql::Database::database();
 //    QString qs = QString("Select normal_url from fandoms where fandom = '%1' ").arg(fandom);
 //    if(false)
 //        qs+=" and (tracked = 1 or tracked_crossovers = 1)";
-//    QSqlQuery q(qs, db);
+//    sql::Query q(qs, db);
 //    QStringList result;
 //    while(q.next())
 //    {
@@ -64,10 +64,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 //QStringList MainWindow::GetCrossoverUrl(QString fandom)
 //{
-//    QSqlDatabase db = QSqlDatabase::database();
+//    sql::Database db = sql::Database::database();
 //    QString qs = QString("Select crossover_url from fandoms where fandom = '%1' ").arg(fandom);
 
-//    QSqlQuery q(qs, db);
+//    sql::Query q(qs, db);
 //    QStringList result;
 //    while(q.next())
 //    {
@@ -95,10 +95,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 //    if(!fandom.isEmpty())
 //    {
-//        QSqlDatabase db = QSqlDatabase::database();
+//        sql::Database db = sql::Database::database();
 //        QString qs = QString("delete from fanfics where fandom like '%%1%'");
 //        qs=qs.arg(fandom);
-//        QSqlQuery q(qs, db);
+//        sql::Query q(qs, db);
 //        q.exec();
 //    }
 //}
@@ -151,14 +151,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 //void MainWindow::InsertFandomData(QMap<QPair<QString,QString>, core::Fandom> names)
 //{
-//    QSqlDatabase db = QSqlDatabase::database();
+//    sql::Database db = sql::Database::database();
 //    QHash<QPair<QString, QString>, core::Fandom> knownValues;
 //    for(auto value : sections)
 //    {
 
 //        QString qs = QString("Select section, fandom, normal_url, crossover_url from fandoms where section = '%1'").
 //                arg(value.name.replace("'","''"));
-//        QSqlQuery q(qs, db);
+//        sql::Query q(qs, db);
 
 
 //        while(q.next())
@@ -170,7 +170,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 //                    q.value("normal_url").toString(),
 //                    q.value("crossover_url").toString(),};
 //        }
-//        qDebug() << q.lastError();
+//        qDebug() << q.lastError().text();
 //    }
 //    auto make_key = [](core::Fandom f){return QPair<QString, QString>(f.section, f.name);} ;
 //    pbMain->setMinimum(0);
@@ -192,15 +192,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 //        {
 //            QString insert = "INSERT INTO FANDOMS (FANDOM, NORMAL_URL, CROSSOVER_URL, SECTION) "
 //                             "VALUES (:FANDOM, :URL, :CROSS, :SECTION)";
-//            QSqlQuery q(db);
+//            sql::Query q(db);
 //            q.prepare(insert);
-//            q.bindValue(":FANDOM",fandom.name.replace("'","''"));
-//            q.bindValue(":URL",fandom.url.replace("'","''"));
-//            q.bindValue(":CROSS",fandom.crossoverUrl.replace("'","''"));
-//            q.bindValue(":SECTION",fandom.section.replace("'","''"));
+//            q.bindValue("FANDOM",fandom.name.replace("'","''"));
+//            q.bindValue("URL",fandom.url.replace("'","''"));
+//            q.bindValue("CROSS",fandom.crossoverUrl.replace("'","''"));
+//            q.bindValue("SECTION",fandom.section.replace("'","''"));
 //            q.exec();
 //            if(q.lastError().isValid())
-//                qDebug() << q.lastError();
+//                qDebug() << q.lastError().text();
 //        }
 //        if(hasFandom && (
 //                    (knownValues[key].crossoverUrl.isEmpty() && !fandom.crossoverUrl.isEmpty())
@@ -208,15 +208,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 //        {
 //            QString insert = "UPDATE FANDOMS set normal_url = :normal, crossover_url = :cross "
 //                             "where section = :section and fandom = :fandom";
-//            QSqlQuery q(db);
+//            sql::Query q(db);
 //            q.prepare(insert);
-//            q.bindValue(":fandom",fandom.name.replace("'","''"));
-//            q.bindValue(":normal",fandom.url.replace("'","''"));
-//            q.bindValue(":cross",fandom.crossoverUrl.replace("'","''"));
-//            q.bindValue(":section",fandom.section.replace("'","''"));
+//            q.bindValue("fandom",fandom.name.replace("'","''"));
+//            q.bindValue("normal",fandom.url.replace("'","''"));
+//            q.bindValue("cross",fandom.crossoverUrl.replace("'","''"));
+//            q.bindValue("section",fandom.section.replace("'","''"));
 //            q.exec();
 //            if(q.lastError().isValid())
-//                qDebug() << q.lastError();
+//                qDebug() << q.lastError().text();
 //        }
 
 //        if(counter%100 == 0)

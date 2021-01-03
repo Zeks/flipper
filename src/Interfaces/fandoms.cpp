@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include <algorithm>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QVariant>
 #include <QDateTime>
 
@@ -100,14 +100,14 @@ QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
     return uniqueFandoms;
 }
 
-bool Fandoms::UploadFandomsIntoDatabase(QVector<core::Fandom> fandoms)
+bool Fandoms::UploadFandomsIntoDatabase(QVector<core::Fandom> fandoms, bool writeUrls)
 {
     bool result = true;
     database::Transaction transaction(db);
     for(auto fandom: fandoms)
     {
         core::FandomPtr fandomPtr(&fandom, [](core::Fandom*){});
-        result = result && CreateFandom(fandomPtr, true, true);
+        result = result && CreateFandom(fandomPtr, writeUrls, true);
     }
     transaction.finalize();
     return result;
@@ -122,7 +122,7 @@ Q_UNUSED(fandoms)
 //    for(auto fandom : fandoms)
 //    {
 //        fandom = core::Fandom::ConvertName(fandom.trimmed());
-//        success = success && database::puresql::UpdateFandomStats(GetIDForName(fandom), db);
+//        success = success && sql::UpdateFandomStats(GetIDForName(fandom), db);
 //    }
     return success;
 }
@@ -140,7 +140,7 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom,
     if(current && current->id != -1)
         return true;
     database::Transaction transaction(db);
-    auto result = database::puresql::CreateFandomInDatabase(fandom, db, writeUrls, useSuppliedIds);
+    auto result = sql::CreateFandomInDatabase(fandom, db, writeUrls, useSuppliedIds);
 
     if(!result.success)
         return false;
@@ -166,7 +166,7 @@ bool Fandoms::AddFandomLink(QString fandom, const core::Url& url)
     auto id = GetIDForName(fandom);
     if(id == -1)
         return false;
-    auto result = database::puresql::AddUrlToFandom(id, url, db);
+    auto result = sql::AddUrlToFandom(id, url, db);
     return result.success;
 }
 
@@ -185,7 +185,7 @@ void Fandoms::SetLastUpdateDate(QString fandom, QDate date)
     auto id = GetIDForName(fandom);
     if(id== -1)
         return;
-    auto result = database::puresql::SetLastUpdateDateForFandom(id, date, db);
+    auto result = sql::SetLastUpdateDateForFandom(id, date, db);
 }
 
 QStringList Fandoms::GetRecentFandoms()
@@ -209,7 +209,7 @@ void Fandoms::FillFandomList(bool forced)
 {
     if(forced || fandomsList.isEmpty())
     {
-        fandomsList  = database::puresql::GetFandomListFromDB(db).data;
+        fandomsList  = sql::GetFandomListFromDB(db).data;
     }
 }
 
@@ -270,7 +270,7 @@ void Fandoms::PushFandomToTopOfRecent(QString fandom)
 void Fandoms::RemoveFandomFromRecentList(QString name)
 {
     name = core::Fandom::ConvertName(name);
-    auto result = database::puresql::RemoveFandomFromRecentList(name, db);
+    auto result = sql::RemoveFandomFromRecentList(name, db);
 }
 
 bool Fandoms::IsDataLoaded()
@@ -301,7 +301,7 @@ QList<core::FandomPtr> Fandoms::FilterFandoms(const std::function<bool (core::Fa
 //    {
 //        if(forcedSync || fandom->hasChanges)
 //        {
-//            ok = ok && database::puresql::WriteMaxUpdateDateForFandom(fandom, db);
+//            ok = ok && sql::WriteMaxUpdateDateForFandom(fandom, db);
 //        }
 //    }
 //    return ok;
@@ -330,7 +330,7 @@ bool Fandoms::Load()
         if(fandomPresent)
             this->recentFandoms.push_back(nameIndex[bit.toLower()]);
     }
-    auto result = database::puresql::GetFandomCountInDatabase(db);
+    auto result = sql::GetFandomCountInDatabase(db);
     fandomCount = result.data;
     return hadErrors || !result.success;
 }
@@ -358,7 +358,7 @@ bool Fandoms::LoadTrackedFandoms(bool forced)
     if(!needsLoading)
         return true;
 
-    auto opResult = database::puresql::GetTrackedFandomList(db);
+    auto opResult = sql::GetTrackedFandomList(db);
     auto trackedList = opResult.data;
     if(trackedList.empty() || !opResult.success)
         return false;
@@ -381,7 +381,7 @@ bool Fandoms::LoadAllFandoms(bool forced)
     if(!needsLoading)
         return true;
 
-    fandoms = database::puresql::GetAllFandoms(db).data;
+    fandoms = sql::GetAllFandoms(db).data;
     for(const auto& fandom: std::as_const(fandoms))
         indexFandomsById[fandom->id] = fandom->GetName();
     if(fandoms.empty())
@@ -391,7 +391,7 @@ bool Fandoms::LoadAllFandoms(bool forced)
 
 QList<core::FandomPtr> Fandoms::LoadAllFandomsAfter(int id)
 {
-    return database::puresql::GetAllFandomsAfter(id, db).data;
+    return sql::GetAllFandomsAfter(id, db).data;
 }
 
 bool Fandoms::IsTracked(QString fandom)
@@ -411,19 +411,19 @@ bool Fandoms::IgnoreFandom(QString name, bool includeCrossovers)
 
 bool Fandoms::IgnoreFandom(int id, bool includeCrossovers)
 {
-    auto result = database::puresql::IgnoreFandom(id,includeCrossovers,  db);
+    auto result = sql::IgnoreFandom(id,includeCrossovers,  db);
     return result.data;
 }
 
 QStringList Fandoms::GetIgnoredFandoms() const
 {
-    auto result = database::puresql::GetIgnoredFandoms(db);
+    auto result = sql::GetIgnoredFandoms(db);
     return result.data;
 }
 
 QHash<int, bool> Fandoms::GetIgnoredFandomsIDs() const
 {
-    auto result = database::puresql::GetIgnoredFandomIDs(db);
+    auto result = sql::GetIgnoredFandomIDs(db);
     return result.data;
 }
 
@@ -434,19 +434,17 @@ QList<core::FandomPtr> Fandoms::GetAllLoadedFandoms()
 
 QHash<int, QString> Fandoms::GetFandomNamesForIDs(QList<int> fandoms)
 {
-    return database::puresql::GetFandomNamesForIDs(fandoms, db).data;
+    return sql::GetFandomNamesForIDs(fandoms, db).data;
 }
 
 bool Fandoms::FetchFandomsForFics(QVector<core::Fanfic> *fics)
 {
-    static bool loadFandoms = true;
-    LoadAllFandoms(loadFandoms);
-    loadFandoms = false;
     for(auto& fic: *fics)
     {
         for(int i = 0; i < fic.fandomIds.size(); i++)
         {
             auto index = fic.fandomIds.at(i);
+            EnsureFandom(index);
             if(index != -1)
                 fic.fandoms.push_back(indexFandomsById[fic.fandomIds[i]]);
         }
@@ -464,7 +462,7 @@ bool Fandoms::RemoveFandomFromIgnoredList(QString name)
 
 bool Fandoms::RemoveFandomFromIgnoredList(int id)
 {
-    auto result = database::puresql::RemoveFandomFromIgnoredList(id, db);
+    auto result = sql::RemoveFandomFromIgnoredList(id, db);
     return result.data;
 }
 
@@ -477,13 +475,13 @@ bool Fandoms::IgnoreFandomSlashFilter(QString name)
 
 bool Fandoms::IgnoreFandomSlashFilter(int id)
 {
-    auto result = database::puresql::IgnoreFandomSlashFilter(id, db);
+    auto result = sql::IgnoreFandomSlashFilter(id, db);
     return result.data;
 }
 
 QStringList Fandoms::GetIgnoredFandomsSlashFilter() const
 {
-    auto result = database::puresql::GetIgnoredFandomsSlashFilter(db);
+    auto result = sql::GetIgnoredFandomsSlashFilter(db);
     return result.data;
 }
 
@@ -496,7 +494,7 @@ bool Fandoms::RemoveFandomFromIgnoredListSlashFilter(QString name)
 
 bool Fandoms::RemoveFandomFromIgnoredListSlashFilter(int id)
 {
-    auto result = database::puresql::RemoveFandomFromIgnoredListSlashFilter(id, db);
+    auto result = sql::RemoveFandomFromIgnoredListSlashFilter(id, db);
     return result.data;
 }
 
@@ -517,6 +515,7 @@ void Fandoms::AddToIndex(core::FandomPtr fandom)
         return;
     nameIndex[fandom->GetName().toLower()] = fandom;
     idIndex[fandom->id] = fandom;
+    indexFandomsById[fandom->id] = fandom->GetName();
     fandomsList.push_back(fandom->GetName());
     if(fandom->tracked)
         trackedFandoms.push_back(fandom);
@@ -527,7 +526,7 @@ bool Fandoms::WipeFandom(QString name)
     name = core::Fandom::ConvertName(name.trimmed());
     if(!EnsureFandom(name))
         return false;
-    return database::puresql::CleanupFandom(nameIndex[name.toLower()]->id, db).success;
+    return sql::CleanupFandom(nameIndex[name.toLower()]->id, db).success;
 }
 
 int Fandoms::GetFandomCount()
@@ -537,7 +536,7 @@ int Fandoms::GetFandomCount()
 
 int Fandoms::GetLastFandomID()
 {
-    return database::puresql::GetLastFandomID(db).data;
+    return sql::GetLastFandomID(db).data;
 }
 
 int Fandoms::GetIDForName(QString fandom)
@@ -566,7 +565,7 @@ void Fandoms::SetTracked(QString fandom, bool value, bool immediate)
     if(immediate)
     {
         auto id = nameIndex[fandom.toLower()]->id;
-        database::puresql::SetFandomTracked(id, value, db);
+        sql::SetFandomTracked(id, value, db);
     }
     else
         nameIndex[fandom.toLower()]->hasChanges = nameIndex[fandom.toLower()]->tracked == false;
@@ -609,7 +608,7 @@ QList<core::FandomPtr > Fandoms::ListOfTrackedFandoms()
 bool Fandoms::LoadFandom(QString name)
 {
     name = core::Fandom::ConvertName(name);
-    auto fandom = database::puresql::GetFandom(name, !isClient, db).data;
+    auto fandom = sql::GetFandom(name, !isClient, db).data;
     if(!fandom)
         return false;
 
@@ -620,7 +619,7 @@ bool Fandoms::LoadFandom(QString name)
 
 bool Fandoms::LoadFandom(int id)
 {
-    auto fandom = database::puresql::GetFandom(id, !isClient, db).data;
+    auto fandom = sql::GetFandom(id, !isClient, db).data;
     if(!fandom)
         return false;
 
@@ -636,19 +635,19 @@ bool Fandoms::AssignTagToFandom(QString fandom, QString tag, bool includeCrosses
         return false;
 
     auto id = nameIndex[fandom.toLower()]->id;
-    database::puresql::AssignTagToFandom(tag, id, db, includeCrosses);
+    sql::AssignTagToFandom(tag, id, db, includeCrosses);
     return true;
 }
 
 void Fandoms::CalculateFandomsAverages()
 {
     //! todo needs refactoring
-    //database::puresql::CalculateFandomsAverages(db);
+    //sql::CalculateFandomsAverages(db);
 }
 
 void Fandoms::CalculateFandomsFicCounts()
 {
-    database::puresql::CalculateFandomsFicCounts(db);
+    sql::CalculateFandomsFicCounts(db);
 }
 
 }
