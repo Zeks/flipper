@@ -172,6 +172,93 @@ double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
 }
 
 
+QSet<int> LimitResults(QSharedPointer<RecommendationList> params,
+                       RecommendationListResult& result,
+                       QHash<uint32_t, core::FicWeightPtr>& fetchedFics){
+    QSet<int> limiterResults;
+    std::list<int> scores;
+    std::list<int> ids;
+        scores.clear();
+        ids.clear();
+        if(params->resultLimit != 0){
+
+            auto itHash = result.recommendations.cbegin();
+            auto itHashEnd = result.recommendations.cend();
+            bool top = false;
+            bool bubble = false;
+
+            while(itHash != itHashEnd){
+                top = false;
+                bubble = false;
+                auto& key = itHash.key();
+                auto& value = itHash.value();
+                if(fetchedFics.contains(key))
+                {
+                    itHash++;
+                    continue;
+                }
+                if(scores.back() <= value)
+                    top = true;
+                else if(scores.front() < value || scores.size() < params->resultLimit)
+                    bubble = true;
+                else if(scores.front() == value)
+                {
+                    if(scores.size() < params->resultLimit)
+                        bubble = true;
+                }
+                if(top)
+                {
+                    scores.push_back(value);
+                    ids.push_back(key);
+                    if(scores.size() > params->resultLimit)
+                    {
+                        scores.pop_front();
+                        ids.pop_front();
+                    }
+                }
+                else if(bubble){
+                    auto itList = scores.cbegin();
+                    auto itListEnd = scores.cend();
+                    int counter = 0;
+                    while(itList!=itListEnd){
+                        if(*itList >= value){
+                            break;
+                        }
+                        counter++;
+                        itList++;
+                    }
+                    if(counter > 0 || scores.size() < params->resultLimit){
+                        auto itChange = scores.cbegin();
+                        auto itChangeIds = ids.cbegin();
+                        std::advance(itChange, counter);
+                        std::advance(itChangeIds, counter);
+                        scores.insert(itChange, value);
+                        ids.insert(itChangeIds, key);
+                    }
+                    if(scores.size() > params->resultLimit)
+                    {
+                        scores.pop_front();
+                        ids.pop_front();
+                    }
+                }
+                itHash++;
+            }
+        }
+
+//    auto itScores = scores.cbegin();
+//    auto itIds = ids.cbegin();
+//    qDebug() << "LIMITS RESULTS";
+//    for(auto i = 0 ; i < params->resultLimit; i++)
+//    {
+//        qDebug() << *itScores << " " << *itIds;
+//        itScores++;itIds++;
+//    }
+    for(auto id: ids){
+        limiterResults.insert(id);
+    }
+    return limiterResults;
+}
+
 
 bool RecCalculatorImplBase::CollectVotes()
 {
@@ -264,12 +351,13 @@ bool RecCalculatorImplBase::CollectVotes()
             result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
     });
+
+
+    if(params->resultLimit != 0){
+        result.limitedResults = LimitResults(params,result, fetchedFics);
+    }
+
     return true;
-    //for(auto& breakdownKey : result.pureMatches.keys())
-    //{
-//        auto normalizer = 1 + 0.1*std::max(4-result.pureMatches[breakdownKey], 0);
-//        result.noTrashScore[breakdownKey] = 100*normalizer*(static_cast<double>(result.sumNegativeMatches[breakdownKey])/static_cast<double>(result.pureMatches[breakdownKey]));
-    //}
 }
 
 AutoAdjustmentAndFilteringResult RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter(QSharedPointer<RecommendationList> params)

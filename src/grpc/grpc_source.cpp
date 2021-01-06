@@ -978,6 +978,7 @@ static const auto paramToTaskFiller = [](auto& task, QSharedPointer<core::Recomm
         ffn->add_ffn_ids(fic);
     }
     data->mutable_response_data_controls()->set_ignore_breakdowns(recList->ignoreBreakdowns);
+    data->mutable_response_data_controls()->set_output_size(recList->resultLimit);
     data->set_list_name(proto_converters::TS(recList->name));
     params->set_always_pick_at(recList->alwaysPickAt);
     params->set_is_automatic(recList->isAutomatic);

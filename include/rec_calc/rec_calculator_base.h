@@ -43,6 +43,7 @@ struct RecommendationListResult{
     QHash<int, int> sumNegativeVotesForFic;
     QHash<int, double> noTrashScore;
     QSet<int> authors;
+    QSet<int> limitedResults;
 };
 
 struct DiagnosticRecommendationListResult{
@@ -124,34 +125,6 @@ struct RatioSumInfo{
     uint16_t maxListSize = 0;
     Roaring fics;
     Roaring ficsAfterIgnore;
-
-    //    RatioSumInfo& operator+=(const RatioSumInfo& rhs){
-
-    //        this->authors += rhs.authors;
-    //        this->ratio = rhs.ratio;
-    //        if(this->minMatches > rhs.minMatches)
-    //            this->minMatches = rhs.minMatches;
-    //        this->fics = this->fics | rhs.fics;
-    //          return *this;
-    //    }
-    //    void IncrementAuthors(){
-    //        QWriteLocker locker(&lock);
-    //        authors++;
-    //    };
-    //    void SetRatio(int ratio){
-    //        QWriteLocker locker(&lock);
-    //        this->ratio = ratio;
-    //    };
-    //    void UpdateMinMatches(int matches){
-    //        QWriteLocker locker(&lock);
-    //        if(minMatches > matches)
-    //            minMatches = matches;
-    //    };
-    //    void MergeFics(const Roaring& newFics){
-    //        QWriteLocker locker(&lock);
-    //        fics|=newFics;
-    //    };
-    //    QReadWriteLock lock;
 };
 
 

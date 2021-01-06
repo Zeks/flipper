@@ -438,7 +438,7 @@ const static auto basicRecommendationsParamReader = [](RequestContext& reqContex
         params->minorNegativeVotes.insert(task->data().user_data().negative_feedback().basicnegatives(i));
     for(auto i = 0; i< task->data().user_data().negative_feedback().strongnegatives_size(); i++)
         params->majorNegativeVotes.insert(task->data().user_data().negative_feedback().strongnegatives(i));
-
+    params->resultLimit = task->data().response_data_controls().output_size();
 
     QLOG_INFO() << "Dumping received list creation params:";
     params->Log();
@@ -550,7 +550,11 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         return Status::OK;
 
     auto recommendationsCreationParams = basicRecommendationsParamReader(reqContext, task);
-
+    if(recommendationsCreationParams->resultLimit > 100)
+    {
+        response->mutable_response_info()->set_error("result limit must not be greater than 100");
+        return Status::OK;
+    }
 
     auto ficResult = ficPackReader(reqContext, task);
     //ankerl::nanobench::Bench().minEpochIterations(6).run([&](){
@@ -587,6 +591,8 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         for(auto i = list.recommendations.cbegin(); i != list.recommendations.cend(); i++)
         {
             const auto& key = i.key();
+            if(recommendationsCreationParams->resultLimit != 0 && !list.limitedResults.contains(key))
+                continue;
             const auto& value = i.value();
             //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
             if(!recCalculator->holder.fics.contains(key))
