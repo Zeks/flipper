@@ -206,6 +206,8 @@ struct User{
 
     QString GetImpersonatedId() const;
     void SetImpersonatedId(const QString &value);
+    void SetRecommendationsCutoff(int);
+    int GetRecommendationsCutoff() const;
 
 private:
     bool isValid = false;
@@ -241,6 +243,7 @@ private:
     int goodRngFicsSize = 0;
     int favouritesSize = 0;
     int largeListCounter = 0;
+    int recommednationsCutoff = 0;
 
     QDate lastLargeListRegenerationDate;
 

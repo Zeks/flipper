@@ -557,6 +557,20 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     }
 
     auto ficResult = ficPackReader(reqContext, task);
+    auto& fetchedFics = ficResult.fetchedFics;
+    if(recommendationsCreationParams->ficFavouritesCutoff != 0){
+        auto ids = fetchedFics.keys();
+        std::sort(ids.begin(),ids.end(), [&](const int fic1, const int fic2){
+           return  fetchedFics[fic1]->favCount < fetchedFics[fic2]->favCount;
+        });
+        int cutoffPoint = fetchedFics.size() * (static_cast<float>(recommendationsCreationParams->ficFavouritesCutoff)/100.);
+        for(auto i = cutoffPoint ; i < ids.size(); i++)
+        {
+            qDebug() << "removing story: " << fetchedFics[ids.at(i)]->id;
+            fetchedFics.remove(ids.at(i));
+        }
+
+    }
     //ankerl::nanobench::Bench().minEpochIterations(6).run([&](){
     //recommendationsCreationParams->ficData.sourceFics = ficResult.sourceFics;
     //QLOG_INFO() << "Received source fics: " << ficResult.sourceFics.toList();

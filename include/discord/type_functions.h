@@ -50,6 +50,7 @@ namespace discord {
                 TypeStringHolder<SusCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<GemsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeTargetCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<CutoffCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<SimilarFicsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,

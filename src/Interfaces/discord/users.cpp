@@ -194,6 +194,12 @@ void Users::SetWordcountFilter(QString userId, discord::WordcountFilter filter)
     database::discord_queries::SetWordcountFilter(dbToken->db, userId, filter);
 }
 
+void Users::SetRecommendationsCutoff(QString userId, int value)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    database::discord_queries::SetRecommendationsCutoff(dbToken->db, userId, value);
+}
+
 void Users::SetDeadFicDaysRange(QString userId, int days)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));

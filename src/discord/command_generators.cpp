@@ -1133,6 +1133,38 @@ bool GemsCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<GemsCommand>::name;
 }
 
+CommandChain CutoffCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+{
+    Command command = NewCommand(server, message,ct_set_cutoff);
+    auto match = matchCommand<CutoffCommand>(message.content);
+    if(match.get<1>().to_string().length() > 0)
+    {
+        command.variantHash["cutoff"] = QString::fromStdString(match.get<1>().to_string());
+        result.Push(std::move(command));
+    }
+    else
+    {
+        result.Push(std::move(command));
+    }
+
+    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+    createRecs.ids.push_back(user->FfnID().toUInt());
+    createRecs.variantHash[QStringLiteral("refresh")] = true;
+    createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(user->FfnID());
+    result.Push(std::move(createRecs));
+    Command displayRecs = NewCommand(server, message,ct_display_page);
+    displayRecs.ids.push_back(0);
+    result.Push(std::move(displayRecs));
+    return std::move(result);
+}
+
+bool CutoffCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<CutoffCommand>::name;
+}
+
+
+
 CommandChain ChangeTargetCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
 {
     if(message.author.ID.string() != std::to_string(ownerId))
@@ -1271,6 +1303,9 @@ bool StatsCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<StatsCommand>::name;
 }
+
+
+
 
 
 

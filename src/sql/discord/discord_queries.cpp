@@ -59,6 +59,7 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(sql::Database db, QSt
         user->SetUuid(QString::fromStdString(q.value("uuid").toString()));
         //user->SetSortFreshFirst(q.value("use_fresh_sorting").toInt());
         user->SetHideDead(q.value("hide_dead").toInt());
+        user->SetRecommendationsCutoff(q.value("recommendations_cutoff").toInt());
 
         auto minWords = static_cast<uint64_t>(q.value("words_filter_range_begin").toUInt64());
         auto maxWords = static_cast<uint64_t>(q.value("words_filter_range_end").toUInt64());
@@ -539,6 +540,19 @@ DiagnosticSQLResult<bool> SetWordcountFilter(sql::Database db, QString userId, d
     return std::move(ctx.result);
 }
 
+DiagnosticSQLResult<bool> SetRecommendationsCutoff(Database db, QString userId, int value)
+{
+    std::string qs = "update discord_users set "
+                     " recommendations_cutoff = :recommendations_cutoff "
+                     " where user_id = :user_id";
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.bindValue("user_id", userId);
+    ctx.bindValue("recommendations_cutoff", value);
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
+
 DiagnosticSQLResult<bool> SetDeadFicDaysRange(sql::Database db, QString user_id, int dead_fic_days_range)
 {
     std::string qs = "update discord_users set dead_fic_days_range = :dead_fic_days_range where user_id = :user_id";
@@ -546,6 +560,8 @@ DiagnosticSQLResult<bool> SetDeadFicDaysRange(sql::Database db, QString user_id,
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
+
+
 
 
 

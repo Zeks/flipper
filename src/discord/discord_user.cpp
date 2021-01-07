@@ -668,6 +668,19 @@ void User::SetImpersonatedId(const QString &value)
     QWriteLocker locker(&lock);
     impersonatedId = value;
 }
+
+void User::SetRecommendationsCutoff(int value)
+{
+    QWriteLocker locker(&lock);
+    recommednationsCutoff = value;
+}
+
+int User::GetRecommendationsCutoff() const
+{
+    QReadLocker locker(&lock);
+    return recommednationsCutoff;
+}
+
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

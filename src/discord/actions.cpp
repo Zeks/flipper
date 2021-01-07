@@ -161,6 +161,8 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     }
 
     environment->ficSource->userData = userData;
+    //recList->resultLimit = 50;
+    recList->ficFavouritesCutoff = command.user->GetRecommendationsCutoff();
     environment->ficSource->GetRecommendationListFromServer(recList);
     //QLOG_INFO() << "Got fics";
     // refreshing the currently saved recommendation list params for user
@@ -1303,6 +1305,22 @@ QSharedPointer<SendMessageCommand> SusAction::ExecuteImpl(QSharedPointer<TaskEnv
     return action;
 }
 
+QSharedPointer<SendMessageCommand> CutoffAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    An<interfaces::Users> usersDbInterface;
+    if(command.variantHash.contains("cutoff")){
+        action->text = "Setting cutoff for recommendations to: " + command.variantHash["cutoff"].toString();
+        command.user->SetRecommendationsCutoff(command.variantHash["cutoff"].toInt());
+        usersDbInterface->SetRecommendationsCutoff(command.user->UserID(),command.variantHash["cutoff"].toInt());
+    }
+    else{
+        command.user->SetRecommendationsCutoff(0);
+        usersDbInterface->SetRecommendationsCutoff(command.user->UserID(),0);
+        action->text = "Done, resetting the cutoff.";
+    }
+    return action;
+}
+
 QSharedPointer<SendMessageCommand> ToggleBanAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
     auto type = command.variantHash["type"].toString();
@@ -1409,6 +1427,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new ShowGemsAction());
     case ECommandType::ct_sus_user:
         return QSharedPointer<ActionBase>(new SusAction());
+    case ECommandType::ct_set_cutoff:
+        return QSharedPointer<ActionBase>(new CutoffAction());
 
     default:
         return QSharedPointer<ActionBase>(new NullAction());

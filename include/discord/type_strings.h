@@ -296,4 +296,13 @@ struct TypeStringHolder<discord::SusCommand>{
         static constexpr std::string_view shorthand = "";
 };
 
+template <>
+struct TypeStringHolder<discord::CutoffCommand>{
+        static constexpr std::string_view name = "cutoff";
+        static constexpr std::string_view prefixlessPattern = "?<cutoff>cutoff";
+        static constexpr std::string_view pattern = "cutoff\\s{1,}(\\d{1,20})";
+        static constexpr std::string_view help = "";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
 

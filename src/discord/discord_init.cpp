@@ -46,6 +46,7 @@ namespace discord {
         RegisterCommand<ToggleBanCommand>(parser);
         RegisterCommand<ResetFiltersCommand>(parser);
         RegisterCommand<WordcountCommand>(parser);
+        RegisterCommand<CutoffCommand>(parser);
         //RegisterCommand<ForceListParamsCommand>(parser);
         //RegisterCommand<SetIdentityCommand>(parser);
         //RegisterCommand<SimilarFicsCommand>(parser);
