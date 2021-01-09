@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/timeutils.h"
 #include "include/page_utils.h"
 #include "include/EGenres.h"
+#include "sql_abstractions/sql_transaction.h"
 #include <array>
 
 #include <QThread>
@@ -63,12 +64,16 @@ RecommendationsProcessor::~RecommendationsProcessor()
 
 void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
 {
-    database::Transaction transaction(db);
+    //database::Transaction transaction(db);
+    sql::Transaction transaction(db);
 
     auto& authors = stagedAuthors;
     std::sort(authors.begin(), authors.end(), [](const auto& a1, const auto& a2){
         return a1->stats.favouritesLastChecked > a2->stats.favouritesLastChecked;
     });
+//        std::sort(authors.begin(), authors.end(), [](const auto& a1, const auto& a2){
+//            return a1->id < a2->id;
+//        });
     emit requestProgressbar(authors.size());
     QSet<QString> fandoms;
     //QList<core::FicRecommendation> recommendations;
@@ -97,6 +102,8 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         QVector<QFuture<FavouriteStoryParser>> futures;
         //QSet<int> uniqueAuthors;
         authorsInterface->DeleteLinkedAuthorsForAuthor(author->id);
+//        if(author->id == 6)
+//            std::chrono::high_resolution_clock::now();
         auto startPageRequest = std::chrono::high_resolution_clock::now();
         auto page = env::RequestPage(author->url("ffn"), cacheMode);
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
@@ -142,6 +149,8 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         QCoreApplication::processEvents();
 
         elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
+//        if(author->id == 6)
+//            break;
         //qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
     }
     fandomsInterface->RecalculateFandomStats(fandoms.values());

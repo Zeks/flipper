@@ -369,7 +369,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pbUnpdateInterval">
+           <widget class="QPushButton" name="pbUpdateInterval">
             <property name="text">
              <string>Update interval</string>
             </property>

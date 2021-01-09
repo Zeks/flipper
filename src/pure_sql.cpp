@@ -512,7 +512,7 @@ DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id
     SqlContext<bool> ctx(db, std::move(qs), {{"recommender_id", author->id},{"fic_id", fic_id}});
     if(!author || author->id < 0)
         return std::move(ctx.result);
-
+    ctx.SetExpectedErrors({sql::ESqlErrors::se_unique_row_violation});
     return ctx(true);
 }
 
@@ -3284,7 +3284,7 @@ DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr task, sql::Database db)
 DiagnosticSQLResult<bool> SetTaskFinished(int id, sql::Database db)
 {
     return SqlContext<bool> (db, "update PageTasks set finished = 1 where id = :task_id",{
-                                 {":task_id", id}
+                                 {"task_id", id}
                              })();
 }
 
@@ -3542,7 +3542,7 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr au
     auto keyConverter = interfaces::GenreConverter::Instance();
     QList<QString> keys = interfaces::GenreConverter::Instance().GetCodeGenres();
     ctx.ProcessKeys(keys, [&](const QString& key, auto& q){
-        q.bindValue(":" + keyConverter.ToDB(key).toStdString(), genreFactors[key]);
+        q.bindValue(keyConverter.ToDB(key).toStdString(), genreFactors[key]);
     });
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);

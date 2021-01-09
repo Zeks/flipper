@@ -719,14 +719,10 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     for(auto i = faves.begin(); i != faves.end(); i++)
     {
         const auto& set = i.value();
-        //qDebug() <<  key << " set size is: " << set.size();
         if(set.cardinality() < minAuthorRecs)
             continue;
-        //qDebug() << "processing";
         for(auto fic : set)
         {
-            //            if(fic != 38212)
-            //                continue;
             ficsToUse[fic].insert(i.key());
         }
     }
@@ -753,9 +749,6 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
 
     qDebug() << "Finished counts";
 
-    //    for(auto fic: result)
-    //        fanfics->AssignQueuedForFic(fic);
-
     auto genreLists = authors->GetListGenreData();
     qDebug() << "got genre lists, size: " << genreLists.size();
 
@@ -772,9 +765,13 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
                                     genresForFics,
                                     filteredFicsToUse}, CutoffControls{});
 
-    database::Transaction transaction(db);
+    sql::Transaction transaction(db);
     if(!genres->WriteDetectedGenres(ficGenreDataList))
+    {
+
+        qDebug() << "cancelling transaction";
         transaction.cancel();
+    }
 
     qDebug() << "finished writing genre data for fics";
     transaction.finalize();
@@ -1172,11 +1169,13 @@ void ServitorWindow::OnNewProgressString(QString )
 
 }
 
-void ServitorWindow::on_pbUnpdateInterval_clicked()
+void ServitorWindow::on_pbUpdateInterval_clicked()
 {
     auto db = sql::Database::database();
+    auto isOpen = db.isOpen();
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
+    dbInterface->SetDatabase(db);
     authorInterface->portableDBInterface = dbInterface;
 
     auto authors = authorInterface->GetAllAuthorsWithFavUpdateBetween("ffn",
@@ -1360,10 +1359,12 @@ void ServitorWindow::on_pbReprocessCacheLinked_clicked()
 void ServitorWindow::on_pbSlashCalc_clicked()
 {
     auto db = sql::Database::database();
-    database::Transaction transaction(db);
+    sql::Transaction transaction(db);
+    dbInterface->SetDatabase(db);
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
+
 
     //auto authors = authorInterface->GetAllAuthors("ffn");
 

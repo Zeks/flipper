@@ -160,7 +160,7 @@ private slots:
     void OnUpdatedProgressValue(int value);
     void OnNewProgressString(QString value);
 
-    void on_pbUnpdateInterval_clicked();
+    void on_pbUpdateInterval_clicked();
 
     void on_pbReprocessAllFavPages_clicked();
 

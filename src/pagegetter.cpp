@@ -187,21 +187,23 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 
 
     QString filename = QString("tmpfaves/favourites_%1.html").arg(userPart);
-    params << "-c" << "curl" << "-L" << "-X" << "POST" << QString("http://%1/v1").arg(servitorPort)
+    params << "-o" << filename //<< "-c" << "curl"
+           << "-L" << "-X" << "POST" << QString("http://%1/v1").arg(servitorPort)
            << "-H" << "'Content-Type: application/json'"
-           << "--data-raw" << curlQuery.arg(url) << ">" << filename;
+           << "--data-raw" << curlQuery.arg(url);
+    //process.setWorkingDirectory("/home/zeks/curltest/tmpfaves");
     process.start("curl" , params);
     process.waitForFinished(-1); // will wait forever until finished
     QString stdoutResult = process.readAllStandardOutput();
     QString stderrResult = process.readAllStandardError();
 
-    QFile tempFIle(filename);
-    if(tempFIle.open(QFile::WriteOnly | QFile::Truncate))
-    {
-        QTextStream out(&tempFIle);
-        out << stdoutResult;
-    }
-    file.close();
+//    QFile tempFIle(filename);
+//    if(tempFIle.open(QFile::WriteOnly | QFile::Truncate))
+//    {
+//        QTextStream out(&tempFIle);
+//        out << stdoutResult;
+//    }
+//    file.close();
 
     process.start("bash", QStringList() << "-c" << "scripts/page_fixer.sh " + QString("%1").arg(filename));
     process.waitForFinished(-1); // will wait forever until finished
@@ -211,7 +213,7 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     qDebug() << stdoutResult;
     qDebug() << stderrResult;
 
-    QThread::msleep(500);
+    QThread::msleep(1000);
     QFile favouritesfile(filename);
     if (favouritesfile.open(QFile::ReadOnly))
     {
