@@ -1180,12 +1180,15 @@ QSharedPointer<SendMessageCommand> ResetFiltersAction::ExecuteImpl(QSharedPointe
     user->SetStrictFreshSort(false);
     user->SetUseLikedAuthorsOnly(false);
     user->SetWordcountFilter({0,0});
+    user->SetPublishedFilter("");
+    user->SetFinishedFilter("");
     {
         usersDbInterface->SetHideDeadFilter(command.user->UserID(), false);
         usersDbInterface->SetCompleteFilter(command.user->UserID(), false);
         usersDbInterface->WriteFreshSortingParams(command.user->UserID(), false, false);
         usersDbInterface->WriteForceLikedAuthors(command.user->UserID(), false);
         usersDbInterface->SetWordcountFilter(command.user->UserID(), {0,0});
+        usersDbInterface->SetDateFilter(command.user->UserID(), filters::dft_none, "");
         auto currentFilter = command.user->GetCurrentFandomFilter();
         for(auto fandomId : std::as_const(currentFilter.fandoms))
             usersDbInterface->UnfilterFandom(command.user->UserID(), fandomId);
