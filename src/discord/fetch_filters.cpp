@@ -15,6 +15,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "include/discord/fetch_filters.h"
 namespace discord {
+
+core::FicDateFilter CreateDateFilterFromYear(QString year, filters::EDateFilterType type){
+    core::FicDateFilter result;
+    QDate date = QDate::fromString(year, "yyyy");
+    auto nextYear = date.addYears(1);
+    result.dateStart = QString(year + "-00-00").toStdString();
+    result.dateEnd = QString(nextYear.toString("yyyy")+ "-00-00").toStdString();
+    result.mode = type;
+    return result;
+}
+
 void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
                       QSharedPointer<discord::User> user,
                       int size,
@@ -89,7 +100,10 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     if(user->GetHideDead())
         filter.ensureActive = true;
     //QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
-
+    if(!user->GetPublishedFilter().isEmpty())
+        filter.ficDateFilter = CreateDateFilterFromYear(user->GetPublishedFilter(), filters::dft_published);
+    else if(!user->GetFinishedFilter().isEmpty())
+        filter.ficDateFilter = CreateDateFilterFromYear(user->GetFinishedFilter(), filters::dft_finished);
 
 
     fics->clear();
@@ -164,7 +178,10 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
     userData.allTaggedFics = user->GetIgnoredFics();
     //QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 
-
+    if(!user->GetPublishedFilter().isEmpty())
+        filter.ficDateFilter = CreateDateFilterFromYear(user->GetPublishedFilter(), filters::dft_published);
+    else if(!user->GetFinishedFilter().isEmpty())
+        filter.ficDateFilter = CreateDateFilterFromYear(user->GetFinishedFilter(), filters::dft_finished);
 
     fics->clear();
     fics->reserve(size);
@@ -241,6 +258,12 @@ int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QShared
         filter.ensureCompleted = true;
     if(user->GetHideDead())
         filter.ensureActive= true;
+
+    if(!user->GetPublishedFilter().isEmpty())
+        filter.ficDateFilter = CreateDateFilterFromYear(user->GetPublishedFilter(), filters::dft_published);
+    else if(!user->GetFinishedFilter().isEmpty())
+        filter.ficDateFilter = CreateDateFilterFromYear(user->GetFinishedFilter(), filters::dft_finished);
+
     //QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 
     source->userData = userData;

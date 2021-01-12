@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QVector>
 #include <QSet>
 #include "core/fandom_list.h"
+#include "filters/date_filter.h"
 
 struct SlashFilterState
 {
@@ -46,6 +47,12 @@ struct RecommendationListFicSearchToken
 {
     std::unordered_map<int, int> ficToScore;
     std::unordered_map<int, int> ficToPureVotes;
+};
+
+struct FicDateFilter{
+    std::string dateStart;
+    std::string dateEnd;
+    filters::EDateFilterType mode = filters::dft_none;
 };
 
 struct StoryFilter{
@@ -180,6 +187,8 @@ struct StoryFilter{
 
     int fandom = -1;
     int secondFandom = -1;
+
+
     QString website;
 
     QStringList genreExclusion;
@@ -199,6 +208,7 @@ struct StoryFilter{
     std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> fandomStates;
     QString userToken;
     QString rngDisambiguator;
+    FicDateFilter ficDateFilter;
 };
 
 struct ReclistFilter{

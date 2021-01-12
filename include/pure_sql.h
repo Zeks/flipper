@@ -16,6 +16,7 @@
 #include "core/experimental/fic_relations.h"
 #include "include/storyfilter.h"
 #include "include/reclist_author_result.h"
+#include "filters/date_filter.h"
 #include "regex_utils.h"
 #include "transaction.h"
 
@@ -49,6 +50,7 @@ enum IDType{
     idt_db = 0,
     idt_ffn = 1
 };
+
 
 struct FanficIdRecord
 {

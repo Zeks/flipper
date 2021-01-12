@@ -306,3 +306,16 @@ struct TypeStringHolder<discord::CutoffCommand>{
         static constexpr std::string_view shorthand = "";
 };
 
+
+template <>
+struct TypeStringHolder<discord::YearCommand>{
+        static constexpr std::string_view name = "year";
+        static constexpr std::string_view prefixlessPattern = "?<year>year";
+        static constexpr std::string_view pattern = "year\\s{1,}>{0,}\\s{0,}(pub(lished){0,}|fin(ished){0,1})(\\s{1,}[0-9]{1,6}){0,}";
+        static constexpr std::string_view help = "`%1year` Shows recommendations from specific year, either by published or finished date.";
+        static constexpr std::string_view tips = "`%1year published XXXX` command will display fics from specific year, you can choose between `published` or 'finished' to select what it filters.";
+        static constexpr std::string_view shorthand = "`{0}year` - limits the running years of fics displayed";
+};
+
+
+

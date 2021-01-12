@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/db_interface.h"
 #include "discord/limits.h"
 #include "discord/discord_user.h"
+#include "filters/date_filter.h"
 #include "core/section.h"
 
 #include "GlobalHeaders/SingletonHolder.h"
@@ -36,6 +37,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 namespace interfaces {
 class IDBWrapper;
 class Fandoms;
+
+
 
 class Users {
 public:
@@ -74,6 +77,7 @@ public:
     void SetWordcountFilter(QString userId, discord::WordcountFilter);
     void SetRecommendationsCutoff(QString userId, int);
     void SetDeadFicDaysRange(QString userId, int);
+    void SetDateFilter(QString userId, filters::EDateFilterType, QString);
 };
 
 }

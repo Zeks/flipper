@@ -615,6 +615,11 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
     if(wordcountFilter.filterMode == WordcountFilter::fm_between)
         result += QString(QStringLiteral("\nShowing fics between %1k and %2k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords),QString::number(wordcountFilter.secondLimit/oneThousandWords));
 
+    if(!command.user->GetPublishedFilter().isEmpty())
+        result += QString(QStringLiteral("\nShowing fics started in year: %1")).arg(command.user->GetPublishedFilter());
+    if(!command.user->GetFinishedFilter().isEmpty())
+        result += QString(QStringLiteral("\nShowing fics started in year: %1")).arg(command.user->GetFinishedFilter());
+
 
     if(command.user->GetLastPageType() == ct_display_rng)
     {
@@ -1321,6 +1326,61 @@ QSharedPointer<SendMessageCommand> CutoffAction::ExecuteImpl(QSharedPointer<Task
     return action;
 }
 
+QSharedPointer<SendMessageCommand> YearAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    An<interfaces::Users> usersDbInterface;
+    if(command.variantHash.contains("type")){
+        auto type = command.variantHash["type"].toString();
+        if(command.variantHash.contains("year")){
+
+            auto year = command.variantHash["year"].toString();
+            QDate date = QDate::fromString(year, "yyyy");
+            if(!date.isValid())
+            {
+                action->text = "Not a valid year:" + command.variantHash["year"].toString();
+                action->stopChain = true;
+                return action;
+            }
+            if(type.contains("pub")){
+                command.user->SetPublishedFilter(year);
+                command.user->SetFinishedFilter("");
+                usersDbInterface->SetDateFilter(command.user->UserID(), filters::dft_published, year);
+                action->text = "Done, setting year filter to mode: published and year: " + command.variantHash["year"].toString();
+            }
+            else{
+                command.user->SetPublishedFilter("");
+                command.user->SetFinishedFilter(year);
+                usersDbInterface->SetDateFilter(command.user->UserID(), filters::dft_finished, year);
+                action->text = "Done, setting year filter to mode: finished and year: " + command.variantHash["year"].toString();
+            }
+        }
+        else{
+            auto isInPublishedMode = !command.user->GetPublishedFilter().isEmpty();
+            auto isInFinishedMode = !command.user->GetFinishedFilter().isEmpty();
+            if(type.contains("pub") && isInFinishedMode){
+                command.user->SetPublishedFilter(command.user->GetFinishedFilter());
+                command.user->SetFinishedFilter("");
+                usersDbInterface->SetDateFilter(command.user->UserID(), filters::dft_published, command.user->GetPublishedFilter());
+                action->text = "Done, switching filter to published mode";
+            }
+            else if(type.contains("fin") && isInPublishedMode){
+                command.user->SetFinishedFilter(command.user->GetPublishedFilter());
+                command.user->SetPublishedFilter("");
+                usersDbInterface->SetDateFilter(command.user->UserID(), filters::dft_finished, command.user->GetFinishedFilter());
+                action->text = "Done, switching filter to finished mode";
+            }
+        }
+    }
+    else{
+        command.user->SetPublishedFilter("");
+        command.user->SetFinishedFilter("");
+        usersDbInterface->SetDateFilter(command.user->UserID(), filters::dft_none, "");
+        action->text = "Done, clearing year filter.";
+    }
+    return action;
+}
+
+
 QSharedPointer<SendMessageCommand> ToggleBanAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
     auto type = command.variantHash["type"].toString();
@@ -1429,6 +1489,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SusAction());
     case ECommandType::ct_set_cutoff:
         return QSharedPointer<ActionBase>(new CutoffAction());
+    case ECommandType::ct_set_year:
+        return QSharedPointer<ActionBase>(new YearAction());
 
     default:
         return QSharedPointer<ActionBase>(new NullAction());

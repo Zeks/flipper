@@ -90,6 +90,8 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> SetRecommendationsCutoff(sql::Database db, QString userId, int);
 
     DiagnosticSQLResult<bool> SetDeadFicDaysRange(sql::Database db, QString userId, int days);
+    DiagnosticSQLResult<bool> SetDateFilter(sql::Database db, QString userId, filters::EDateFilterType, QString);
+
 
  }
 }

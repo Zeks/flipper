@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "querybuilder.h"
 #include "pure_sql.h"
 #include "Interfaces/db_interface.h"
+#include "filters/date_filter.h"
 #include "GlobalHeaders/snippets_templates.h"
 #include <QDebug>
 
@@ -163,6 +164,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     queryString+= ProcessSlashMode(filter);
     queryString+= ProcessGenreIncluson(filter);
     queryString+= ProcessWordInclusion(filter);
+    queryString+= ProcessDateRange(filter);
     queryString+= ProcessBias(filter);
     queryString+= ProcessWhereSortMode(filter);
     queryString+= ProcessActiveRecommendationsPart(filter);
@@ -544,6 +546,25 @@ QString DefaultQueryBuilder::ProcessWordInclusion(StoryFilter filter)
             queryString += QString(" AND summary not like '%'||:excword%1||'%' and title not like '%'||:excword%2||'%'")
                     .arg(QString::number(counter1),QString::number(counter2));
         }
+    }
+    return queryString;
+}
+
+QString DefaultQueryBuilder::ProcessDateRange(StoryFilter filter)
+{
+    if(filter.ficDateFilter.mode == filters::dft_none)
+        return "";
+    QString queryString = " %1 between '%2' and '%3' ";
+    if(filter.ficDateFilter.mode == filters::dft_published){
+        queryString = queryString.arg("published");
+        queryString = queryString.arg(QString::fromStdString(filter.ficDateFilter.dateStart),QString::fromStdString(filter.ficDateFilter.dateEnd));
+        queryString = " and " + queryString;
+    }
+    else {
+        queryString = queryString.arg("updated");
+        queryString += " and complete = 1 ";
+        queryString = queryString.arg(QString::fromStdString(filter.ficDateFilter.dateStart),QString::fromStdString(filter.ficDateFilter.dateEnd));
+        queryString = " and ( " + queryString + " ) ";
     }
     return queryString;
 }

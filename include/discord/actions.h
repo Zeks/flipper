@@ -68,6 +68,7 @@ ACTION(ShowFullFavouritesAction);
 ACTION(ShowFreshRecommendationsAction);
 ACTION(ShowGemsAction);
 ACTION(CutoffAction);
+ACTION(YearAction);
 ACTION(ShowCompleteAction);
 ACTION(HideDeadAction);
 ACTION(PurgeAction);

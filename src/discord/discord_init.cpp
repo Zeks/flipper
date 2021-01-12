@@ -47,6 +47,7 @@ namespace discord {
         RegisterCommand<ResetFiltersCommand>(parser);
         RegisterCommand<WordcountCommand>(parser);
         RegisterCommand<CutoffCommand>(parser);
+        RegisterCommand<YearCommand>(parser);
         //RegisterCommand<ForceListParamsCommand>(parser);
         //RegisterCommand<SetIdentityCommand>(parser);
         //RegisterCommand<SimilarFicsCommand>(parser);
@@ -79,6 +80,7 @@ namespace discord {
         helpString +=  GetTipsForCommandIfActive<ResetFiltersCommand>();
         helpString +=  GetTipsForCommandIfActive<SimilarFicsCommand>();
         helpString +=  GetTipsForCommandIfActive<WordcountCommand>();
+        helpString +=  GetTipsForCommandIfActive<YearCommand>();
         helpString +=  QStringLiteral("If the genres you see in the list have + = and ~ next to them, they are auto-deduced.")+
                        QStringLiteral("\n+ means main genre")+
                        QStringLiteral("\n= means there's a sufficient amount of this genre in the fic.")+
@@ -93,6 +95,7 @@ namespace discord {
     }
 
 }
+
 
 
 

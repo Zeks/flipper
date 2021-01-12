@@ -1164,6 +1164,48 @@ bool CutoffCommand::IsThisCommand(const std::string &cmd)
 }
 
 
+CommandChain YearCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+{
+    Command command = NewCommand(server, message,ct_set_year);
+    auto match = matchCommand<YearCommand>(message.content);
+    // have the type detected
+    if(match.get<1>().to_string().length() > 0)
+    {
+        // have the year detected
+        if(match.get<4>().to_string().length() > 0){
+            command.variantHash["type"] = QString::fromStdString(match.get<1>().to_string());
+            command.variantHash["year"] = QString::fromStdString(match.get<4>().to_string()).trimmed();
+            result.Push(std::move(command));
+        }
+        else{
+            // this wil lswitch mode or disable, in action code
+            command.variantHash["type"] = QString::fromStdString(match.get<1>().to_string());
+            result.Push(std::move(command));
+        }
+    }
+    else
+    {
+        // this will just diable the mode
+        result.Push(std::move(command));
+    }
+
+    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+    createRecs.ids.push_back(user->FfnID().toUInt());
+    createRecs.variantHash[QStringLiteral("refresh")] = true;
+    createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(user->FfnID());
+    result.Push(std::move(createRecs));
+    Command displayRecs = NewCommand(server, message,ct_display_page);
+    displayRecs.ids.push_back(0);
+    result.Push(std::move(displayRecs));
+    return std::move(result);
+}
+
+bool YearCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<YearCommand>::name;
+}
+
+
 
 CommandChain ChangeTargetCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
 {

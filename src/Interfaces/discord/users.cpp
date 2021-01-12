@@ -206,6 +206,12 @@ void Users::SetDeadFicDaysRange(QString userId, int days)
     database::discord_queries::SetDeadFicDaysRange(dbToken->db, userId, days);
 }
 
+void Users::SetDateFilter(QString userId, filters::EDateFilterType type, QString year)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    database::discord_queries::SetDateFilter(dbToken->db, userId, type, year);
+}
+
 
 
 }

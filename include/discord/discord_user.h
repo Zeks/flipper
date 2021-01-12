@@ -209,6 +209,14 @@ struct User{
     void SetRecommendationsCutoff(int);
     int GetRecommendationsCutoff() const;
 
+
+public:
+    QString GetPublishedFilter() const;
+    void SetPublishedFilter(const QString &value);
+
+    QString GetFinishedFilter() const;
+    void SetFinishedFilter(const QString &value);
+
 private:
     bool isValid = false;
     QString userID;
@@ -246,6 +254,8 @@ private:
     int recommednationsCutoff = 0;
 
     QDate lastLargeListRegenerationDate;
+    QString publishedFilter;
+    QString finishedFilter;
 
     QString lastUsedRoll = QStringLiteral("all");
 

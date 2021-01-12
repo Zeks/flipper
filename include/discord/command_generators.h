@@ -248,6 +248,13 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class YearCommand: public CommandCreator{
+public:
+    YearCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 class ChangeTargetCommand: public CommandCreator{
 public:
     ChangeTargetCommand(){}

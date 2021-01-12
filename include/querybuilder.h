@@ -103,6 +103,7 @@ protected:
     QString ProcessSlashMode(StoryFilter, bool renameToFID = true);
     QString ProcessGenreIncluson(StoryFilter);
     QString ProcessWordInclusion(StoryFilter);
+    QString ProcessDateRange(StoryFilter);
     QString ProcessActiveRecommendationsPart(StoryFilter);
     virtual QString ProcessWhereSortMode(StoryFilter);
 

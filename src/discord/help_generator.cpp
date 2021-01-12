@@ -100,6 +100,7 @@ SleepyDiscord::Embed GetTopLevelHelpPage(std::string_view serverPrefix)
     std::string fanficText;
     fanficText += std::string(TypeStringHolder<ShowCompletedCommand>::shorthand) + "\n";
     fanficText += std::string(TypeStringHolder<HideDeadCommand>::shorthand) + "\n";
+    fanficText += std::string(TypeStringHolder<YearCommand>::shorthand) + "\n";
     fanficText += std::string(TypeStringHolder<FilterLikedAuthorsCommand>::shorthand) + "\n";
     fanficText += std::string(TypeStringHolder<WordcountCommand>::shorthand) + "\n";
     fanficText += std::string(TypeStringHolder<IgnoreFicCommand>::shorthand);
@@ -421,8 +422,23 @@ SleepyDiscord::Embed GetFanficFiltersHelpPage(std::string_view serverPrefix)
     deadField.value = fieldText;
 
 
+    SleepyDiscord::EmbedField rangeField;
+    rangeField.isInline = true;
+    rangeField.name = "Set date range:";
+    fieldText = "`{0}year` allows you to set year ranges for when the fic has started or finished.\n"
+                "Once the year has been set you can call the opposite command to switch between published/finished.\n"
+                "Invoking the command without parameters resets year filter"
+                "\n\nExamples:"
+                "\n`{0}year pub 2011`"
+                "\n`{0}year fin 2009`"
+                "\n`{0}year pub`"
+                "\n`{0}year`";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    rangeField.value = fieldText;
+
+
     SleepyDiscord::EmbedField xficField;
-    xficField.isInline = false;
+    xficField.isInline = true;
     xficField.name = "Hide certain fics:";
     fieldText = "`{0}xfic` allows you to exclude individual fics from further display in your recommendations. It accepts two kinds of arguments:"
                 "\nID of the fic(s) in the currently displayed list (NOT id on fanfiction.net)"
@@ -463,10 +479,11 @@ SleepyDiscord::Embed GetFanficFiltersHelpPage(std::string_view serverPrefix)
 
 
     embed.fields.push_back(rollRecsField);
-    embed.fields.push_back(deadField);
     embed.fields.push_back(wordsField);
-    embed.fields.push_back(xficField);
+    embed.fields.push_back(deadField);
     embed.fields.push_back(completeField);
+    embed.fields.push_back(rangeField);
+    embed.fields.push_back(xficField);
     embed.fields.push_back(likedField);
     embed.fields.push_back(resetField);
 

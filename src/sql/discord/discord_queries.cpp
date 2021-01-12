@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "sql/discord/discord_queries.h"
+#include "GlobalHeaders/snippets_templates.h"
 #include "logger/QsLog.h"
 
 template <typename T>
@@ -60,6 +61,12 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(sql::Database db, QSt
         //user->SetSortFreshFirst(q.value("use_fresh_sorting").toInt());
         user->SetHideDead(q.value("hide_dead").toInt());
         user->SetRecommendationsCutoff(q.value("recommendations_cutoff").toInt());
+        auto publishedFilter = q.value("year_published").toString();
+        auto finishedFilter = q.value("year_finished").toString();
+        if(publishedFilter.length() > 0)
+            user->SetPublishedFilter(QString::fromStdString(publishedFilter));
+        if(finishedFilter.length() > 0)
+            user->SetFinishedFilter(QString::fromStdString(finishedFilter));
 
         auto minWords = static_cast<uint64_t>(q.value("words_filter_range_begin").toUInt64());
         auto maxWords = static_cast<uint64_t>(q.value("words_filter_range_end").toUInt64());
@@ -557,6 +564,22 @@ DiagnosticSQLResult<bool> SetDeadFicDaysRange(sql::Database db, QString user_id,
 {
     std::string qs = "update discord_users set dead_fic_days_range = :dead_fic_days_range where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, dead_fic_days_range));
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<bool> SetDateFilter(Database db, QString user_id, filters::EDateFilterType type, QString year)
+{
+    std::string qs;
+    if(type == filters::dft_published)
+        qs = "update discord_users set year_published = :year, year_finished = null where user_id = :user_id";
+    else if(type == filters::dft_finished)
+        qs = "update discord_users set year_finished = :year, year_published = null where user_id = :user_id";
+    else
+        qs = "update discord_users set year_finished = null, year_published = null where user_id = :user_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP1(user_id));
+    if(type *in (filters::dft_published, filters::dft_finished))
+        ctx.bindValue("year", year);
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }

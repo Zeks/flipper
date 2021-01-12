@@ -681,6 +681,30 @@ int User::GetRecommendationsCutoff() const
     return recommednationsCutoff;
 }
 
+QString User::GetPublishedFilter() const
+{
+    QReadLocker locker(&lock);
+    return publishedFilter;
+}
+
+void User::SetPublishedFilter(const QString &value)
+{
+    QWriteLocker locker(&lock);
+    publishedFilter = value;
+}
+
+QString User::GetFinishedFilter() const
+{
+    QReadLocker locker(&lock);
+    return finishedFilter;
+}
+
+void User::SetFinishedFilter(const QString &value)
+{
+    QWriteLocker locker(&lock);
+    finishedFilter = value;
+}
+
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

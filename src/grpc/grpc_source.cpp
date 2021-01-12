@@ -206,6 +206,12 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
             it++;
         }
     }
+    auto* dateFilter = result.mutable_fic_date_filter();
+    if(filter.ficDateFilter.mode != filters::dft_none){
+        dateFilter->set_fic_date_start(filter.ficDateFilter.dateStart);
+        dateFilter->set_fic_date_end(filter.ficDateFilter.dateEnd);
+        dateFilter->set_date_filter_mode(static_cast<ProtoSpace::FicDateFilter::FicDateMode>(filter.ficDateFilter.mode));
+    }
     //auto* fandomState = result.mutable_();
     return result;
 }
@@ -369,6 +375,9 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
         token.crossoverInclusionMode = static_cast<core::fandom_lists::ECrossoverInclusionMode>(item.crossover_inclusion_mode());
         result.fandomStates.insert_or_assign(item.id(), token);
     }
+    result.ficDateFilter.dateStart = filter.fic_date_filter().fic_date_start();
+    result.ficDateFilter.dateEnd= filter.fic_date_filter().fic_date_end();
+    result.ficDateFilter.mode = static_cast<filters::EDateFilterType>(filter.fic_date_filter().date_filter_mode());
 
     return result;
 }
