@@ -559,13 +559,15 @@ bool DisplayHelpCommand::IsThisCommand(const std::string &cmd)
 void SendMessageCommand::Invoke(Client * client)
 {
     try{
-        auto addReaction = [&](const SleepyDiscord::Message& newMessage){
+        auto addReaction = [&](const SleepyDiscord::Message& newMessage, std::string targetChannel = ""){
             An<discord::Servers> servers;
             auto server = servers->GetServer(originalMessageToken.serverID);
             try{
-                if(!server || server->GetAllowedToAddReactions())
+                if(!server || server->GetAllowedToAddReactions()){
+                    SleepyDiscord::Snowflake<SleepyDiscord::Channel> channel = targetChannel.length() > 0 ? targetChannel : originalMessageToken.channelID.string();
                     for(const auto& reaction: std::as_const(reactionsToAdd))
-                        client->addReaction(originalMessageToken.channelID, newMessage.ID, reaction.toStdString());
+                        client->addReaction(channel, newMessage.ID, reaction.toStdString());
+                }
             }
             catch (const SleepyDiscord::ErrorCode& error){
                 if(error != 403)
@@ -639,7 +641,7 @@ void SendMessageCommand::Invoke(Client * client)
                             if(originalCommandType *in(ct_display_page, ct_display_rng))
                                 this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
                             client->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
-                            addReaction(resultingMessage.response.value().cast());
+                            addReaction(resultingMessage.response.value().cast(), targetChannel.string());
                         }
                     }
                 }
