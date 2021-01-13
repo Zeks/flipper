@@ -248,7 +248,20 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
         bool isOriginalUser = messageSourceAndTypeHash.same_user(messageID.number(), userID.number());
         if(isOriginalUser || emoji.name == "🔍"){
             An<Users> users;
-            auto user = users->GetUser(QString::fromStdString(userID.string()));
+            auto userId = QString::fromStdString(userID.string());
+            if(!users->HasUser(userId)){
+
+                bool inDatabase = users->LoadUser(userId);
+                if(!inDatabase)
+                {
+                    SleepyDiscord::User sleepyUser = getUser(userID);
+                    QSharedPointer<discord::User> user(new discord::User(userId, QStringLiteral("-1"), QString::fromStdString(sleepyUser.username), QUuid::createUuid().toString()));
+                    An<interfaces::Users> usersInterface;
+                    usersInterface->WriteUser(user);
+                    users->LoadUser(userId);
+                }
+            }
+            auto user = users->GetUser(userId);
             if(!user)
                 return;
             QLOG_INFO() << "bot is fetching message information";
@@ -278,6 +291,7 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
             else if(emoji.name == "🔍")
             {
                 CommandChain commands;
+                messageInfo.token.authorID = userID;
                 commands = CreateSimilarListCommand(user,server, messageInfo.token,messageSourceAndTypeHash.value(messageID.number()).token.ficId);
                 commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%F0%9F%94%8D");
                 executor->Push(std::move(commands));
