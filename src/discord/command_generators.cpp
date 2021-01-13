@@ -1232,15 +1232,10 @@ CommandChain ShowCommand::ProcessInputImpl(const SleepyDiscord::Message & messag
     QList<uint64_t> ids;
     static const int ficDisplayLimit = 10;
     int counter = 1;
-    //!show
-    static constexpr std::string_view input = "123,456,768";
-    static constexpr std::string_view pattern = "([0-9]{1,3}),?";
 
     for(auto match : ctre::range<TypeStringHolder<ShowCommand>::pattern>(message.content)){
-    //for(auto match : ctre::range<pattern>(input)){
         if(counter > ficDisplayLimit)
             break;
-        //auto str = match.get<0>().to_string();
         auto id = match.get<0>().to_string();
         id = trim_copy(id);
         ids.push_back(std::stoll(id));
