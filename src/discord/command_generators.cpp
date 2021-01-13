@@ -603,10 +603,10 @@ void SendMessageCommand::Invoke(Client * client)
         auto server = servers->GetServer(originalMessageToken.serverID);
         auto channelToSendTo = originalMessageToken.channelID;
         if(targetMessage.string().length() == 0){
+            if(targetChannel.string().length() > 0 && targetChannel.string() != "0")
+                channelToSendTo = targetChannel;
             if(embed.empty())
             {
-                if(targetChannel.string().length() > 0 && targetChannel.string() != "0")
-                    channelToSendTo = targetChannel;
                 SleepyDiscord::Embed embed;
                 if(text.length() > 0)
                 {
@@ -957,6 +957,25 @@ CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server>
     result.Push(std::move(command));
     return result;
 }
+
+CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken & message, int ficId)
+{
+    CommandChain result;
+    Command command = NewCommand(server, message,ct_create_similar_fics_list);
+    command.targetMessage = message.messageID;
+    command.user = user;
+    user->SetSimilarFicsId(ficId);
+    command.ids.push_back(ficId);
+    result.Push(std::move(command));
+    Command displayRecs = NewCommand(server, message,ct_display_page);
+    displayRecs.ids.push_back(0);
+    displayRecs.user = user;
+    if(server->GetDedicatedChannelId().length() > 0)
+        displayRecs.targetChannelID = server->GetDedicatedChannelId();
+    result.Push(std::move(displayRecs));
+    return result;
+}
+
 
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message, bool shiftRight)
 {
@@ -1391,6 +1410,7 @@ bool StatsCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<StatsCommand>::name;
 }
+
 
 
 

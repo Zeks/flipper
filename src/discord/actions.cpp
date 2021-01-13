@@ -46,6 +46,7 @@ QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnviro
     action->originalMessageToken = command.originalMessageToken;
     action->user = command.user;
     action->originalCommandType = command.type;
+    action->targetChannel = command.targetChannelID;
     if(command.type != ECommandType::ct_timeout_active)
         command.user->initNewEasyQuery();
     environment->ficSource->SetUserToken(command.user->GetUuid());
@@ -1214,6 +1215,8 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
 
     auto recList = CreateSimilarFicParams();
     recList->ignoreBreakdowns= true;
+    recList->isAutomatic = true;
+    recList->listSizeMultiplier = 20000;
 
     QVector<core::Identity> pack;
     pack.resize(1);
@@ -1235,7 +1238,7 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
         action->stopChain = true;
         return action;
     }
-
+    recList->resultLimit = 90;
     environment->ficSource->GetRecommendationListFromServer(recList);
 
     // instantiating working set for user
@@ -1250,7 +1253,9 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
         action->stopChain = true;
         return action;
     }
-
+    if(command.server->GetDedicatedChannelId().length() > 0){
+        action->targetChannel = command.server->GetDedicatedChannelId();
+    }
 
     action->text = QStringLiteral("Created similarity list FFN ID: ") + QString::number(command.ids.at(0));
     environment->ficSource->ClearUserData();
@@ -1447,7 +1452,7 @@ QSharedPointer<SendMessageCommand> ShowFicAction::ExecuteImpl(QSharedPointer<Tas
     embed.description = temp.toStdString();
 
     action->embed = embed;
-    action->originalMessageToken.ficId = QString::number(fic.identity.web.GetPrimaryId()).toStdString();
+    action->originalMessageToken.ficId = fic.identity.web.GetPrimaryId();
     action->reactionsToAdd.push_back(QStringLiteral("%F0%9F%94%8D"));
     if(command.targetMessage.string().length() > 0)
         action->targetMessage = command.targetMessage;

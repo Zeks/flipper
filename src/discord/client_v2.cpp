@@ -78,7 +78,7 @@ void Client::InitClient()
     Client::mirrorTargetChannel = settings.value(QStringLiteral("Login/text_to")).toULongLong();
     Client::botPmChannel = settings.value(QStringLiteral("Login/pm_to")).toULongLong();
 
-    actionableEmoji = {"🔁","👈","👉"};
+    actionableEmoji = {"🔁","👈","👉","🔍"};
 }
 
 QSharedPointer<discord::Server> Client::InitDiscordServerIfNecessary(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverId)
@@ -177,14 +177,17 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(sv == botPrefixRequest)
             sendMessageWrapper(message.channelID, message.serverID, "Prefix for this server is: " + std::string(commandPrefix));
 
-
+        bool explaining = false;
         if(server->GetExplanationAllowed()){
             auto result = FetchFFNUrls(message.content);
             std::string command = std::string(commandPrefix) + "show";
             if(result.size() > 0)
             {
+                explaining = true;
                 for(auto bit: result)
+                {
                     command+= " " + bit;
+                }
                 message.content = command;
             }
         }
@@ -204,7 +207,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
             return logRest();
 
         bool priorityCommand = message.content.substr(server->GetCommandPrefix().length(), 6) *in("permit", "target") || sv.substr(0, 4) == "send";
-        if(!priorityCommand && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && message.channelID.string() != server->GetDedicatedChannelId())
+        if(!priorityCommand && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && (!explaining && message.channelID.string() != server->GetDedicatedChannelId()))
             return logRest();
 
         auto commands = parser->Execute(result.get<0>().to_string(), server, message);
@@ -243,7 +246,7 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
                                                                              ? channelToServerHash.value(channelID.number()) : 0);
 
         bool isOriginalUser = messageSourceAndTypeHash.same_user(messageID.number(), userID.number());
-        if(isOriginalUser){
+        if(isOriginalUser || emoji.name == "🔍"){
             An<Users> users;
             auto user = users->GetUser(QString::fromStdString(userID.string()));
             if(!user)
@@ -270,6 +273,13 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
                 CommandChain commands;
                 commands = CreateRollCommand(user,server, messageInfo.token);
                 commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%f0%9f%94%81");
+                executor->Push(std::move(commands));
+            }
+            else if(emoji.name == "🔍")
+            {
+                CommandChain commands;
+                commands = CreateSimilarListCommand(user,server, messageInfo.token,messageSourceAndTypeHash.value(messageID.number()).token.ficId);
+                //commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%f0%9f%94%81");
                 executor->Push(std::move(commands));
             }
 

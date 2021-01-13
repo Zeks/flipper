@@ -331,6 +331,7 @@ public:
 };
 
 CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken & );
+CommandChain CreateSimilarListCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken &, int ficId);
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken & , bool shiftRight = true);
 CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken &, bool shiftRight = true);
 CommandChain CreateRemoveReactionCommand(QSharedPointer<User> , QSharedPointer<Server> server, const MessageToken &message, const std::string &reaction);
