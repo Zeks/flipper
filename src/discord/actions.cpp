@@ -1187,6 +1187,7 @@ QSharedPointer<SendMessageCommand> ResetFiltersAction::ExecuteImpl(QSharedPointe
     user->SetWordcountFilter({0,0});
     user->SetPublishedFilter("");
     user->SetFinishedFilter("");
+    user->SetSimilarFicsId(0);
     {
         usersDbInterface->SetHideDeadFilter(command.user->UserID(), false);
         usersDbInterface->SetCompleteFilter(command.user->UserID(), false);
@@ -1209,6 +1210,13 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
 {
     command.user->initNewEasyQuery();
     command.user->SetRngBustScheduled(true);
+
+    command.user->SetSortFreshFirst(false);
+    command.user->SetSortGemsFirst(false);
+    command.user->SetStrictFreshSort(false);
+    command.user->SetPublishedFilter("");
+    command.user->SetFinishedFilter("");
+
     auto ficId = command.ids.at(0);
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
@@ -1341,6 +1349,7 @@ QSharedPointer<SendMessageCommand> CutoffAction::ExecuteImpl(QSharedPointer<Task
 QSharedPointer<SendMessageCommand> YearAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
     An<interfaces::Users> usersDbInterface;
+    //command.user->SetSimilarFicsId(0);
     if(command.variantHash.contains("type")){
         auto type = command.variantHash["type"].toString();
         if(command.variantHash.contains("year")){

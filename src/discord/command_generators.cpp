@@ -205,6 +205,7 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
             Command command = NewCommand(server, message,ct_display_page);
             command.ids.push_back(user->CurrentRecommendationsPage());
             result.Push(std::move(command));
+            user->SetSimilarFicsId(0);
             return std::move(result);
         }
         else
@@ -580,13 +581,15 @@ void SendMessageCommand::Invoke(Client * client)
                 }
             }
         };
-        auto removeReaction = [&](SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage){
+        auto removeReaction = [&](SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage, std::string targetChannel = ""){
             for(const auto& reaction: std::as_const(reactionsToRemove))
                 try{
                 An<discord::Servers> servers;
                 auto server = servers->GetServer(originalMessageToken.serverID);
-                if(!server || server->GetAllowedToRemoveReactions())
-                    client->removeReaction(originalMessageToken.channelID, targetMessage, reaction.toStdString(), user->UserID().toStdString());
+                if(!server || server->GetAllowedToRemoveReactions()){
+                    SleepyDiscord::Snowflake<SleepyDiscord::Channel> channel = targetChannel.length() > 0 ? targetChannel : originalMessageToken.channelID.string();
+                    client->removeReaction(channel, targetMessage, reaction.toStdString(), user->UserID().toStdString());
+                }
             }
             catch (const SleepyDiscord::ErrorCode& error){
                 if(error != 403)
@@ -603,7 +606,8 @@ void SendMessageCommand::Invoke(Client * client)
         };
         An<discord::Servers> servers;
         auto server = servers->GetServer(originalMessageToken.serverID);
-        auto channelToSendTo = originalMessageToken.channelID;
+        //auto channelToSendTo = originalMessageToken.channelID;
+        SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelToSendTo = targetChannel.string().length() > 0 ? targetChannel : originalMessageToken.channelID;
         if(targetMessage.string().length() == 0){
             if(targetChannel.string().length() > 0 && targetChannel.string() != "0")
                 channelToSendTo = targetChannel;
@@ -640,6 +644,8 @@ void SendMessageCommand::Invoke(Client * client)
                         if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help, ct_show_fic)){
                             if(originalCommandType *in(ct_display_page, ct_display_rng))
                                 this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
+                            if(targetChannel.string().length() > 0)
+                                originalMessageToken.channelID = targetChannel;
                             client->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
                             addReaction(resultingMessage.response.value().cast(), targetChannel.string());
                         }
@@ -847,6 +853,7 @@ CommandChain ShowFreshRecsCommand::ProcessInputImpl(const SleepyDiscord::Message
     if(strict.length() > 0)
         command.variantHash[QStringLiteral("strict")] = true;
     AddFilterCommand(std::move(command));
+    //user->SetSimilarFicsId(0);
 
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
@@ -1141,6 +1148,7 @@ CommandChain GemsCommand::ProcessInputImpl(const SleepyDiscord::Message &message
 {
     Command command = NewCommand(server, message,ct_show_gems);
     AddFilterCommand(std::move(command));
+    //user->SetSimilarFicsId(0);
 
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
@@ -1210,11 +1218,11 @@ CommandChain YearCommand::ProcessInputImpl(const SleepyDiscord::Message & messag
         result.Push(std::move(command));
     }
 
-    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
-    createRecs.ids.push_back(user->FfnID().toUInt());
-    createRecs.variantHash[QStringLiteral("refresh")] = true;
-    createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(user->FfnID());
-    result.Push(std::move(createRecs));
+//    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+//    createRecs.ids.push_back(user->FfnID().toUInt());
+//    createRecs.variantHash[QStringLiteral("refresh")] = true;
+//    createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(user->FfnID());
+//    result.Push(std::move(createRecs));
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
     result.Push(std::move(displayRecs));

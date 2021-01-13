@@ -279,7 +279,7 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
             {
                 CommandChain commands;
                 commands = CreateSimilarListCommand(user,server, messageInfo.token,messageSourceAndTypeHash.value(messageID.number()).token.ficId);
-                //commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%f0%9f%94%81");
+                commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%F0%9F%94%8D");
                 executor->Push(std::move(commands));
             }
 
