@@ -535,7 +535,7 @@ void  FillListEmbedForFicAsFields(SleepyDiscord::Embed& embed, const core::Fanfi
 }
 
 
-void  FillListEmbedForFic(SleepyDiscord::Embed& embed, const core::Fanfic& fic, int i, bool addNewlines = true){
+void  FillListEmbedForFic(SleepyDiscord::Embed& embed, const core::Fanfic& fic, int i, bool addNewlines = true, bool addScore = true){
     QString urlProto = QStringLiteral("[%1](https://www.fanfiction.net/s/%2)");
     auto fandomsList=fic.fandoms;
     embed.description += QString(QStringLiteral("ID: ") + QString::number(i)).rightJustified(2, ' ').toStdString();
@@ -545,7 +545,8 @@ void  FillListEmbedForFic(SleepyDiscord::Embed& embed, const core::Fanfic& fic, 
                                  + QStringLiteral("`")).rightJustified(20, ' ').toStdString();
     //embed.description += " by: "  + QString(" " + authorUrlProto.arg(fic.author).arg(QString::number(fic.author_id))+"\n").toStdString();
     embed.description += QString(QStringLiteral("\nLength: `") + fic.wordCount + QStringLiteral("`")).toStdString();
-    embed.description += QString(QStringLiteral(" Score: `") + QString::number(fic.score) + QStringLiteral("`")).toStdString();
+    if(addScore)
+        embed.description += QString(QStringLiteral(" Score: `") + QString::number(fic.score) + QStringLiteral("`")).toStdString();
     embed.description += QStringLiteral(" Status:  ").toHtmlEscaped().toStdString();
     if(fic.complete)
         embed.description += QStringLiteral(" `Complete`  ").rightJustified(12).toStdString();
@@ -575,7 +576,10 @@ void  FillListEmbedForFic(SleepyDiscord::Embed& embed, const core::Fanfic& fic, 
 
 
 
-void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i, bool asFields){
+void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed,
+                              core::Fanfic& fic,
+                              int i,
+                              bool asFields){
     if(asFields)
         FillListEmbedForFicAsFields(embed, fic, i);
     else{
@@ -1383,6 +1387,74 @@ QSharedPointer<SendMessageCommand> YearAction::ExecuteImpl(QSharedPointer<TaskEn
     return action;
 }
 
+QSharedPointer<SendMessageCommand> ShowFicAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
+{
+    if(command.ids.size() == 0){
+        action->text = "No fics to show";
+        return action;
+    }
+    QVector<core::Fanfic> fics;
+    environment->ficSource->ClearUserData();
+    FetchFicsForShowIdCommand(environment->ficSource, {static_cast<int>(command.ids[0])},  &fics);
+    if(fics.size() == 0){
+        return action;
+    }
+
+    SleepyDiscord::Embed embed;
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    environment->fandoms->db = dbToken->db;
+    environment->fandoms->FetchFandomsForFics(&fics);
+
+    auto& fic = fics[0];
+
+
+    QString urlProto = QStringLiteral("[%1](https://www.fanfiction.net/s/%2)");
+    QString authorUrlProto = QStringLiteral("[%1](https://www.fanfiction.net/u/%2)");
+    auto fandomsList=fic.fandoms;
+    embed.description += QString(QStringLiteral(" ") + urlProto.arg(fic.title, QString::number(fic.identity.web.GetPrimaryId()))+QStringLiteral("\n")).toStdString();
+    embed.description += QString(QStringLiteral("By: ") + authorUrlProto.arg(fic.author->name, QString::number(fic.author_id)) + "\n").toStdString();
+    embed.description += QString(QStringLiteral("Fandom: `") +
+                                 fandomsList.join(QStringLiteral(" & ")).replace(QStringLiteral("'"), QStringLiteral("\\'"))
+                                 + QStringLiteral("`")).rightJustified(20, ' ').toStdString();
+
+    embed.description += QString(QStringLiteral("\nLength: `") + fic.wordCount + QStringLiteral("`")).toStdString();
+
+    embed.description += QStringLiteral(" Status:  ").toHtmlEscaped().toStdString();
+    if(fic.complete)
+        embed.description += QStringLiteral(" `Complete`  ").rightJustified(12).toStdString();
+    else
+    {
+        QDateTime date = fic.updated.isValid() && fic.updated.date().year() != 1970 ? fic.updated : fic.published;
+        auto dates = ExtractAge(date);
+        if(dates.size())
+            embed.description += (QStringLiteral(" `Incomplete: ") + dates.join(QStringLiteral(" ")) + QStringLiteral("`")).rightJustified(12).toStdString();
+        else
+            embed.description += QStringLiteral(" `Incomplete`").rightJustified(12).toStdString();
+    }
+    QString genre = fic.statistics.realGenreString.split(QStringLiteral(",")).join(QStringLiteral("/")).
+            replace(QRegExp(QStringLiteral("#c#")),QStringLiteral("+")).
+            replace(QRegExp(QStringLiteral("#p#")),QStringLiteral("=")).
+            replace(QRegExp(QStringLiteral("#b#")),QStringLiteral("~"));
+    if(genre.isEmpty())
+        genre = fic.genreString;
+
+    embed.description += QString(QStringLiteral("\nGenre: `") + genre + "`").toStdString();
+    embed.description += (QString(QStringLiteral("\n```")) + fic.summary + QString(QStringLiteral("```"))).toStdString();
+    embed.description += "\n";
+    auto temp =  QString::fromStdString(embed.description);
+    temp = temp.replace(QStringLiteral("````"), QStringLiteral("```"));
+    //temp = temp.replace("'", "\'");
+    embed.description = temp.toStdString();
+
+    action->embed = embed;
+    action->originalMessageToken.ficId = QString::number(fic.identity.web.GetPrimaryId()).toStdString();
+    action->reactionsToAdd.push_back(QStringLiteral("%F0%9F%94%8D"));
+    if(command.targetMessage.string().length() > 0)
+        action->targetMessage = command.targetMessage;
+
+    return action;
+
+}
 
 QSharedPointer<SendMessageCommand> ToggleBanAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
@@ -1494,6 +1566,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new CutoffAction());
     case ECommandType::ct_set_year:
         return QSharedPointer<ActionBase>(new YearAction());
+    case ECommandType::ct_show_fic:
+        return QSharedPointer<ActionBase>(new ShowFicAction());
 
     default:
         return QSharedPointer<ActionBase>(new NullAction());

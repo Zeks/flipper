@@ -88,6 +88,9 @@ struct Server{
     bool GetShownBannedMessage() const;
     void SetShownBannedMessage(bool value);
 
+    bool GetExplanationAllowed() const;
+    void SetExplanationAllowed(bool value);
+
 private:
     std::string serverId;
     QString serverName;
@@ -105,6 +108,7 @@ private:
     bool allowedToRemoveReactions = true;
     bool allowedToAddReactions = true;
     bool allowedToEditMessages = true;
+    bool explanationAllowed = false;
 
 
 

@@ -37,5 +37,10 @@ void FetchFicsForDisplayRngCommand(int size,
                                    QVector<core::Fanfic>* fics,
                                    int qualityCutoff = 1);
 
+void FetchFicsForShowIdCommand(QSharedPointer<FicSourceGRPC> source,
+                                    QList<int> ficIds,
+                                    QVector<core::Fanfic>* fics);
+
+
 
 }

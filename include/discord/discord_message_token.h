@@ -44,6 +44,7 @@ struct MessageToken{
     SleepyDiscord::Snowflake<SleepyDiscord::User> authorID;
     SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID;
     SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID;
+    std::string ficId;
 };
 
 }

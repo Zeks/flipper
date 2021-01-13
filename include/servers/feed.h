@@ -90,6 +90,9 @@ public:
     Status Search(ServerContext* context, const ProtoSpace::SearchTask* task,
                   ProtoSpace::SearchResponse* response) override;
 
+    Status SearchByIdList(ServerContext* context, const ProtoSpace::SearchByIdListTask* task,
+                  ProtoSpace::SearchByIdListResponse* response) override;
+
 
     Status GetFicCount(ServerContext* context, const ProtoSpace::FicCountTask* task,
                        ProtoSpace::FicCountResponse* response) override;

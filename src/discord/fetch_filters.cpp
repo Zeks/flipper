@@ -270,4 +270,21 @@ int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QShared
     auto count = source->GetFicCount(filter);
     return count/size;
 }
+
+void FetchFicsForShowIdCommand(QSharedPointer<FicSourceGRPC> source, QList<int> ficIds, QVector<core::Fanfic> *fics)
+{
+    fics->clear();
+    fics->reserve(ficIds.size());
+
+    QList<core::StoryFilter::FicId> ficsTask;
+    for(auto ficId : ficIds)
+    {
+        core::StoryFilter::FicId fic;
+        fic.id = ficId;
+        fic.idType = core::StoryFilter::EUseThisFicType::utf_ffn_id;
+        ficsTask.push_back(fic);
+    }
+    source->FetchFics(ficsTask, fics);
+}
+
 }

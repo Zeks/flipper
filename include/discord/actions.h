@@ -69,6 +69,7 @@ ACTION(ShowFreshRecommendationsAction);
 ACTION(ShowGemsAction);
 ACTION(CutoffAction);
 ACTION(YearAction);
+ACTION(ShowFicAction);
 ACTION(ShowCompleteAction);
 ACTION(HideDeadAction);
 ACTION(PurgeAction);

@@ -294,13 +294,28 @@ QString DefaultQueryBuilder::ProcessAuthor(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessFicID(StoryFilter filter)
 {
     QString result;
-    if(filter.useThisFic == -1)
+    // need to split into db and ffn ids
+    QStringList dbIds;
+    QStringList ffnIds;
+    std::for_each(filter.exactFicIds.begin(),filter.exactFicIds.end(), [&](const auto& fic){
+        if(fic.idType == core::StoryFilter::EUseThisFicType::utf_db_id)
+            dbIds.push_back(QString::number(fic.id));
+        else
+            ffnIds.push_back(QString::number(fic.id));
+    });
+
+    if(ffnIds.size() == 0 && dbIds.size() == 0)
         return result;
 
-    if(filter.useThisFicType == StoryFilter::EUseThisFicType::utf_ffn_id )
-        result = QString(" and f.ffn_id = %1 ").arg(QString::number(filter.useThisFic));
-    else
-        result = QString(" and f.id = %1 ").arg(QString::number(filter.useThisFic));
+    QString ffnIdPart = ffnIds.size() > 0 ? QString(" f.ffn_id in ('%1') ").arg(ffnIds.join("','")) : QString("");
+    QString dbIdPart = dbIds.size() > 0 ? QString(" f.id in ('%1') ").arg(dbIds.join("','")) : QString("");;
+    QStringList sum;
+    if(!ffnIdPart.isEmpty())
+        sum.push_back(ffnIdPart);
+    if(!dbIdPart.isEmpty())
+        sum.push_back(dbIdPart);
+    return " and ( " + sum.join(" OR ") + " ) " ;
+
     return result;
 }
 QString DefaultQueryBuilder::ProcessRecommenders(StoryFilter filter)

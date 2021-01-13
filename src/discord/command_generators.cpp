@@ -635,7 +635,7 @@ void SendMessageCommand::Invoke(Client * client)
                     if(resultingMessage.response.has_value()){
                         // I only need to hash messages that the user can later react to
                         // meaning page, rng and help commands
-                        if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
+                        if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help, ct_show_fic)){
                             if(originalCommandType *in(ct_display_page, ct_display_rng))
                                 this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
                             client->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
@@ -1206,6 +1206,52 @@ bool YearCommand::IsThisCommand(const std::string &cmd)
 }
 
 
+CommandChain ShowCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+{
+
+    //auto match = ctre::search<TypeStringHolder<ShowCommand>::pattern>(message.content);
+    QList<uint64_t> ids;
+    static const int ficDisplayLimit = 10;
+    int counter = 1;
+    //!show
+    static constexpr std::string_view input = "123,456,768";
+    static constexpr std::string_view pattern = "([0-9]{1,3}),?";
+
+    for(auto match : ctre::range<TypeStringHolder<ShowCommand>::pattern>(message.content)){
+    //for(auto match : ctre::range<pattern>(input)){
+        if(counter > ficDisplayLimit)
+            break;
+        //auto str = match.get<0>().to_string();
+        auto id = match.get<0>().to_string();
+        id = trim_copy(id);
+        ids.push_back(std::stoll(id));
+        counter++;
+    }
+    if(ids.size() > 0)
+    {
+        for(auto id: ids){
+            Command queuedFics = NewCommand(server, message,ct_show_fic);
+            queuedFics.ids.push_back(id);
+            result.Push(std::move(queuedFics));
+        }
+        result.delayMs = 200;
+    }
+    else{
+        Command nullCommand = NewCommand(server, message,ct_null_command);
+        nullCommand.type = ct_null_command;
+        nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("`show` command requites fic ids after it.");
+        nullCommand.originalMessageToken = message;
+        nullCommand.server = this->server;
+        result.Push(std::move(nullCommand));
+    }
+    return std::move(result);
+}
+
+bool ShowCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ShowCommand>::name;
+}
+
 
 CommandChain ChangeTargetCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
 {
@@ -1345,6 +1391,8 @@ bool StatsCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<StatsCommand>::name;
 }
+
+
 
 
 

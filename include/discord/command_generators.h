@@ -255,6 +255,15 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+
+class ShowCommand: public CommandCreator{
+public:
+    ShowCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
+
 class ChangeTargetCommand: public CommandCreator{
 public:
     ChangeTargetCommand(){}
@@ -310,6 +319,7 @@ public:
     QStringList reactionsToRemove;
     QSharedPointer<User> user;
     MessageToken originalMessageToken;
+
     SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
     SleepyDiscord::Snowflake<SleepyDiscord::Channel> targetChannel;
     ECommandType originalCommandType = ct_none;

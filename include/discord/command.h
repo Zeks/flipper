@@ -94,6 +94,7 @@ struct CommandChain{
     bool hasParseCommand = false;
     bool hasFullParseCommand = false;
     bool stopExecution = false;
+    int delayMs = 0;
 };
 
 }

@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/type_functions.h"
 #include "discord/cached_message_source.h"
 #include "discord/db_vendor.h"
+#include "discord/type_functions.h"
 #include "sql/discord/discord_queries.h"
 #include "logger/QsLog.h"
 #include "GlobalHeaders/snippets_templates.h"
@@ -142,6 +143,16 @@ static constexpr auto pattern = discord::GetSimplePatternChecker();
 constexpr auto matchSimple(std::string_view sv) noexcept {
     return ctre::match<pattern>(sv);
 }
+static constexpr std::string_view ffnUrlPattern  = "s/(\\d{1,16})";
+
+std::vector<std::string> FetchFFNUrls(const std::string& message){
+    std::vector<std::string> result;
+    for(auto match : ctre::range<ffnUrlPattern>(message)){
+        auto rangeStr = match.get<1>().to_string();
+        result.push_back(rangeStr);
+    }
+    return result;
+}
 
 void Client::onMessage(SleepyDiscord::Message message) {
     try{
@@ -165,6 +176,18 @@ void Client::onMessage(SleepyDiscord::Message message) {
         const auto commandPrefix = server->GetCommandPrefix();
         if(sv == botPrefixRequest)
             sendMessageWrapper(message.channelID, message.serverID, "Prefix for this server is: " + std::string(commandPrefix));
+
+
+        if(server->GetExplanationAllowed()){
+            auto result = FetchFFNUrls(message.content);
+            std::string command = std::string(commandPrefix) + "show";
+            if(result.size() > 0)
+            {
+                for(auto bit: result)
+                    command+= " " + bit;
+                message.content = command;
+            }
+        }
 
         if(sv.substr(0, commandPrefix.length()) != commandPrefix)
             return logRest();

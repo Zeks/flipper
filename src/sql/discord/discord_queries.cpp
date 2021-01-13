@@ -117,6 +117,7 @@ DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(sql::Database db,
         server->SetOwnerId(QString::fromStdString(q.value("owner_id").toString()));
         server->SetDedicatedChannelId(q.value("dedicated_channel_id").toString());
         server->SetCommandPrefix(q.value("command_prefix").toString());
+        server->SetExplanationAllowed(q.value("explain_allowed").toBool());
         server->SetServerName(QString::fromStdString(q.value("server_name").toString()));
 
         ctx.result.data = server;

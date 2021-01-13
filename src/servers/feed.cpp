@@ -232,6 +232,46 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
     QLOG_INFO() << " ";
     return Status::OK;
 }
+
+grpc::Status FeederService::SearchByIdList(grpc::ServerContext *context, const ProtoSpace::SearchByIdListTask *task, ProtoSpace::SearchByIdListResponse *response)
+{
+    RequestContext reqContext("Search by id list", task->controls(), this);
+    if(!reqContext.Process(response->mutable_response_info()))
+        return Status::OK;
+
+    QLOG_TRACE() << "Verifying request params";
+    if(task->task_list().size() == 0)
+        return Status::OK;
+
+    auto ficSource = InitFicSource(reqContext.userToken, reqContext.dbContext.dbInterface);
+    core::StoryFilter filter;
+    filter.mode = core::StoryFilter::filtering_in_fics;
+    filter.sortMode = core::StoryFilter::sm_wordcount;
+    filter.slashFilter.slashFilterEnabled = false;
+
+    for(auto i = 0; i < task->task_list_size(); i++){
+        core::StoryFilter::FicId fic;
+        fic.id = task->task_list(i).id();
+        fic.idType = task->task_list(i).id_type() == ::ProtoSpace::SearchId_IDType::SearchId_IDType_ffn ?
+                    core::StoryFilter::EUseThisFicType::utf_ffn_id
+                  : core::StoryFilter::EUseThisFicType::utf_db_id;
+        filter.exactFicIds.push_back(fic);
+    }
+
+    QVector<core::Fanfic> data;
+    TimedAction action("Fetching data",[&](){
+        ficSource->FetchData(filter, &data);
+    });
+    action.run();
+    for(const auto& fic: std::as_const(data))
+    {
+        auto ficResult = response->add_search_result();
+        proto_converters::LocalFicToProtoFic(fic, ficResult->mutable_fanfic());
+    }
+    return Status::OK;
+}
+
+
 grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpace::SearchByFFNIDTask *task, ProtoSpace::SearchByFFNIDResponse *response)
 {
     RequestContext reqContext("Search by FFN id", task->controls(), this);
@@ -248,8 +288,11 @@ grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpac
     filter.sortMode = core::StoryFilter::sm_wordcount;
     filter.slashFilter.slashFilterEnabled = false;
 
-    filter.useThisFic = task->id();
-    filter.useThisFicType = task->id_type() == ProtoSpace::SearchByFFNIDTask::ffn ? core::StoryFilter::EUseThisFicType::utf_ffn_id : core::StoryFilter::EUseThisFicType::utf_db_id;
+    core::StoryFilter::FicId fic;
+    fic.id = task->id();
+    fic.idType = task->id_type() == ProtoSpace::SearchByFFNIDTask::ffn ? core::StoryFilter::EUseThisFicType::utf_ffn_id : core::StoryFilter::EUseThisFicType::utf_db_id;;
+    filter.exactFicIds.push_back(fic);
+
     QLOG_INFO() << "Fetching data for fic ID: " << task->id();
     QLOG_INFO() << "ID type: " << task->id_type();
 
@@ -1207,4 +1250,5 @@ void AccumulatorIntoSectionStats(core::FavListDetails& result, const core::FicLi
     for(size_t i = 1; i < dataResult.result.sizeRatios.size(); i++)
         result.sizeFactors[i] = dataResult.result.sizeRatios[i];
 }
+
 

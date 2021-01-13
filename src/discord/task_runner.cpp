@@ -52,6 +52,8 @@ void TaskRunner::run()
         result.Push(actionResult);
         if(actionResult->stopChain)
             break;
+        if(chainToRun.delayMs > 0)
+            QThread::msleep(chainToRun.delayMs);
     }
 }
 

@@ -75,6 +75,7 @@ public:
 
     virtual void FetchData(const core::StoryFilter& filter, QVector<core::Fanfic>*) override;
     void FetchFic(int ficId, QVector<core::Fanfic>*fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
+    void FetchFics(QList<core::StoryFilter::FicId> ficId, QVector<core::Fanfic>*fics);
     virtual int GetFicCount(const core::StoryFilter& filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
 

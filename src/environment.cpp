@@ -73,11 +73,11 @@ void CoreEnvironment::LoadData()
         interfaces::TagIDFetcherSettings tagFetcherSettings;
         tagFetcherSettings.allowSnoozed = filter.displaySnoozedFics;
 
-        if(filter.useThisFic != -1)
+        if(filter.exactFicIds.size() == 1)
         {
             FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
 
-            grpcSource->FetchFic(filter.useThisFic,
+            grpcSource->FetchFic(filter.exactFicIds.at(0).id,
                                  &newFanfics);
         }
         else {

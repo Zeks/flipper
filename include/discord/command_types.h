@@ -39,7 +39,8 @@ enum ECommandType{
     ct_show_gems= 36,
     ct_sus_user= 37,
     ct_set_cutoff= 38,
-    ct_set_year = 39
+    ct_set_year = 39,
+    ct_show_fic = 40,
 };
 
 }

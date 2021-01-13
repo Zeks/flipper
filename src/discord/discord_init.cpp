@@ -48,6 +48,7 @@ namespace discord {
         RegisterCommand<WordcountCommand>(parser);
         RegisterCommand<CutoffCommand>(parser);
         RegisterCommand<YearCommand>(parser);
+        RegisterCommand<ShowCommand>(parser);
         //RegisterCommand<ForceListParamsCommand>(parser);
         //RegisterCommand<SetIdentityCommand>(parser);
         //RegisterCommand<SimilarFicsCommand>(parser);

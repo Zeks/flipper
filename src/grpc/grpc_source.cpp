@@ -663,6 +663,7 @@ public:
     bool GetFFNIDsForFics(QVector<core::Identity> * ficList);
     void FetchData(const core::StoryFilter& filter, QVector<core::Fanfic> * fics);
     void FetchFic(int ficId, QVector<core::Fanfic> * fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
+    void FetchFics(QList<core::StoryFilter::FicId> ficIds, QVector<core::Fanfic> *fics);
     int GetFicCount(const core::StoryFilter& filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList);
@@ -891,6 +892,34 @@ void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fanfic> *fics, core::
 
     fics->resize(1);
     proto_converters::ProtoFicToLocalFic(response->fanfic(), (*fics)[static_cast<size_t>(0)]);
+}
+
+void FicSourceGRPCImpl::FetchFics(QList<core::StoryFilter::FicId> ficIds, QVector<core::Fanfic> *fics)
+{
+    grpc::ClientContext context;
+
+    ProtoSpace::SearchByIdListTask task;
+
+    ProtoSpace::Filter protoFilter;
+    QScopedPointer<ProtoSpace::SearchByIdListResponse> response (new ProtoSpace::SearchByIdListResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    FillControlStruct(task.mutable_controls());
+    for(auto fic : ficIds){
+        auto ficTask = task.add_task_list();
+        ficTask->set_id(fic.id);
+        ficTask->set_id_type(static_cast<::ProtoSpace::SearchId_IDType>(fic.idType));
+    }
+
+    grpc::Status status = stub_->SearchByIdList(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    fics->resize(response->search_result_size());
+    for(auto i = 0; i < response->search_result_size(); i++){
+        proto_converters::ProtoFicToLocalFic(response->search_result(i).fanfic(), (*fics)[static_cast<size_t>(i)]);
+    }
 }
 
 int FicSourceGRPCImpl::GetFicCount(const core::StoryFilter& filter)
@@ -1432,6 +1461,13 @@ void FicSourceGRPC::FetchFic(int ficId, QVector<core::Fanfic> *fics, core::Story
     if(!impl)
         return;
     impl->FetchFic(ficId, fics, idType);
+}
+
+void FicSourceGRPC::FetchFics(QList<core::StoryFilter::FicId> ficIds, QVector<core::Fanfic> *fics)
+{
+    if(!impl)
+        return;
+    impl->FetchFics(ficIds, fics);
 }
 
 int FicSourceGRPC::GetFicCount(const core::StoryFilter &filter)

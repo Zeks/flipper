@@ -168,12 +168,19 @@ struct StoryFilter{
     int allTagsCount = 0;
     int allSnoozeCount = 0;
     int useThisAuthor = -1;
-    int useThisFic = -1;
+    //int useThisFic = -1;
+
     int protocolMajorVersion = 2;
     int protocolMinorVersion = 0;
     int deadFicDaysRange = 365;
 
+    struct FicId{
+        int id;
+        EUseThisFicType idType;
+    };
+
     QList<int> usedRecommenders;
+    QList<FicId> exactFicIds;
     ESortMode sortMode;
     EReviewBiasMode reviewBias;
     EBiasOperator biasOperator;
@@ -183,7 +190,6 @@ struct StoryFilter{
     EGenrePresence genrePresenceForExclude;
     EShowSourcesMode showRecSources = ssm_filter_as_usual;
     ESourceListLimiter sourcesLimiter = ESourceListLimiter::sll_all;
-    EUseThisFicType useThisFicType = EUseThisFicType::utf_ffn_id;
 
     int fandom = -1;
     int secondFandom = -1;

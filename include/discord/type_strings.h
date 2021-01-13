@@ -319,3 +319,12 @@ struct TypeStringHolder<discord::YearCommand>{
 
 
 
+template <>
+struct TypeStringHolder<discord::ShowCommand>{
+        static constexpr std::string_view name = "show";
+        static constexpr std::string_view prefixlessPattern = "?<show>show";
+        static constexpr std::string_view pattern = "\\s(\\d{1,16})?";
+        static constexpr std::string_view help = "";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
