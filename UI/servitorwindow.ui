@@ -355,10 +355,28 @@
            <widget class="QLineEdit" name="leGetCachedData"/>
           </item>
           <item>
-           <widget class="QCheckBox" name="chkUseCache">
-            <property name="text">
-             <string>Use cache</string>
+           <widget class="QComboBox" name="cbCacheMode">
+            <property name="minimumSize">
+             <size>
+              <width>150</width>
+              <height>0</height>
+             </size>
             </property>
+            <item>
+             <property name="text">
+              <string>Don't Use Cache</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Use Cache</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Use Only Cache</string>
+             </property>
+            </item>
            </widget>
           </item>
           <item>

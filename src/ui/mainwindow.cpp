@@ -2279,7 +2279,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(ui->cbGenrePresenceTypeInclude->currentIndex());
     filter.rating = static_cast<core::StoryFilter::ERatingFilter>(ui->cbFicRating->currentIndex());
     if(ui->cbIDMode->currentIndex() == 0 && !ui->leAuthorID->text().isEmpty() && ui->chkIdSearch->isChecked())
-        filter.useThisFic = ui->leAuthorID->text().toInt();
+        filter.exactFicIds = {{ui->leAuthorID->text().toInt(), core::StoryFilter::EUseThisFicType::utf_ffn_id}};
     if(ui->cbIDMode->currentIndex() == 1 && !ui->leAuthorID->text().isEmpty() && ui->chkIdSearch->isChecked())
         filter.useThisAuthor = ui->leAuthorID->text().toInt();
     if(ui->cbIDMode->currentIndex() == 2 && !ui->leAuthorID->text().isEmpty() && ui->chkIdSearch->isChecked())
@@ -2497,10 +2497,10 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     ui->cbFicRating->setCurrentIndex(static_cast<int>(filter.rating));
 
 
-    if(filter.useThisFic != -1)
+    if(filter.exactFicIds.size() > 0)
     {
         ui->cbIDMode->setCurrentIndex(0);
-        ui->leAuthorID->setText(QString::number(filter.useThisFic));
+        ui->leAuthorID->setText(QString::number(filter.exactFicIds.at(0).id));
         ui->chkIdSearch->setChecked(true);
     }
     else if(filter.useThisAuthor != -1)

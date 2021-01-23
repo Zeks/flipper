@@ -1213,8 +1213,7 @@ void ServitorWindow::on_pbUpdateInterval_clicked()
 
 
     reloader.SetStagedAuthors(authors);
-    bool useCache = ui->chkUseCache->isChecked();
-    reloader.ReloadRecommendationsList(useCache ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+    reloader.ReloadRecommendationsList(static_cast<ECacheMode>(ui->cbCacheMode->currentIndex()));
     QLOG_INFO() << "FINISHED";
 }
 
