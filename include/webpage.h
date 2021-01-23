@@ -36,10 +36,11 @@ enum class EPageSource
     network = 0,
     cache = 1,
 };
-
+namespace webview{class PageThreadWorker;}
 struct WebPage
 {
     friend class PageThreadWorker;
+    friend class webview::PageThreadWorker;
     QString url;
     QDateTime generated;
     QDate minFicDate;

@@ -38,6 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/in_tag_accessor.h"
 #include "include/timeutils.h"
 #include "include/in_tag_accessor.h"
+#include "include/webview/pagegetter_w.h"
 #include "include/url_utils.h"
 #include "include/Interfaces/interface_sqlite.h"
 #include "sql_abstractions/sql_query.h"
@@ -1020,6 +1021,14 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
 
     //QString content;
     QRegularExpression rx("p[=](\\d+)['][>]Last[<][/]a[>]");
+    page.content = page.content.replace("s\" s", "s' s");
+    page.content = page.content.replace("=\"", "='");
+    page.content = page.content.replace("\">", "'>");
+    page.content = page.content.replace("\\'", "'");
+    page.content = page.content.replace(";\"", ";'");
+    page.content = page.content.replace("ago<", "<");
+    page.content = page.content.replace("&amp;", "&");
+    qDebug() << "got page text: " <<  page.content;
     auto match = rx.match(page.content);
     if(!match.hasMatch())
     {
@@ -1059,7 +1068,7 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
         counter++;
         emit updateCounter(counter);
         if(page.source != EPageSource::cache)
-            QThread::msleep(500);
+            QThread::msleep(1000);
         QCoreApplication::processEvents();
     }
     return urlResult;
@@ -1365,7 +1374,7 @@ namespace env {
 WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
 {
     WebPage result;
-    An<PageManager> pager;
+    An<webview::PageManager> pager;
     pager->SetDatabase(sql::Database::database("PageCache"));
     result = pager->GetPage(pageUrl, cacheMode);
     if(autoSaveToDB)
@@ -1376,7 +1385,7 @@ WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
 WebPage RequestPage(QString pageUrl, sql::Database db, ECacheMode cacheMode,  bool autoSaveToDB)
 {
     WebPage result;
-    An<PageManager> pager;
+    An<webview::PageManager> pager;
     pager->SetDatabase(db);
     result = pager->GetPage(pageUrl, cacheMode);
     if(autoSaveToDB)

@@ -30,6 +30,8 @@ App{
     Depends { name: "Qt.sql" }
     Depends { name: "Qt.core" }
     Depends { name: "Qt.widgets" }
+    Depends { name: "Qt.webengine" }
+    Depends { name: "Qt.webenginewidgets" }
     Depends { name: "Qt.network" }
     Depends { name: "Qt.gui" }
 
@@ -76,6 +78,7 @@ App{
         "include/core/identity.h",
         "include/core/slash_data.h",
         "include/core/url.h",
+        "include/pagegetter.h",
         "include/parsers/ffn/desktop_favparser.h",
         "include/parsers/ffn/favparser_wrapper.h",
         "include/parsers/ffn/mobile_favparser.h",
@@ -83,6 +86,7 @@ App{
         "src/core/fandom.cpp",
         "src/core/fanfic.cpp",
         "src/core/fav_list_details.cpp",
+        "src/pagegetter.cpp",
         "src/parsers/ffn/desktop_favparser.cpp",
         "src/parsers/ffn/favparser_wrapper.cpp",
         "src/parsers/ffn/mobile_favparser.cpp",
@@ -155,8 +159,8 @@ App{
         "src/parsers/ffn/ficparser.cpp",
         "src/main_flipper.cpp",
         "src/ui/mainwindow_utility.cpp",
-        "src/pagegetter.cpp",
-        "include/pagegetter.h",
+        "src//webview/pagegetter_w.cpp",
+        "include/webview/pagegetter_w.h",
         "src/pure_sql.cpp",
         "src/querybuilder.cpp",
         "src/regex_utils.cpp",
