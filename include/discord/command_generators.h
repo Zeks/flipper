@@ -299,6 +299,14 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+
+class ReviewCommand: public CommandCreator{
+public:
+    ReviewCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 class CommandParser{
 public:
     CommandChain Execute(const std::string &command, QSharedPointer<Server> server, const SleepyDiscord::Message &);

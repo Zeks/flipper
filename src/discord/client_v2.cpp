@@ -181,7 +181,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(server->GetExplanationAllowed()){
             auto result = FetchFFNUrls(message.content);
             std::string command = std::string(commandPrefix) + "show";
-            if(result.size() > 0)
+            if(result.size() > 0 && message.content.find("review add") == std::string::npos)
             {
                 explaining = true;
                 for(auto bit: result)
@@ -206,7 +206,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(!result.matched())
             return logRest();
 
-        bool priorityCommand = message.content.substr(server->GetCommandPrefix().length(), 6) *in("permit", "target") || sv.substr(0, 4) == "send";
+        bool priorityCommand = sv.substr(0, 6) *in("permit", "target", "review") || sv.substr(0, 4) == "send";
         if(!priorityCommand && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && (!explaining && message.channelID.string() != server->GetDedicatedChannelId()))
             return logRest();
 

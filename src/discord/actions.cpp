@@ -1515,6 +1515,59 @@ QSharedPointer<SendMessageCommand> ToggleBanAction::ExecuteImpl(QSharedPointer<T
 }
 
 
+QSharedPointer<SendMessageCommand> AddReviewAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    An<interfaces::Users> usersDbInterface;
+    auto identifier = command.variantHash["identifier"].toString();
+    QString website;
+    if(identifier.contains("fanfiction.net"))
+        website = "ffn";
+    else if(identifier.contains("archiveofourown"))
+        website = "ao3";
+    else if(identifier.contains("royalroad"))
+        website = "rr";
+    else if(identifier.contains("spacebattles"))
+        website = "sb";
+    else if(identifier.contains("sufficientvelocity"))
+        website = "sv";
+    else if(identifier.contains("questionablequesting"))
+        website = "qq";
+
+
+    QString review_id = QUuid::createUuid().toString();
+    action->text = "Adding review: " + review_id;
+    usersDbInterface->AddReview(command.user->UserID(),
+                                QString::fromStdString(command.server->GetServerId()),
+                                identifier,
+                                website,
+                                command.variantHash["id"].toString(),
+            command.variantHash["score"].toInt(),
+            command.variantHash["review"].toString(),
+            review_id);
+
+    return action;
+}
+
+QSharedPointer<SendMessageCommand> DeleteReviewAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    An<interfaces::Users> usersDbInterface;
+    auto identifier = command.variantHash["identifier"].toString();
+    auto deleteAllowed = command.variantHash["allow"].toBool();
+    if(!deleteAllowed){
+        deleteAllowed = command.user->UserID() == usersDbInterface->GetReviewAuthor(identifier);
+    }
+
+    if(!deleteAllowed){
+        action->text = "You need to be the author of the review or server administrator to delete.";
+        return action;
+    }
+    action->text = "Deleting review.";
+    usersDbInterface->RemoveReview(identifier);
+    return action;
+}
+
+
+
 QSharedPointer<ActionBase> GetAction(ECommandType type)
 {
     switch(type){
@@ -1582,7 +1635,10 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new YearAction());
     case ECommandType::ct_show_fic:
         return QSharedPointer<ActionBase>(new ShowFicAction());
-
+    case ECommandType::ct_add_review:
+        return QSharedPointer<ActionBase>(new AddReviewAction());
+    case ECommandType::ct_delete_review:
+        return QSharedPointer<ActionBase>(new DeleteReviewAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

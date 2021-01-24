@@ -78,6 +78,9 @@ public:
     void SetRecommendationsCutoff(QString userId, int);
     void SetDeadFicDaysRange(QString userId, int);
     void SetDateFilter(QString userId, filters::EDateFilterType, QString);
+    void AddReview(QString user_id, QString server_id, QString raw_url, QString site_type, QString site_identifier, int score,  QString review, QString review_id);
+    void RemoveReview(QString reviewId);
+    QString GetReviewAuthor(QString reviewId);
 };
 
 }

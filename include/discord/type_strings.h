@@ -328,3 +328,15 @@ struct TypeStringHolder<discord::ShowCommand>{
         static constexpr std::string_view tips = "";
         static constexpr std::string_view shorthand = "";
 };
+
+template <>
+struct TypeStringHolder<discord::ReviewCommand>{
+        static constexpr std::string_view name = "review";
+        static constexpr std::string_view prefixlessPattern = "?<review>review";
+        static constexpr std::string_view pattern = "review\\s+(add|remove|delete){0,1}\\s((([A-Za-z0-9\\-/:.]+)\\s(([+\\-]){0,1}(\\d))\\s(([A-Za-z0-9]|[^A-Za-z0-9])+))|[{a-zA-Z0-9}\\-]+)";
+        static constexpr std::string_view help = "{0}review command allows you to add a review to a fic. syntax is `{0}review link score(-5/+5) review_text`";
+        static constexpr std::string_view tips = "If you want to review a fic for other users use %1review command. See {0}help {0}review for full explanation.";
+        static constexpr std::string_view shorthand = "";
+};
+
+

@@ -41,6 +41,8 @@ enum ECommandType{
     ct_set_cutoff= 38,
     ct_set_year = 39,
     ct_show_fic = 40,
+    ct_add_review = 41,
+    ct_delete_review = 42,
 };
 
 }

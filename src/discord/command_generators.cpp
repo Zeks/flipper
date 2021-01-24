@@ -1397,6 +1397,69 @@ bool SusCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<SusCommand>::name;
 }
 
+
+
+CommandChain ReviewCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+{
+    auto createNullCommand = [&](QString reason){
+        Command nullCommand = NewCommand(server, message,ct_null_command);
+        nullCommand.type = ct_null_command;
+        nullCommand.variantHash[QStringLiteral("reason")] = reason;
+        nullCommand.originalMessageToken = message;
+        nullCommand.server = this->server;
+        result.Push(std::move(nullCommand));
+    };
+
+    auto match = ctre::search<TypeStringHolder<ReviewCommand>::pattern>(message.content);
+    auto mode = match.get<1>().to_string();
+    std::string identifier,sign,score,text;
+    if(mode *in("delete", "remove")){
+        identifier = match.get<2>().to_string();
+        if(identifier.length() == 0 ){
+            createNullCommand("You need to provide an identifier you want to delete");
+            return std::move(result);
+        }
+        Command command = NewCommand(server, message, ct_delete_review);
+        command.variantHash["identifier"] = QString::fromStdString(identifier);
+        result.Push(std::move(command));
+
+    }else{
+        identifier = match.get<4>().to_string();
+        std::string id;
+        static constexpr std::string_view pattern = "(\\d{1,20}+)/";
+        for(auto rangeMatch : ctre::range<pattern>(identifier)){
+            id = rangeMatch.get<1>().to_string();
+            break;
+        }
+        sign = match.get<6>().to_string();
+        score = match.get<7>().to_string();
+        text = match.get<8>().to_string();
+        if(identifier.length() == 0 || score.length() == 0 || text.length() == 0){
+            if(identifier.length() == 0)
+                createNullCommand("You need to provide a link you are reviewing");
+            else if(score.length() == 0)
+                createNullCommand("You need to provide a score for the fic (it can range between -5 and +5)");
+            else if(text.length() == 0)
+                createNullCommand("You need to provide a review for the fic");
+            return std::move(result);
+        }
+        Command command = NewCommand(server, message, ct_add_review);
+        command.variantHash["identifier"] = QString::fromStdString(identifier);
+        command.variantHash["review"] = QString::fromStdString(text);
+        command.variantHash["id"] = QString::fromStdString(id);
+        int intScore = QString::fromStdString(score).toInt();
+        command.variantHash["score"] = sign == "-" ? -1*intScore : intScore;
+        result.Push(std::move(command));
+    }
+    return std::move(result);
+}
+
+bool ReviewCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ReviewCommand>::name;
+}
+
+
 CommandChain StatsCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
 {
     if(message.author.ID.string() != std::to_string(ownerId))

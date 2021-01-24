@@ -214,4 +214,24 @@ void Users::SetDateFilter(QString userId, filters::EDateFilterType type, QString
 
 
 
+void Users::AddReview(QString user_id, QString server_id, QString raw_url, QString site_type, QString site_identifier, int score,  QString review, QString review_id)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    database::discord_queries::AddReview(dbToken->db, user_id, server_id, raw_url,site_type,site_identifier, score, review, review_id);
+}
+
+void Users::RemoveReview(QString reviewId)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    database::discord_queries::RemoveReview(dbToken->db, reviewId);
+}
+
+QString Users::GetReviewAuthor(QString reviewId)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    return database::discord_queries::GetReviewAuthor(dbToken->db, reviewId).data;
+}
+
+
+
 }

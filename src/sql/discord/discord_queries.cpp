@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "sql/discord/discord_queries.h"
 #include "GlobalHeaders/snippets_templates.h"
 #include "logger/QsLog.h"
+#include "fmt/format.h"
 
 template <typename T>
 bool NullPtrGuard(T item)
@@ -585,7 +586,54 @@ DiagnosticSQLResult<bool> SetDateFilter(Database db, QString user_id, filters::E
     return std::move(ctx.result);
 }
 
+DiagnosticSQLResult<bool> AddReview(sql::Database db, QString user_id, QString server_id, QString raw_url, QString site_type, QString site_identifier, int score, QString review, QString review_id){
+    std::string orPart;
+    std::string qs = "delete from user_reviews where user_id = :user_id and (raw_url = :raw_url {0} )";
+    if(!(site_type.isEmpty() || site_identifier.isEmpty())){
+        orPart = " or (site_type = :site_type and site_identifier = :site_identifier ) ";
+        qs=fmt::format(qs, orPart);
+    }
+    else
+        qs=fmt::format(qs, "");
 
+    SqlContext<bool> ctxDelete(db, std::move(qs));
+    ctxDelete.bindValue("user_id", user_id);
+    ctxDelete.bindValue("raw_url", raw_url);
+    if(!(site_type.isEmpty() || site_identifier.isEmpty())){
+        ctxDelete.bindValue("site_identifier", site_identifier);
+        ctxDelete.bindValue("site_type", site_type);
+    }
+    ctxDelete.ExecAndCheck(true);
+
+    qs = "insert into user_reviews(user_id, server_id, review_id, raw_url,site_identifier, site_type, score, content, date_added)"
+         "values(:user_id, :server_id, :review_id,:raw_url,:site_identifier, :site_type, :score, :content, :date_added) ";
+    SqlContext<bool> ctxAdd(db, std::move(qs));
+    ctxAdd.bindValue("user_id", user_id);
+    ctxAdd.bindValue("server_id", server_id);
+    ctxAdd.bindValue("review_id", review_id);
+    ctxAdd.bindValue("raw_url", raw_url);
+    ctxAdd.bindValue("site_type", site_type);
+    ctxAdd.bindValue("site_identifier", site_identifier);
+    ctxAdd.bindValue("score", score);
+    ctxAdd.bindValue("content", review);
+    ctxAdd.bindValue("date_added", QDate::currentDate());
+    ctxAdd.ExecAndCheck(true);
+    return ctxAdd.result;
+
+}
+DiagnosticSQLResult<bool> RemoveReview(sql::Database db, QString review_id){
+    std::string qs = "delete from user_reviews where review_id = :review_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP1(review_id));
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<QString> GetReviewAuthor(sql::Database db, QString review_id){
+    std::string qs = "select user_id from user_reviews where review_id = :review_id";
+    SqlContext<QString> ctx(db, std::move(qs), BP1(review_id));
+    ctx.FetchSingleValue<QString>("user_id", "");
+    return std::move(ctx.result);
+}
 
 
 

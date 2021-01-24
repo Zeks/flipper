@@ -53,6 +53,7 @@ namespace discord {
                 TypeStringHolder<CutoffCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<YearCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ShowCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<ReviewCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<SimilarFicsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,

@@ -81,6 +81,8 @@ ACTION(SetTargetChannelAction);
 ACTION(SendMessageToChannelAction);
 ACTION(ToggleBanAction);
 ACTION(SusAction);
+ACTION(AddReviewAction); // also edit
+ACTION(DeleteReviewAction);
 
 
 struct ActionChain{

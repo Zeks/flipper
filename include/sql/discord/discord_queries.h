@@ -92,6 +92,11 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> SetDeadFicDaysRange(sql::Database db, QString userId, int days);
     DiagnosticSQLResult<bool> SetDateFilter(sql::Database db, QString userId, filters::EDateFilterType, QString);
 
+    DiagnosticSQLResult<bool> AddReview(sql::Database db, QString user_id, QString server_id, QString raw_url, QString site_type, QString site_identifier,int score, QString review,QString review_id);
+    DiagnosticSQLResult<bool> RemoveReview(sql::Database db, QString reviewId);
+    DiagnosticSQLResult<QString> GetReviewAuthor(sql::Database db, QString reviewId);
+
+
 
  }
 }
