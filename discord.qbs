@@ -150,7 +150,7 @@ App{
         "include/core/recommendation_list.h",
         "src/core/recommendation_list.cpp",
     ]
-    cpp.defines: base.concat(["FMT_HEADER_ONLY", project.usePostgres ? "USE_POSTGRES" : ""])
+    cpp.defines: base.concat(["FMT_HEADER_ONLY", project.usePostgres ? "USE_POSTGRES" : "", project.useWebview ? "USE_WEBVIEW" : "NO_WEBVIEW"])
     Group{
     name: "sqlite"
     files: [

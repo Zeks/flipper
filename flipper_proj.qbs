@@ -31,7 +31,7 @@ Project {
         return rootFolder.toString()
     }
     property bool usePostgres: false
-
+    property bool useWebview: true
     references: [
         "flipper.qbs",
         "gui_condition.qbs",

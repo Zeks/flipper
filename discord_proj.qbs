@@ -14,6 +14,7 @@ Project {
         return rootFolder.toString()
     }
     property bool usePostgres: true
+    property bool useWebview: false
 
     references: [
         "discord.qbs",

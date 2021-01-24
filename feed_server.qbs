@@ -191,7 +191,7 @@ App{
             libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
     }
-    cpp.defines: base.concat(["L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "FMT_HEADER_ONLY"])
+    cpp.defines: base.concat(["L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "FMT_HEADER_ONLY", project.useWebview ? "USE_WEBVIEW" : "NO_WEBVIEW"])
 
     Group{
         name:"grpc files"

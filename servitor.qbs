@@ -44,7 +44,7 @@ App{
     Depends { name: "grpc_generation" }
     Depends { name: "Environment" }
 
-    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "FMT_HEADER_ONLY"])
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "FMT_HEADER_ONLY", project.useWebview ? "USE_WEBVIEW" : "NO_WEBVIEW"])
     cpp.includePaths: [
         sourceDirectory,
         sourceDirectory + "/../",

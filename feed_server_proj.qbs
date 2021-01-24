@@ -30,6 +30,7 @@ Project {
         console.error("Source:" + rootFolder)
         return rootFolder.toString()
     }
+    property bool useWebview: false
     references: [
         "feed_server.qbs",
         "core_condition.qbs",

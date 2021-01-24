@@ -38,7 +38,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/in_tag_accessor.h"
 #include "include/timeutils.h"
 #include "include/in_tag_accessor.h"
+
+#ifdef USE_WEBVIEW
 #include "include/webview/pagegetter_w.h"
+#endif
+
 #include "include/url_utils.h"
 #include "include/Interfaces/interface_sqlite.h"
 #include "sql_abstractions/sql_query.h"
@@ -1374,7 +1378,12 @@ namespace env {
 WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
 {
     WebPage result;
+#ifdef USE_WEBVIEW
     An<webview::PageManager> pager;
+#endif
+#ifdef NO_WEBVIEW
+    An<PageManager> pager;
+#endif
     pager->SetDatabase(sql::Database::database("PageCache"));
     result = pager->GetPage(pageUrl, cacheMode);
     if(autoSaveToDB)
@@ -1385,7 +1394,12 @@ WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
 WebPage RequestPage(QString pageUrl, sql::Database db, ECacheMode cacheMode,  bool autoSaveToDB)
 {
     WebPage result;
+#ifdef USE_WEBVIEW
     An<webview::PageManager> pager;
+#endif
+#ifdef NO_WEBVIEW
+    An<PageManager> pager;
+#endif
     pager->SetDatabase(db);
     result = pager->GetPage(pageUrl, cacheMode);
     if(autoSaveToDB)
