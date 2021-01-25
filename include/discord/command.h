@@ -49,10 +49,12 @@ struct Command{
     ECommandType type = ECommandType::ct_none;
     EOperandType operand = EOperandType::ot_unspecified;
     bool requiresThread = false;
+    bool reactionCommand = false;
 
     QList<uint64_t> ids;
     QHash<QString, QVariant> variantHash;
     MessageIdToken originalMessageToken;
+    MessageIdToken reactedMessageToken;
     QSharedPointer<User> user;
     QSharedPointer<Server> server;
 

@@ -27,6 +27,7 @@ App{
         "include/core/identity.h",
         "include/core/slash_data.h",
         "include/discord/actions.h",
+        "include/discord/client_storage.h",
         "include/discord/client_v2.h",
         "include/discord/command.h",
         "include/discord/command_controller.h",

@@ -128,6 +128,7 @@ struct StoryFilter{
     };
 
     bool isValid = true;
+    bool partiallyFilled = false;
     bool includeCrossovers = true;
     bool crossoversOnly = false;
     bool ignoreAlreadyTagged = false;
@@ -181,10 +182,10 @@ struct StoryFilter{
 
     QList<int> usedRecommenders;
     QList<FicId> exactFicIds;
-    ESortMode sortMode;
-    EReviewBiasMode reviewBias;
+    ESortMode sortMode = core::StoryFilter::sm_metascore;
+    EReviewBiasMode reviewBias = core::StoryFilter::bias_none;
     EBiasOperator biasOperator;
-    EFilterMode mode;
+    EFilterMode mode = core::StoryFilter::filtering_in_fics;
     ERatingFilter rating;
     EGenrePresence genrePresenceForInclude;
     EGenrePresence genrePresenceForExclude;

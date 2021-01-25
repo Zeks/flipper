@@ -141,29 +141,6 @@ void User::SetFfnID(QString id)
     this->ffnID = id;
 }
 
-void User::SetPerfectRngFics(const QSet<int>& perfectRngFics)
-{
-    QWriteLocker locker(&lock);
-    this->perfectRngFics = perfectRngFics;
-}
-
-void User::SetGoodRngFics(const QSet<int>& goodRngFics)
-{
-    QWriteLocker locker(&lock);
-    this->goodRngFics = goodRngFics;
-}
-
-void User::SetPerfectRngScoreCutoff(int perfectRngScoreCutoff)
-{
-    QWriteLocker locker(&lock);
-    this->perfectRngScoreCutoff = perfectRngScoreCutoff;
-}
-
-void User::SetGoodRngScoreCutoff(int goodRngScoreCutoff)
-{
-    QWriteLocker locker(&lock);
-    this->goodRngScoreCutoff = goodRngScoreCutoff;
-}
 
 void User::SetUserID(QString id)
 {
@@ -181,18 +158,6 @@ void User::SetUuid(QString value)
 {
     uuid = QUuid::fromString(value);
 }
-
-//void User::ToggleFandomIgnores(QSet<int> set)
-//{
-//    QWriteLocker locker(&lock);
-//    for(auto fandom: set)
-//    {
-//        if(!ignoredFandoms.contains(fandom))
-//            ignoredFandoms.insert(fandom);
-//        else
-//            ignoredFandoms.remove(fandom);
-//    }
-//}
 
 void User::SetFandomFilter(int id, bool displayCrossovers)
 {
@@ -249,30 +214,6 @@ void User::SetIgnoredFics(const QSet<int>& fics)
 {
     QWriteLocker locker(&lock);
     ignoredFics = fics;
-}
-
-QSet<int> User::GetPerfectRngFics()
-{
-    QReadLocker locker(&lock);
-    return perfectRngFics;
-}
-
-QSet<int> User::GetGoodRngFics()
-{
-    QReadLocker locker(&lock);
-    return goodRngFics;
-}
-
-int User::GetPerfectRngScoreCutoff() const
-{
-    QReadLocker locker(&lock);
-    return perfectRngScoreCutoff;
-}
-
-int User::GetGoodRngScoreCutoff() const
-{
-    QReadLocker locker(&lock);
-    return goodRngScoreCutoff;
 }
 
 void User::ResetFandomFilter()
@@ -587,30 +528,6 @@ void User::SetLargeListToken(const LargeListToken &value)
 {
     QWriteLocker locker(&lock);
     largeListToken = value;
-}
-
-int User::GetPerfectRngFicsSize() const
-{
-    QReadLocker locker(&lock);
-    return perfectRngFicsSize;
-}
-
-void User::SetPerfectRngFicsSize(int value)
-{
-    QWriteLocker locker(&lock);
-    perfectRngFicsSize = value;
-}
-
-int User::GetGoodRngFicsSize() const
-{
-    QReadLocker locker(&lock);
-    return goodRngFicsSize;
-}
-
-void User::SetGoodRngFicsSize(int value)
-{
-    QWriteLocker locker(&lock);
-    goodRngFicsSize = value;
 }
 
 bool User::GetTimeoutWarningShown() const

@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "core/section.h"
 #include "discord/fandom_filter_token.h"
 #include "discord/command_types.h"
+#include "discord/timed_token.h"
 
 #include "GlobalHeaders/SingletonHolder.h"
 
@@ -89,8 +90,6 @@ struct User{
     void SetFfnID(QString id);
     void SetPerfectRngFics(const QSet<int>&);
     void SetGoodRngFics(const QSet<int>&);
-    void SetPerfectRngScoreCutoff(int);
-    void SetGoodRngScoreCutoff(int);
     void SetUserID(QString id);
     void SetUserName(QString name);
     void SetUuid(QString);
@@ -109,9 +108,6 @@ struct User{
 
     QSet<int> GetPerfectRngFics();
     QSet<int> GetGoodRngFics();
-    int GetPerfectRngScoreCutoff() const;
-    int GetGoodRngScoreCutoff() const;
-
     void ResetFandomFilter();
     void ResetFandomIgnores();
     void ResetFicIgnores();
@@ -187,12 +183,6 @@ struct User{
     LargeListToken GetLargeListToken() const;
     void SetLargeListToken(const LargeListToken &value);
 
-    int GetPerfectRngFicsSize() const;
-    void SetPerfectRngFicsSize(int value);
-
-    int GetGoodRngFicsSize() const;
-    void SetGoodRngFicsSize(int value);
-
     bool GetTimeoutWarningShown() const;
     void SetTimeoutWarningShown(bool value);
 
@@ -245,10 +235,7 @@ private:
     int similarFicsId = 0;
     int forcedMinMatch = 0;
     int forcedRatio = 0;
-    int perfectRngScoreCutoff = 0;
-    int goodRngScoreCutoff = 0;
-    int perfectRngFicsSize = 0;
-    int goodRngFicsSize = 0;
+
     int favouritesSize = 0;
     int largeListCounter = 0;
     int recommednationsCutoff = 0;
@@ -264,19 +251,17 @@ private:
     std::chrono::system_clock::time_point lastActive;
     std::chrono::system_clock::time_point timeoutLimit;
 
-    QSharedPointer<core::RecommendationListFicData> fics;
-    QSet<int> perfectRngFics;
-    QSet<int> goodRngFics;
-
     QSet<int> ignoredFics;
     FandomFilter filteredFandoms;
     WordcountFilter wordcountFilter;
     FandomFilter ignoredFandoms;
-    QHash<int, int> positionToId;
     ECommandType lastPageType = ct_display_page;
     LastPageCommandMemo lastPageCommandMemo;
     LargeListToken largeListToken;
+    QHash<int, int> positionToId;
     mutable QReadWriteLock lock;
+    // can be attached to a page
+    QSharedPointer<core::RecommendationListFicData> fics;
 };
 
 

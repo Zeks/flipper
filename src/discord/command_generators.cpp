@@ -646,7 +646,7 @@ void SendMessageCommand::Invoke(Client * client)
                                 this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
                             if(targetChannel.string().length() > 0)
                                 originalMessageToken.channelID = targetChannel;
-                            client->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
+                            client->storage->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
                             addReaction(resultingMessage.response.value().cast(), targetChannel.string());
                         }
                     }
@@ -962,6 +962,7 @@ CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server>
     Command command = NewCommand(server, message,ct_display_rng);
     command.variantHash[QStringLiteral("quality")] = user->GetLastUsedRoll();
     command.targetMessage = message.messageID;
+    command.reactedMessageToken = message;
     command.user = user;
     result.Push(std::move(command));
     return result;

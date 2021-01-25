@@ -8,7 +8,7 @@ struct RecsMessageCreationMemo{
     int64_t originalMessage;
     core::RecommendationList list;
     core::StoryFilter filter;
-
+    QSet<int> sourceFics;
     friend  QTextStream &operator<<(QTextStream &out, const RecsMessageCreationMemo &p);
     friend  QTextStream &operator>>(QTextStream &in, RecsMessageCreationMemo &p);
 
