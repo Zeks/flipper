@@ -115,7 +115,7 @@ Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::
     return command;
 }
 
-Command NewCommand(QSharedPointer<discord::Server> server, const MessageToken& message, ECommandType type){
+Command NewCommand(QSharedPointer<discord::Server> server, const MessageIdToken& message, ECommandType type){
     Command command;
     command.originalMessageToken = message;
     command.server = server;
@@ -957,7 +957,7 @@ bool ResetFiltersCommand::IsThisCommand(const std::string &cmd)
 
 
 
-CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message){
+CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message){
     CommandChain result;
     Command command = NewCommand(server, message,ct_display_rng);
     command.variantHash[QStringLiteral("quality")] = user->GetLastUsedRoll();
@@ -967,7 +967,7 @@ CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server>
     return result;
 }
 
-CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken & message, int ficId)
+CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken & message, int ficId)
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_create_similar_fics_list);
@@ -986,7 +986,7 @@ CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<
 }
 
 
-CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message, bool shiftRight)
+CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, bool shiftRight)
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_display_page);
@@ -1003,7 +1003,7 @@ CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, Q
     return result;
 }
 
-CommandChain CreateRemoveReactionCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken & message, const std::string& reaction)
+CommandChain CreateRemoveReactionCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken & message, const std::string& reaction)
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_remove_reactions);
@@ -1017,7 +1017,7 @@ CommandChain CreateRemoveReactionCommand(QSharedPointer<User> user, QSharedPoint
 
 
 
-CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message, bool shiftRight)
+CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, bool shiftRight)
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_display_help);

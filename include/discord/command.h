@@ -52,7 +52,7 @@ struct Command{
 
     QList<uint64_t> ids;
     QHash<QString, QVariant> variantHash;
-    MessageToken originalMessageToken;
+    MessageIdToken originalMessageToken;
     QSharedPointer<User> user;
     QSharedPointer<Server> server;
 

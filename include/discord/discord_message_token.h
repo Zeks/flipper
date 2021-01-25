@@ -26,9 +26,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 
 namespace discord{
 
-struct MessageToken{
-    MessageToken() = default;
-    MessageToken(const SleepyDiscord::Message& message){
+struct MessageIdToken{
+    MessageIdToken() = default;
+    MessageIdToken(const SleepyDiscord::Message& message){
         messageID = message.ID;
         authorID = message.author.ID;
         serverID = message.serverID;
@@ -44,7 +44,6 @@ struct MessageToken{
     SleepyDiscord::Snowflake<SleepyDiscord::User> authorID;
     SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID;
     SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID;
-    int ficId;
 };
 
 }
