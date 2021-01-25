@@ -35,6 +35,7 @@ struct RecommendationListFicData
     void Clear();
     int id = -1;
     QSet<int> sourceFics;
+    QSet<int> sourceFicsFFN;
     QVector<int> fics;
     QVector<int> purges;
     QVector<int> metascores;

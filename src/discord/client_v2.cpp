@@ -66,6 +66,7 @@ Client::Client(QObject *obj):QObject(obj), SleepyDiscord::DiscordClient()
 
 void Client::InitClient()
 {
+    startTimer(1000);
     storage->fictionalDMServer.reset(new discord::Server());
     discord::InitDefaultCommandSet(this->parser);
 
@@ -350,15 +351,15 @@ void Client::Log(const SleepyDiscord::Message& message)
 
 void Client::timerEvent(QTimerEvent *)
 {
-    An<discord::Users> users;
-    users->ClearInactiveUsers();
     for(auto key: storage->timedMessageData.keys()){
         auto value = storage->timedMessageData.value(key);
         if(!value)
             continue;
         auto lock = value->LockResult();
-        if(value->GetDataExpirationPoint() < std::chrono::high_resolution_clock::now())
+        if(value->GetDataExpirationPoint() < std::chrono::high_resolution_clock::now()){
             value->RetireData();
+            storage->timedMessageData.remove(key);
+        }
     }
 }
 

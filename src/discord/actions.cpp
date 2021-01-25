@@ -135,7 +135,10 @@ QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
     return list;
 }
 
-QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId, const QSet<int>& userFavourites, QSharedPointer<TaskEnvironment> environment, const Command& command){
+QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId,
+                                                                               const QSet<int>& userFavourites,
+                                                                               QSharedPointer<TaskEnvironment> environment,
+                                                                               const Command& command){
     auto recList = CreateRecommendationParams(ffnId);
     recList->ignoreBreakdowns= true;
 
@@ -159,6 +162,7 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     for(const auto& source: std::as_const(pack))
     {
         recList->ficData->sourceFics+=source.id;
+        recList->ficData->sourceFicsFFN+=source.web.ffn;
         recList->ficData->fics+=source.web.ffn;
     }
 
@@ -171,7 +175,7 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     An<interfaces::Users> usersDbInterface;
     usersDbInterface->DeleteUserList(command.user->UserID(), QStringLiteral(""));
     usersDbInterface->WriteUserList(command.user->UserID(), QStringLiteral(""), discord::elt_favourites, recList->minimumMatch, recList->maxUnmatchedPerMatch, recList->alwaysPickAt);
-    usersDbInterface->WriteUserFFNId(command.user->UserID(), command.ids.at(0));
+    usersDbInterface->WriteUserFFNId(command.user->UserID(), ffnId.toInt());
 
     // instantiating working set for user
     An<Users> users;
@@ -800,15 +804,19 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         auto data = storage->messageData.value(command.reactedMessageToken.messageID.number());
         auto resultLocker = data->LockResult();
         auto rngData = static_cast<TrackedRoll*>(data.get());
+        bool regenHappened = false;
         if(!rngData->ficData.data)
         {
             // we need to recreate the list before we can display anything
             auto recList = FillUserRecommendationsFromFavourites(rngData->memo.userFFNId, rngData->memo.sourceFics, environment,command);
             rngData->ficData.data = recList->ficData;
+            regenHappened = true;
         }
         rngData->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(rngData->GetDataExpirationIntervalS());
         selectScoreCutoff(rngData->ficData.data);
         usedFilter = FetchFicsForDisplayRngCommand(rngData->memo.filter, environment->ficSource, command.user, rngData->ficData.data, &fics, 3, scoreCutoff);
+        if(regenHappened)
+            storage->timedMessageData.push(rngData->token.messageID.number(),data);
         setFicScores(rngData->ficData.data);
     }
     else{
@@ -1264,6 +1272,7 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
             hasValidId = true;
         recList->ficData->sourceFics+=source.id;
         recList->ficData->fics+=source.web.ffn;
+        recList->ficData->sourceFicsFFN+=source.web.ffn;
     }
     if(!hasValidId)
     {

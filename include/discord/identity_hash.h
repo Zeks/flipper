@@ -23,6 +23,10 @@ struct BotIdentityMatchingHash{
         QReadLocker locker(&lock);
         return hash.contains(keyId);
     }
+    inline bool remove(int64_t keyId){
+        QWriteLocker locker(&lock);
+        return hash.remove(keyId);
+    }
     inline bool same_user(int64_t keyId, int64_t userId){
         QReadLocker locker(&lock);
         bool result = IdentityMatchingDataComparator<T>::Compare(hash, keyId, userId);

@@ -655,11 +655,12 @@ void SendMessageCommand::Invoke(Client * client)
                                 data->ficData.data = user->FicList();
                                 data->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(data->GetDataExpirationIntervalS());
                                 data->memo.userFFNId = user->FfnID();
-                                data->memo.sourceFics = user->FicList()->sourceFics;
+                                data->memo.sourceFics = user->FicList()->sourceFicsFFN;
                                 data->token = originalMessageToken;
                                 data->token.messageID = resultingMessage.response->cast().ID.number();
                                 data->token.channelID = targetChannel;
                                 client->storage->messageData.push(resultingMessage.response->cast().ID.number(),data);
+                                client->storage->timedMessageData.push(resultingMessage.response->cast().ID.number(),data);
                             }
                             client->storage->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
                             addReaction(resultingMessage.response.value().cast(), targetChannel.string());
@@ -978,6 +979,7 @@ CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server>
     command.variantHash[QStringLiteral("quality")] = user->GetLastUsedRoll();
     command.targetMessage = message.messageID;
     command.reactedMessageToken = message;
+    command.reactionCommand = true;
     command.user = user;
     result.Push(std::move(command));
     return result;
