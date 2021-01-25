@@ -135,7 +135,7 @@ QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
     return list;
 }
 
-QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId, const QSet<QString>& userFavourites, QSharedPointer<TaskEnvironment> environment, const Command& command){
+QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId, const QSet<int>& userFavourites, QSharedPointer<TaskEnvironment> environment, const Command& command){
     auto recList = CreateRecommendationParams(ffnId);
     recList->ignoreBreakdowns= true;
 
@@ -144,7 +144,7 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     int i = 0;
     for(const auto& source: userFavourites)
     {
-        pack[i].web.ffn = source.toInt();
+        pack[i].web.ffn = source;
         i++;
     }
 
@@ -768,48 +768,56 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     return action;
 }
 
-
-
-QSharedPointer<core::RecommendationListFicData> CreateRecList(QString ffnId, const QSet<QString>& userFavourites, QSharedPointer<TaskEnvironment> environment, const Command& command){
-    bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
-    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites, environment,command);
-}
-
-
 QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     auto quality = command.variantHash.value(QStringLiteral("quality")).toString().trimmed();
     if(quality.length() == 0)
         quality = command.user->GetLastUsedRoll().isEmpty() ? QStringLiteral("all ") : command.user->GetLastUsedRoll();
-    QVector<core::Fanfic> fics;
-    command.user->SetLastUsedRoll(quality);
 
-    //QSet<int> filteringFicSet;
+
+
     int scoreCutoff = 1;
-    if(quality == QStringLiteral("best"))    {
-        scoreCutoff= command.user->FicList()->perfectRngScoreCutoff;
-    }
-    if(quality == QStringLiteral("good")){
-        scoreCutoff= command.user->FicList()->goodRngScoreCutoff;
-    }
+    auto selectScoreCutoff = [&](auto recList){
+        if(quality == QStringLiteral("best"))    {
+            scoreCutoff= recList->perfectRngScoreCutoff;
+        }
+        if(quality == QStringLiteral("good")){
+            scoreCutoff= recList->goodRngScoreCutoff;
+        }
+    };
+
+    QVector<core::Fanfic> fics;
+    auto setFicScores = [&](auto ficList){
+        for(auto& fic : fics)
+            fic.score = ficList->ficToMetascore[fic.identity.id];
+    };
+
 
     QLOG_TRACE() << QStringLiteral("Fetching fics for rng");
     An<ClientStorage> storage;
+    core::StoryFilter usedFilter;
     if(command.reactionCommand && storage->messageData.contains(command.reactedMessageToken.messageID.number())){
         auto data = storage->messageData.value(command.reactedMessageToken.messageID.number());
+        auto resultLocker = data->LockResult();
         auto rngData = static_cast<TrackedRoll*>(data.get());
-        if(rngData->ficData.data)
-            FetchFicsForDisplayRngCommand(rngData->memo.filter, environment->ficSource, command.user, rngData->ficData.data, &fics, 3, scoreCutoff);
-        else{
+        if(!rngData->ficData.data)
+        {
             // we need to recreate the list before we can display anything
+            auto recList = FillUserRecommendationsFromFavourites(rngData->memo.userFFNId, rngData->memo.sourceFics, environment,command);
+            rngData->ficData.data = recList->ficData;
         }
+        rngData->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(rngData->GetDataExpirationIntervalS());
+        selectScoreCutoff(rngData->ficData.data);
+        usedFilter = FetchFicsForDisplayRngCommand(rngData->memo.filter, environment->ficSource, command.user, rngData->ficData.data, &fics, 3, scoreCutoff);
+        setFicScores(rngData->ficData.data);
     }
-    else
-        FetchFicsForDisplayRngCommand(core::StoryFilter{}, environment->ficSource, command.user, command.user->FicList(), &fics, 3, scoreCutoff);
-
-    auto userFics = command.user->FicList();
-    for(auto& fic : fics)
-        fic.score = userFics->ficToMetascore[fic.identity.id];
+    else{
+        command.user->SetLastUsedRoll(quality);
+        selectScoreCutoff(command.user->FicList());
+        usedFilter = FetchFicsForDisplayRngCommand(core::StoryFilter{}, environment->ficSource, command.user, command.user->FicList(), &fics, 3, scoreCutoff);
+        setFicScores(command.user->FicList());
+        command.user->SetLastUsedStoryFilter(usedFilter);
+    }
 
     QLOG_TRACE() << QStringLiteral("Fetched fics for rng");
 
@@ -819,7 +827,6 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     environment->fandoms->FetchFandomsForFics(&fics);
 
     SleepyDiscord::Embed embed;
-    //QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
     auto editPreviousPageIfPossible = command.variantHash.value(QStringLiteral("refresh_previous")).toBool();
     if(command.targetMessage.string().length() != 0)
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");

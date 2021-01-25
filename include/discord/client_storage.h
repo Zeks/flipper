@@ -27,6 +27,7 @@ struct ClientStorage{
     QSharedPointer<discord::Server> fictionalDMServer;
     BotIdentityMatchingHash<CachedMessageSource> messageSourceAndTypeHash;
     BotIdentityMatchingHash<std::shared_ptr<TrackedMessageBase>> messageData;
+    BotIdentityMatchingHash<std::shared_ptr<TrackedMessageBase>> timedMessageData;
     BotIdentityMatchingHash<int64_t> channelToServerHash;
     ChannelSet nonPmChannels;
 };

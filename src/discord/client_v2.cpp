@@ -352,6 +352,14 @@ void Client::timerEvent(QTimerEvent *)
 {
     An<discord::Users> users;
     users->ClearInactiveUsers();
+    for(auto key: storage->timedMessageData.keys()){
+        auto value = storage->timedMessageData.value(key);
+        if(!value)
+            continue;
+        auto lock = value->LockResult();
+        if(value->GetDataExpirationPoint() < std::chrono::high_resolution_clock::now())
+            value->RetireData();
+    }
 }
 
 void discord::Client::onReady(SleepyDiscord::Ready )

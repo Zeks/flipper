@@ -6,25 +6,9 @@ inline QTextStream &operator>>(QTextStream &in, RecsMessageCreationMemo &token)
     QString temp;
 
     in >> temp;
-    token.list.adjusting = temp.toInt();
+    token.ficFavouritesCutoff = temp.toInt();
     in >> temp;
-    token.list.ficFavouritesCutoff = temp.toInt();
-    in >> temp;
-    token.list.ignoreBreakdowns = temp.toInt();
-    in >> temp;
-    token.list.isAutomatic = temp.toInt();
-    in >> temp;
-    token.list.listSizeMultiplier = temp.toInt();
-    in >> temp;
-    token.list.resultLimit = temp.toInt();
-    in >> temp;
-    token.list.ratioCutoff = temp.toInt();
-    in >> temp;
-    token.list.useMoodAdjustment = temp.toInt();
-    in >> temp;
-    token.list.useWeighting = temp.toInt();
-    in >> temp;
-    token.list.userFFNId = temp.toLongLong();
+    token.userFFNId = temp.toLongLong();
 
     auto& filter = token.filter;
     in >> temp;
@@ -82,16 +66,8 @@ inline QTextStream &operator<<(QTextStream &out, const RecsMessageCreationMemo &
 {
     //out << token.originalMessage << " ";
     // dumping list creation params
-    out << token.list.adjusting << " ";
-    out << token.list.ficFavouritesCutoff << " ";
-    out << token.list.ignoreBreakdowns << " ";
-    out << token.list.isAutomatic << " ";
-    out << token.list.listSizeMultiplier << " ";
-    out << token.list.resultLimit << " ";
-    out << token.list.ratioCutoff << " ";
-    out << token.list.useMoodAdjustment << " ";
-    out << token.list.useWeighting << " ";
-    out << token.list.userFFNId << " ";
+    out << token.ficFavouritesCutoff << " ";
+    out << token.userFFNId << " ";
     // dumping filter
     auto& filter = token.filter;
     out << filter.allowUnfinished << " ";

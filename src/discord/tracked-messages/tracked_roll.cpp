@@ -41,6 +41,21 @@ CommandChain TrackedRoll::CloneForOtherUser()
     return {}; // intentionally empty for now, this is for the future
 }
 
+int TrackedRoll::GetDataExpirationIntervalS()
+{
+    return 5;
+}
+
+std::chrono::system_clock::time_point TrackedRoll::GetDataExpirationPoint()
+{
+    return ficData.expirationPoint;
+}
+
+void TrackedRoll::RetireData()
+{
+    ficData = {};
+}
+
 
 
 

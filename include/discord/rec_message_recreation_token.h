@@ -5,8 +5,9 @@
 namespace discord{
 
 struct RecsMessageCreationMemo{
-    int64_t originalMessage;
-    core::RecommendationList list;
+    //int64_t originalMessage;
+    int ficFavouritesCutoff = 0;
+    QString userFFNId = 0;
     core::StoryFilter filter;
     QSet<int> sourceFics;
     friend  QTextStream &operator<<(QTextStream &out, const RecsMessageCreationMemo &p);

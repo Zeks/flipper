@@ -25,6 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QUuid>
 #include <chrono>
 #include "core/section.h"
+#include "include/storyfilter.h"
+
 #include "discord/fandom_filter_token.h"
 #include "discord/command_types.h"
 #include "discord/timed_token.h"
@@ -207,6 +209,9 @@ public:
     QString GetFinishedFilter() const;
     void SetFinishedFilter(const QString &value);
 
+    core::StoryFilter GetLastUsedStoryFilter() const;
+    void SetLastUsedStoryFilter(const core::StoryFilter &value);
+
 private:
     bool isValid = false;
     QString userID;
@@ -262,6 +267,7 @@ private:
     mutable QReadWriteLock lock;
     // can be attached to a page
     QSharedPointer<core::RecommendationListFicData> fics;
+    core::StoryFilter lastUsedStoryFilter;
 };
 
 

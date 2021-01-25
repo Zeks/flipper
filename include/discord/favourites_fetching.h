@@ -13,7 +13,7 @@ struct FavouritesFetchResult{
     bool requiresFullParse = false;
     bool hasFavourites = true;
     int totalFavourites = 0;
-    QSet<QString> links;
+    QSet<int> links;
     QStringList errors;
     QString ffnId;
 };

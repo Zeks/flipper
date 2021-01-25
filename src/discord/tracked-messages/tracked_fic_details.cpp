@@ -26,6 +26,11 @@ CommandChain TrackedFicDetails::ProcessReactionImpl(Client* client, QSharedPoint
     return commands;
 }
 
+int TrackedFicDetails::GetDataExpirationIntervalS()
+{
+    return 5;
+}
+
 QStringList TrackedFicDetails::GetEmojiSet()
 {
     static const QStringList emoji = {QStringLiteral("%F0%9F%94%8D")};

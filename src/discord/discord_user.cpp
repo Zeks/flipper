@@ -622,6 +622,18 @@ void User::SetFinishedFilter(const QString &value)
     finishedFilter = value;
 }
 
+core::StoryFilter User::GetLastUsedStoryFilter() const
+{
+    QReadLocker locker(&lock);
+    return lastUsedStoryFilter;
+}
+
+void User::SetLastUsedStoryFilter(const core::StoryFilter &value)
+{
+    QWriteLocker locker(&lock);
+    lastUsedStoryFilter = value;
+}
+
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

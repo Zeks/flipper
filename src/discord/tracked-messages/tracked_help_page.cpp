@@ -25,6 +25,12 @@ CommandChain TrackedHelpPage::ProcessReactionImpl(Client* client, QSharedPointer
     return commands;
 }
 
+int TrackedHelpPage::GetDataExpirationIntervalS()
+{
+    return 5;
+}
+
+
 QStringList TrackedHelpPage::GetEmojiSet()
 {
     static const QStringList emoji = {QStringLiteral("%f0%9f%91%88"), QStringLiteral("%f0%9f%91%89")};

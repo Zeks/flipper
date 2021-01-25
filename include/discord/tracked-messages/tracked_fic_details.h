@@ -13,6 +13,7 @@ public:
                                          SleepyDiscord::Emoji emoji) override;
     QStringList GetEmojiSet() override;
     std::string GetOtherUserErrorMessage(Client *client) override;
+    int GetDataExpirationIntervalS() override;
     CommandChain CloneForOtherUser() override;
     int ficId = 0;
 };

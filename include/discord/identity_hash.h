@@ -32,6 +32,10 @@ struct BotIdentityMatchingHash{
         QReadLocker locker(&lock);
         return hash.value(keyId);
     }
+    QList<int64_t> keys(){
+        QReadLocker locker(&lock);
+        return hash.keys();
+    };
     QHash<int64_t,T> hash;
     QReadWriteLock lock;
 };

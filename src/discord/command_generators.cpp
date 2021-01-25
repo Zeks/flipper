@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "logger/QsLog.h"
 #include "discord/type_functions.h"
 #include "discord/discord_message_token.h"
+#include "discord/tracked-messages/tracked_roll.h"
+#include "discord/client_storage.h"
 #include "GlobalHeaders/snippets_templates.h"
 #include <stdexcept>
 
@@ -646,6 +648,19 @@ void SendMessageCommand::Invoke(Client * client)
                                 this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
                             if(targetChannel.string().length() > 0)
                                 originalMessageToken.channelID = targetChannel;
+                            if(originalCommandType *in(ct_display_rng)){
+                                std::shared_ptr<TrackedRoll> data = std::make_shared<TrackedRoll>();
+                                data->memo.filter = user->GetLastUsedStoryFilter();
+                                data->memo.ficFavouritesCutoff = user->GetRecommendationsCutoff();
+                                data->ficData.data = user->FicList();
+                                data->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(data->GetDataExpirationIntervalS());
+                                data->memo.userFFNId = user->FfnID();
+                                data->memo.sourceFics = user->FicList()->sourceFics;
+                                data->token = originalMessageToken;
+                                data->token.messageID = resultingMessage.response->cast().ID.number();
+                                data->token.channelID = targetChannel;
+                                client->storage->messageData.push(resultingMessage.response->cast().ID.number(),data);
+                            }
                             client->storage->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
                             addReaction(resultingMessage.response.value().cast(), targetChannel.string());
                         }

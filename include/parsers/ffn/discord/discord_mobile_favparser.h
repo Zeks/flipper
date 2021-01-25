@@ -10,7 +10,7 @@ class DiscordMobileFavouritesFetcher : public QObject{
     Q_OBJECT;
 public:
     DiscordMobileFavouritesFetcher(QObject* parent = nullptr);
-    QSet<QString> Execute(ECacheMode cacheMode);
+    QSet<int> Execute(ECacheMode cacheMode);
     QString userId;
     int pageToStartFrom = 0;
     int timeout = 500;

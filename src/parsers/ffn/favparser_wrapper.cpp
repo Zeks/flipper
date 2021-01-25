@@ -103,5 +103,14 @@ void UserFavouritesParser::FetchFavouritesFromMobilePage(int startBoundary)
         result+=parser.Execute();
 }
 
+QSet<int> UserFavouritesParser::GetResultAsIntSet() const
+{
+    QSet<int> intSet;
+    for(auto fic:result){
+        intSet.insert(fic.toInt());
+    }
+    return intSet;
+}
+
 
 }}

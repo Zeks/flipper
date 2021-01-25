@@ -167,7 +167,7 @@ void FillFicDataInStoryFilterForRNGCommand(core::StoryFilter& filter, QSharedPoi
     userFics->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
 }
 
-void FetchFicsForDisplayRngCommand(core::StoryFilter filter, QSharedPointer<FicSourceGRPC> source, QSharedPointer<User> user, QSharedPointer<core::RecommendationListFicData>, QVector<core::Fanfic> *fics,int listSize, int qualityCutoff)
+core::StoryFilter FetchFicsForDisplayRngCommand(core::StoryFilter filter, QSharedPointer<FicSourceGRPC> source, QSharedPointer<User> user, QSharedPointer<core::RecommendationListFicData>, QVector<core::Fanfic> *fics,int listSize, int qualityCutoff)
 {
     if(!filter.partiallyFilled)
         filter = CreatNewFilterForRNGCommand(user, listSize, qualityCutoff);
@@ -188,6 +188,7 @@ void FetchFicsForDisplayRngCommand(core::StoryFilter filter, QSharedPointer<FicS
     fics->reserve(listSize);
     source->userData = userData;
     source->FetchData(filter, fics);
+    return filter;
 }
 
 int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QSharedPointer<User> user, int size)

@@ -48,7 +48,7 @@ FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cac
             else {
                 // we will fetch first 500 regardless to avoid excessive querying later
                 parser.FetchFavouritesFromDesktopPage();
-                resultingData.links = parser.result;
+                resultingData.links = parser.GetResultAsIntSet();
                 if(quickResult.canDoQuickParse)
                     resultingData.finished = true;
                 else

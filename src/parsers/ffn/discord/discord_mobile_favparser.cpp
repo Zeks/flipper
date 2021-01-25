@@ -14,7 +14,7 @@ DiscordMobileFavouritesFetcher::DiscordMobileFavouritesFetcher(QObject *parent):
 
 
 
-QSet<QString> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECacheMode::dont_use_cache)
+QSet<int> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECacheMode::dont_use_cache)
 {
     // first we need to create an m. link
     QString url = QString("https://m.fanfiction.net/u/%1//?a=fs").arg(userId);
@@ -34,7 +34,7 @@ QSet<QString> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECa
     //QString content;
     QRegularExpression rx("p[=](\\d+)[\"][>]Last[<][/]a[>]");
     auto match = rx.match(mobilePage.content);
-    QSet<QString> urlResult;
+    QSet<int> urlResult;
     // failed to grab the last record, exiting with info from just basic page
     if(!match.hasMatch())
         return urlResult;
@@ -49,7 +49,7 @@ QSet<QString> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECa
     parsers::ffn::UserFavouritesParser parser;
     parser.dektopPage = desktopPage;
     parser.FetchFavouritesFromDesktopPage();
-    urlResult+=parser.result;
+    urlResult+=parser.GetResultAsIntSet();
 
     int amountOfPagesToGrab = match.captured(1).toInt();
     if(amountOfPagesToGrab <= 25)
@@ -80,7 +80,7 @@ QSet<QString> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECa
         while (iterator.hasNext()) {
             QRegularExpressionMatch match = iterator.next();
             QString word = match.captured(1);
-            urlResult << word;
+            urlResult << word.toInt();
         }
         counter++;
         emit progress(counter, amountOfPagesToGrab);
