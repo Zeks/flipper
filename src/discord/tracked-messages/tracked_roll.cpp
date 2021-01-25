@@ -1,4 +1,4 @@
-#include "discord/tracked-messages/tracked_help_page.h"
+#include "discord/tracked-messages/tracked_roll.h"
 #include "discord/client_v2.h"
 #include "discord/discord_server.h"
 #include "discord/discord_user.h"
@@ -8,7 +8,7 @@
 
 namespace discord{
 
-CommandChain TrackedHelpPage::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
+CommandChain TrackedRoll::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
 {
     if(!user)
         return {};
@@ -25,18 +25,18 @@ CommandChain TrackedHelpPage::ProcessReactionImpl(Client* client, QSharedPointer
     return commands;
 }
 
-QStringList TrackedHelpPage::GetEmojiSet()
+QStringList TrackedRoll::GetEmojiSet()
 {
     static const QStringList emoji = {QStringLiteral("%f0%9f%91%88"), QStringLiteral("%f0%9f%91%89")};
     return emoji;
 }
 
-std::string TrackedHelpPage::GetOtherUserErrorMessage(Client* client)
+std::string TrackedRoll::GetOtherUserErrorMessage(Client* client)
 {
     return fmt::format("You need to spawn your own help page with {0}help", client->GetServerInstanceForChannel(token.channelID,token.serverID)->GetCommandPrefix());
 }
 
-CommandChain TrackedHelpPage::CloneForOtherUser()
+CommandChain TrackedRoll::CloneForOtherUser()
 {
     return {}; // intentionally empty for now, this is for the future
 }

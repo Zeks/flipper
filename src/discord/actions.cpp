@@ -1411,7 +1411,7 @@ QSharedPointer<SendMessageCommand> ShowFicAction::ExecuteImpl(QSharedPointer<Tas
     environment->ficSource->ClearUserData();
     FetchFicsForShowIdCommand(environment->ficSource, {static_cast<int>(command.ids[0])},  &fics);
     An<interfaces::Users> usersDbInterface;
-    auto reviews = usersDbInterface->SetDateFilter(command.user->UserID(), filters::dft_none, "");
+    usersDbInterface->SetDateFilter(command.user->UserID(), filters::dft_none, "");
     if(fics.size() == 0){
         return action;
     }

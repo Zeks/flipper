@@ -81,7 +81,7 @@ public:
     void AddReview(QString user_id, QString server_id, QString raw_url, QString site_type, QString site_identifier, int score,  QString review, QString review_id);
     void RemoveReview(QString reviewId);
     QString GetReviewAuthor(QString reviewId);
-    QStringList GetReviewIDs(QString server_id, QString fic_identifier, QString site_type, QString site_identifier);
+    //QStringList GetReviewIDs(QString server_id, QString fic_identifier, QString site_type, QString site_identifier);
 };
 
 }

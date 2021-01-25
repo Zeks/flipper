@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/discord_user.h"
 #include "discord/identity_hash.h"
 #include "discord/cached_message_source.h"
+#include "discord/tracked-messages/tracked_message_base.h"
 #include "core/section.h"
 #include <QString>
 #include <QRegularExpression>
@@ -90,6 +91,7 @@ public:
     QSharedPointer<discord::Server> fictionalDMServer;
     QSet<std::string> actionableEmoji;
     BotIdentityMatchingHash<CachedMessageSource> messageSourceAndTypeHash;
+    BotIdentityMatchingHash<std::shared_ptr<TrackedMessageBase>> messageData;
     BotIdentityMatchingHash<int64_t> channelToServerHash;
     std::string botPrefixRequest;
     ChannelSet nonPmChannels;

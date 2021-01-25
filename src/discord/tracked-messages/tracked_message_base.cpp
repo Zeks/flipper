@@ -9,7 +9,7 @@ discord::CommandChain discord::TrackedMessageBase::ProcessReaction(discord::Clie
 {
     if(!IsOriginaluser(user->UserID())){
         if(otherUserBehaviour == noub_error){
-            client->sendMessageWrapper(token.channelID, token.serverID, CreateMention(token.authorID.string()) + GetOtherUserErrorMessage().toStdString());
+            client->sendMessageWrapper(token.channelID, token.serverID, CreateMention(token.authorID.string()) + GetOtherUserErrorMessage(client));
             return {};
         }else if(otherUserBehaviour == noub_error){
             return CloneForOtherUser();
