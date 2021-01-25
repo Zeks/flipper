@@ -143,7 +143,7 @@ static constexpr auto pattern = discord::GetSimplePatternChecker();
 constexpr auto matchSimple(std::string_view sv) noexcept {
     return ctre::match<pattern>(sv);
 }
-static constexpr std::string_view ffnUrlPattern  = "s/(\\d{1,16})";
+static constexpr std::string_view ffnUrlPattern  = "fanfiction.net/s/(\\d{1,16})";
 
 std::vector<std::string> FetchFFNUrls(const std::string& message){
     std::vector<std::string> result;
