@@ -58,7 +58,7 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     filter.slashFilter.excludeSlash = true;
     filter.slashFilter.includeSlash = false;
     filter.slashFilter.slashFilterLevel = 1;
-    filter.slashFilter.slashFilterEnabled = true;
+    filter.slashFilter.slashFilterEnabled = false;
     auto userFics = user->FicList();
     for(int i = 0; i < userFics->fics.size(); i++)
     {
@@ -132,7 +132,7 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
     filter.slashFilter.excludeSlash = true;
     filter.slashFilter.includeSlash = false;
     filter.slashFilter.slashFilterLevel = 1;
-    filter.slashFilter.slashFilterEnabled = true;
+    filter.slashFilter.slashFilterEnabled = false;
     filter.rngDisambiguator += user->UserID();
     filter.wipeRngSequence = user->GetRngBustScheduled();
     auto userWordcountFilter = user->GetWordcountFilter();
@@ -218,7 +218,7 @@ int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QShared
     filter.slashFilter.excludeSlash = true;
     filter.slashFilter.includeSlash = false;
     filter.slashFilter.slashFilterLevel = 1;
-    filter.slashFilter.slashFilterEnabled = true;
+    filter.slashFilter.slashFilterEnabled = false;
     auto userFics = user->FicList();
     for(int i = 0; i < userFics->fics.size(); i++)
     {
