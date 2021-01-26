@@ -651,9 +651,12 @@ void SendMessageCommand::Invoke(Client * client)
                             MessageIdToken newToken = originalMessageToken;
                             newToken.messageID = resultingMessage.response->cast().ID.number();
                             newToken.channelID = targetChannel;
-                            if(messageData)
+                            if(messageData){
+                                An<ClientStorage> storage;
                                 messageData->token = newToken;
-
+                                storage->messageData.push(newToken.messageID.number(),messageData);
+                                storage->timedMessageData.push(newToken.messageID.number(),messageData);
+                            }
                             if(originalCommandType *in(ct_display_page, ct_display_rng))
                                 this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
                             if(targetChannel.string().length() > 0)

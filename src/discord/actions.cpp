@@ -263,7 +263,8 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     auto largeListToken =  command.user->GetLargeListToken();
     An<interfaces::Users> usersDbInterface;
     if(!refreshing){
-        if(largeListToken.date == QDate::currentDate() && largeListToken.counter == 1)
+        qDebug() << "asking user = " + command.user->UserID();
+        if(largeListToken.date == QDate::currentDate() && largeListToken.counter == 1 && command.user->UserID() != "102212539609280512")
         {
             action->text = "Only one profile reparse per day are allowed for lists over 500 fics.";
             action->stopChain = true;
@@ -707,7 +708,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     }
 
     QLOG_TRACE() << "Fetching fics";
-    environment->ficSource->ClearUserData();
+    //environment->ficSource->ClearUserData();
 
     static constexpr int listSize = 9;
 

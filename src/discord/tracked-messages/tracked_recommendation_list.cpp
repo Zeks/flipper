@@ -39,8 +39,10 @@ void TrackedRecommendationList::FillMemo(QSharedPointer<User> user)
     this->memo.userFFNId = user->FfnID();
     this->memo.sourceFics = user->FicList()->sourceFicsFFN;
     this->token = token;
-    storage->messageData.push(token.messageID.number(),this->shared_from_this());
-    storage->timedMessageData.push(token.messageID.number(),this->shared_from_this());
+    if(!token.messageID.string().empty()){
+        storage->messageData.push(token.messageID.number(),this->shared_from_this());
+        storage->timedMessageData.push(token.messageID.number(),this->shared_from_this());
+    }
 }
 
 std::string TrackedRecommendationList::GetOtherUserErrorMessage(Client *)
