@@ -7,6 +7,7 @@ namespace discord{
 class TrackedHelpPage : public TrackedMessageBase{
 
 public:
+    TrackedHelpPage();
     virtual ~TrackedHelpPage(){};
     virtual CommandChain ProcessReactionImpl(Client* client, QSharedPointer<User>,
                                          SleepyDiscord::Emoji emoji) override;
@@ -15,8 +16,9 @@ public:
     int GetDataExpirationIntervalS() override;
     CommandChain CloneForOtherUser() override;
     std::chrono::system_clock::time_point GetDataExpirationPoint() override;
+    void FillMemo(QSharedPointer<User>) override;
     void RetireData() override;
-    int currenHelpPage = 0;
+    std::atomic<int> currenHelpPage = 0;
 
 
 };

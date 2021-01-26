@@ -1,12 +1,18 @@
 #include "discord/tracked-messages/tracked_message_base.h"
 #include "discord/discord_message_token.h"
 #include "discord/client_v2.h"
+#include "GlobalHeaders/snippets_templates.h"
 
 
 namespace discord{
 
 discord::CommandChain discord::TrackedMessageBase::ProcessReaction(discord::Client *client, QSharedPointer<discord::User> user, SleepyDiscord::Emoji emoji)
 {
+    if(!user)
+        return {};
+    if(!(emoji.name *in(actionableEmoji)))
+        return {};
+
     if(!IsOriginaluser(user->UserID())){
         if(otherUserBehaviour == noub_error){
             client->sendMessageWrapper(token.channelID, token.serverID, CreateMention(token.authorID.string()) + GetOtherUserErrorMessage(client));

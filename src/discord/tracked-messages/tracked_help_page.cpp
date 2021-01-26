@@ -8,13 +8,13 @@
 
 namespace discord{
 
+TrackedHelpPage::TrackedHelpPage()
+{
+    actionableEmoji = {"👈","👉"};
+}
+
 CommandChain TrackedHelpPage::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
 {
-    if(!user)
-        return {};
-    if(!(emoji.name *in("👉", "👈")))
-        return {};
-
     QLOG_INFO() << "bot is fetching message information";
 
     auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
@@ -56,6 +56,14 @@ void TrackedHelpPage::RetireData()
 {
     // no point in expiring a single int value
 }
+void TrackedHelpPage::FillMemo(QSharedPointer<User> user)
+{
+    An<ClientStorage> storage;
+    this->currenHelpPage = user->GetCurrentHelpPage();
+    storage->messageData.push(token.messageID.number(),this->shared_from_this());
+    storage->timedMessageData.push(token.messageID.number(),this->shared_from_this());
+}
+
 
 
 

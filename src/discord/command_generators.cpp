@@ -24,6 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/type_functions.h"
 #include "discord/discord_message_token.h"
 #include "discord/tracked-messages/tracked_roll.h"
+#include "discord/tracked-messages/tracked_help_page.h"
+#include "discord/tracked-messages/tracked_similarity_list.h"
+#include "discord/tracked-messages/tracked_recommendation_list.h"
 #include "discord/client_storage.h"
 #include "GlobalHeaders/snippets_templates.h"
 #include <stdexcept>
@@ -644,25 +647,17 @@ void SendMessageCommand::Invoke(Client * client)
                         // I only need to hash messages that the user can later react to
                         // meaning page, rng and help commands
                         if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help, ct_show_fic)){
+                            MessageIdToken newToken = originalMessageToken;
+                            newToken.messageID = resultingMessage.response->cast().ID.number();
+                            newToken.channelID = targetChannel;
+                            if(messageData)
+                                messageData->token = newToken;
+
                             if(originalCommandType *in(ct_display_page, ct_display_rng))
                                 this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
                             if(targetChannel.string().length() > 0)
                                 originalMessageToken.channelID = targetChannel;
-                            if(originalCommandType *in(ct_display_rng)){
-                                std::shared_ptr<TrackedRoll> data = std::make_shared<TrackedRoll>();
-                                data->memo.filter = user->GetLastUsedStoryFilter();
-                                data->memo.ficFavouritesCutoff = user->GetRecommendationsCutoff();
-                                data->ficData.data = user->FicList();
-                                data->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(data->GetDataExpirationIntervalS());
-                                data->memo.userFFNId = user->FfnID();
-                                data->memo.sourceFics = user->FicList()->sourceFicsFFN;
-                                data->token = originalMessageToken;
-                                data->token.messageID = resultingMessage.response->cast().ID.number();
-                                data->token.channelID = targetChannel;
-                                client->storage->messageData.push(resultingMessage.response->cast().ID.number(),data);
-                                client->storage->timedMessageData.push(resultingMessage.response->cast().ID.number(),data);
-                            }
-                            client->storage->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
+
                             addReaction(resultingMessage.response.value().cast(), targetChannel.string());
                         }
                     }
@@ -1007,15 +1002,24 @@ CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, bool shiftRight)
 {
     CommandChain result;
+    An<ClientStorage> storage;
+    if(!storage->messageData.contains(message.messageID.number()))
+        return result;
+
+    auto listData = std::dynamic_pointer_cast<TrackedRecommendationList>(storage->messageData.value(message.messageID.number()));
+
+
     Command command = NewCommand(server, message,ct_display_page);
     if(shiftRight)
-        command.ids.push_back(user->CurrentRecommendationsPage() + 1);
-    else if(user->CurrentRecommendationsPage() != 0)
-        command.ids.push_back(user->CurrentRecommendationsPage() - 1);
+        command.ids.push_back(listData->memo.page + 1);
+    else if(listData->memo.page != 0)
+        command.ids.push_back(listData->memo.page - 1);
     else
         return result;
 
     command.targetMessage = message.messageID;
+    command.reactedMessageToken = message;
+    command.reactionCommand = true;
     command.user = user;
     result.Push(std::move(command));
     return result;
@@ -1037,18 +1041,24 @@ CommandChain CreateRemoveReactionCommand(QSharedPointer<User> user, QSharedPoint
 
 CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, bool shiftRight)
 {
+    An<ClientStorage> storage;
     CommandChain result;
+    if(!storage->messageData.contains(message.messageID.number()))
+        return result;
+
+    auto helpData = std::dynamic_pointer_cast<TrackedHelpPage>(storage->messageData.value(message.messageID.number()));
+
     Command command = NewCommand(server, message,ct_display_help);
     int maxHelpPages = static_cast<int>(discord::EHelpPages::last_help_page) + 1;
     int newPage = 0;
     if(shiftRight)
     {
-        newPage = user->GetCurrentHelpPage() + 1;
+        newPage = helpData->currenHelpPage + 1;
         if(newPage == maxHelpPages)
             newPage = 0;
     }
     else {
-        newPage = user->GetCurrentHelpPage() - 1;
+        newPage = helpData->currenHelpPage - 1;
         if(newPage < 0)
             newPage = maxHelpPages - 1;
 
@@ -1056,6 +1066,8 @@ CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPoint
     command.ids.push_back(newPage);
     command.targetMessage = message.messageID;
     command.user = user;
+    command.reactionCommand = true;
+    command.reactedMessageToken = message;
     result.Push(std::move(command));
     return result;
 }
@@ -1064,7 +1076,7 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(const SleepyDiscord::Message& 
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_create_similar_fics_list);
-
+    auto commandChain = Command::CreateCommandChainVector({ct_create_similar_fics_list, ct_display_page});
     auto match = matchCommand<SimilarFicsCommand>(message.content);
     auto ficId = match.get<1>().to_string();
     if(ficId.length() == 0)
@@ -1079,6 +1091,7 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(const SleepyDiscord::Message& 
             result.Push(std::move(createRecs));
             Command displayRecs = NewCommand(server, message,ct_display_page);
             displayRecs.ids.push_back(0);
+            displayRecs.commandChain = commandChain;
             result.Push(std::move(displayRecs));
             return result;
         }
@@ -1088,6 +1101,7 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(const SleepyDiscord::Message& 
     result.Push(std::move(command));
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
+    displayRecs.commandChain = commandChain;
     result.Push(std::move(displayRecs));
     return result;
 

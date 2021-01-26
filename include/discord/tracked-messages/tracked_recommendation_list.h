@@ -10,22 +10,25 @@
 
 namespace discord{
 
-class TrackedSimilarityList: public TrackedMessageBase{
+class TrackedRecommendationList: public TrackedMessageBase{
 
 public:
-    TrackedSimilarityList();
-    virtual ~TrackedSimilarityList(){};
-    virtual CommandChain ProcessReactionImpl(Client* client, QSharedPointer<User>,
-                                         SleepyDiscord::Emoji emoji) override;
-    QStringList GetEmojiSet() override;
-    std::string GetOtherUserErrorMessage(Client *client) override;
-    CommandChain CloneForOtherUser() override;
+    TrackedRecommendationList();
     int GetDataExpirationIntervalS() override;
     std::chrono::system_clock::time_point GetDataExpirationPoint() override;
     void RetireData() override;
     void FillMemo(QSharedPointer<User>) override;
+
+    // own functions redefined in roll and similarity list
+    std::string GetOtherUserErrorMessage(Client *client) override;
+    CommandChain CloneForOtherUser() override;
+    CommandChain ProcessReactionImpl(Client *client, QSharedPointer<User>, SleepyDiscord::Emoji emoji) override;
+    QStringList GetEmojiSet() override;
+
+
     RecsMessageCreationMemo memo;
     TimedEntity<QSharedPointer<core::RecommendationListFicData>> ficData;
+
 };
 
 

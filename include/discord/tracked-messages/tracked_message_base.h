@@ -7,7 +7,7 @@ namespace discord{
 class Server;
 class Client;
 class ResultGuard;
-class TrackedMessageBase{
+class TrackedMessageBase : public std::enable_shared_from_this<TrackedMessageBase>{
     public:
     enum ENonOriginalUserBehaviour{
         noub_error = 0,
@@ -27,6 +27,7 @@ class TrackedMessageBase{
     // virtual functions
     virtual std::string GetOtherUserErrorMessage(Client* client) = 0;
     virtual int GetDataExpirationIntervalS() = 0;
+    virtual void FillMemo(QSharedPointer<User>) = 0;
     virtual std::chrono::system_clock::time_point GetDataExpirationPoint(){return std::chrono::high_resolution_clock::now();};
     virtual void RetireData(){};
     virtual CommandChain CloneForOtherUser() = 0;
@@ -39,6 +40,7 @@ class TrackedMessageBase{
 
     std::shared_ptr<ResultGuard> LockResult(){return std::make_shared<ResultGuard>(this);};
     std::atomic<bool> resultInUse = false;
+    QSet<std::string> actionableEmoji;
     std::mutex mutex;
 };
 

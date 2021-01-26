@@ -8,20 +8,19 @@
 
 namespace discord{
 
+TrackedRoll::TrackedRoll()
+{
+    actionableEmoji = {"🔁"};
+}
+
 CommandChain TrackedRoll::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
 {
-    if(!user)
-        return {};
-    if(!(emoji.name *in("👉", "👈")))
-        return {};
-
     QLOG_INFO() << "bot is fetching message information";
 
     auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
-    bool scrollDirection = emoji.name == "👉" ? true : false;
     CommandChain commands;
-    commands = CreateChangeHelpPageCommand(user,server, token, scrollDirection);
-    commands += CreateRemoveReactionCommand(user,server, token, emoji.name == "👉" ? "%f0%9f%91%89" : "%f0%9f%91%88");
+    commands = CreateRollCommand(user,server, token);
+    commands += CreateRemoveReactionCommand(user,server, token, "%f0%9f%94%81");
     return commands;
 }
 
@@ -40,23 +39,4 @@ CommandChain TrackedRoll::CloneForOtherUser()
 {
     return {}; // intentionally empty for now, this is for the future
 }
-
-int TrackedRoll::GetDataExpirationIntervalS()
-{
-    return 5;
-}
-
-std::chrono::system_clock::time_point TrackedRoll::GetDataExpirationPoint()
-{
-    return ficData.expirationPoint;
-}
-
-void TrackedRoll::RetireData()
-{
-    ficData = {};
-}
-
-
-
-
 }

@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/limits.h"
 #include "discord/discord_user.h"
 #include "discord/discord_message_token.h"
+#include "discord/tracked-messages/tracked_message_base.h"
 
 
 #include <mutex>
@@ -327,6 +328,7 @@ public:
     QStringList reactionsToRemove;
     QSharedPointer<User> user;
     MessageIdToken originalMessageToken;
+    std::shared_ptr<TrackedMessageBase> messageData;
 
     SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
     SleepyDiscord::Snowflake<SleepyDiscord::Channel> targetChannel;

@@ -27,6 +27,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/fetch_filters.h"
 #include "discord/favourites_fetching.h"
 #include "discord/tracked-messages/tracked_roll.h"
+#include "discord/tracked-messages/tracked_help_page.h"
+#include "discord/tracked-messages/tracked_fic_details.h"
+#include "discord/tracked-messages/tracked_reclist.h"
+#include "discord/tracked-messages/tracked_similarity_list.h"
 #include "discord/type_strings.h"
 #include "parsers/ffn/favparser_wrapper.h"
 #include "include/qstring_from_stringview.h"
@@ -51,8 +55,13 @@ QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnviro
     if(command.type != ECommandType::ct_timeout_active)
         command.user->initNewEasyQuery();
     environment->ficSource->SetUserToken(command.user->GetUuid());
-    return ExecuteImpl(environment, std::move(command));
 
+
+    An<ClientStorage> storage;
+    if(command.reactionCommand && storage->messageData.contains(command.reactedMessageToken.messageID.number()))
+        messageData = storage->messageData.value(command.reactedMessageToken.messageID.number());
+
+    return ExecuteImpl(environment, std::move(command));
 }
 
 template<typename T> QString GetHelpForCommandIfActive(){
@@ -62,46 +71,53 @@ template<typename T> QString GetHelpForCommandIfActive(){
     return result;
 }
 
-QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
-{
-    QString helpString;
-    helpString +=  GetHelpForCommandIfActive<RecsCreationCommand>();
-    helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
-    helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
-    helpString +=  GetHelpForCommandIfActive<PageChangeCommand>();
-    helpString +=  GetHelpForCommandIfActive<SetFandomCommand>();
-    helpString +=  GetHelpForCommandIfActive<IgnoreFandomCommand>();
-    helpString +=  GetHelpForCommandIfActive<IgnoreFicCommand>();
-    helpString +=  GetHelpForCommandIfActive<DisplayHelpCommand>();
-    helpString +=  GetHelpForCommandIfActive<RngCommand>();
-    helpString +=  GetHelpForCommandIfActive<FilterLikedAuthorsCommand>();
-    helpString +=  GetHelpForCommandIfActive<ShowFreshRecsCommand>();
-    helpString +=  GetHelpForCommandIfActive<ShowCompletedCommand>();
-    helpString +=  GetHelpForCommandIfActive<HideDeadCommand>();
-    //helpString +=  GetHelpForCommandIfActive<SimilarFicsCommand>();
-    helpString +=  GetHelpForCommandIfActive<ResetFiltersCommand>();
-    helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
-    helpString +=  GetHelpForCommandIfActive<ChangePermittedChannelCommand>();
-    helpString +=  GetHelpForCommandIfActive<PurgeCommand>();
+//QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+//{
+//    QString helpString;
+//    helpString +=  GetHelpForCommandIfActive<RecsCreationCommand>();
+//    helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
+//    helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
+//    helpString +=  GetHelpForCommandIfActive<PageChangeCommand>();
+//    helpString +=  GetHelpForCommandIfActive<SetFandomCommand>();
+//    helpString +=  GetHelpForCommandIfActive<IgnoreFandomCommand>();
+//    helpString +=  GetHelpForCommandIfActive<IgnoreFicCommand>();
+//    helpString +=  GetHelpForCommandIfActive<DisplayHelpCommand>();
+//    helpString +=  GetHelpForCommandIfActive<RngCommand>();
+//    helpString +=  GetHelpForCommandIfActive<FilterLikedAuthorsCommand>();
+//    helpString +=  GetHelpForCommandIfActive<ShowFreshRecsCommand>();
+//    helpString +=  GetHelpForCommandIfActive<ShowCompletedCommand>();
+//    helpString +=  GetHelpForCommandIfActive<HideDeadCommand>();
+//    //helpString +=  GetHelpForCommandIfActive<SimilarFicsCommand>();
+//    helpString +=  GetHelpForCommandIfActive<ResetFiltersCommand>();
+//    helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
+//    helpString +=  GetHelpForCommandIfActive<ChangePermittedChannelCommand>();
+//    helpString +=  GetHelpForCommandIfActive<PurgeCommand>();
 
 
-    //"\n!status to display the status of your recommentation list"
-    //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
-    action->text = helpString.arg(QSV(command.server->GetCommandPrefix()));
-    return action;
-}
+//    //"\n!status to display the status of your recommentation list"
+//    //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
+//    action->text = helpString.arg(QSV(command.server->GetCommandPrefix()));
+//    return action;
+//}
 
 
 QSharedPointer<SendMessageCommand> GeneralHelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
     auto embed = GetHelpPage(command.ids.at(0), command.server->GetCommandPrefix());
     action->embed = embed;
-    command.user->SetCurrentHelpPage(command.ids.at(0));
-    if(command.targetMessage.string().length() > 0)
-        action->targetMessage = command.targetMessage;
-    action->reactionsToAdd.push_back(QStringLiteral("%f0%9f%91%88"));
-    action->reactionsToAdd.push_back(QStringLiteral("%f0%9f%91%89"));
-
+    if(command.targetMessage.string().length() == 0){
+        command.user->SetCurrentHelpPage(command.ids.at(0));
+        // we need to create memo for this help page
+        action->messageData = std::make_shared<TrackedHelpPage>();
+        action->messageData->FillMemo(command.user);
+        messageData = action->messageData;
+    }
+    else{
+        // we need to edit page in the old memo
+        auto helpData = std::dynamic_pointer_cast<TrackedHelpPage>(messageData);
+        helpData->currenHelpPage = command.ids.at(0);
+    }
+    action->reactionsToAdd = messageData->GetEmojiSet();
     return action;
 }
 
@@ -762,9 +778,33 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     command.user->SetLastPageType(ct_display_page);
+
+
+    if(command.targetMessage.string().length() == 0){
+        switch(command.commandChain.front()){
+        case ct_create_similar_fics_list:
+            action->messageData = std::make_shared<TrackedSimilarityList>();
+            break;
+        case ct_create_recs_from_mobile_page:
+            action->messageData = std::make_shared<TrackedRecommendationList>();
+            break;
+        case ct_fill_recommendations:
+            action->messageData = std::make_shared<TrackedRecommendationList>();
+            break;
+        default:
+            action->messageData = {};
+        }
+        messageData = action->messageData;
+        //auto reclistDataData = std::dynamic_pointer_cast<TrackedRecommendationList>(messageData);
+    }
+
+    An<ClientStorage> storage;
+    if(command.reactionCommand && storage->messageData.contains(command.reactedMessageToken.messageID.number()))
+        messageData = storage->messageData.value(command.reactedMessageToken.messageID.number());
+    messageData->FillMemo(command.user);
+    action->reactionsToAdd = messageData->GetEmojiSet();
+
     action->embed = embed;
-    action->reactionsToAdd.push_back(QStringLiteral("%f0%9f%91%88"));
-    action->reactionsToAdd.push_back(QStringLiteral("%f0%9f%91%89"));
     if(command.targetMessage.string().length() > 0)
         action->targetMessage = command.targetMessage;
     environment->ficSource->ClearUserData();
@@ -800,11 +840,10 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     QLOG_TRACE() << QStringLiteral("Fetching fics for rng");
     An<ClientStorage> storage;
     core::StoryFilter usedFilter;
-    if(command.reactionCommand && storage->messageData.contains(command.reactedMessageToken.messageID.number())){
-        auto data = storage->messageData.value(command.reactedMessageToken.messageID.number());
-        auto resultLocker = data->LockResult();
-        auto rngData = static_cast<TrackedRoll*>(data.get());
-        bool regenHappened = false;
+    bool regenHappened = false;
+    if(command.reactionCommand){
+        auto resultLocker = messageData->LockResult();
+        auto rngData = static_cast<TrackedRoll*>(messageData.get());
         if(!rngData->ficData.data)
         {
             // we need to recreate the list before we can display anything
@@ -815,8 +854,6 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         rngData->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(rngData->GetDataExpirationIntervalS());
         selectScoreCutoff(rngData->ficData.data);
         usedFilter = FetchFicsForDisplayRngCommand(rngData->memo.filter, environment->ficSource, command.user, rngData->ficData.data, &fics, 3, scoreCutoff);
-        if(regenHappened)
-            storage->timedMessageData.push(rngData->token.messageID.number(),data);
         setFicScores(rngData->ficData.data);
     }
     else{
@@ -825,6 +862,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         usedFilter = FetchFicsForDisplayRngCommand(core::StoryFilter{}, environment->ficSource, command.user, command.user->FicList(), &fics, 3, scoreCutoff);
         setFicScores(command.user->FicList());
         command.user->SetLastUsedStoryFilter(usedFilter);
+
     }
 
     QLOG_TRACE() << QStringLiteral("Fetched fics for rng");
@@ -863,9 +901,14 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     command.user->SetLastPageType(ct_display_rng);
     FillActiveFilterPartInEmbed(embed, environment, command);
+    if(!messageData){
+        action->messageData = std::make_shared<TrackedRoll>();
+        messageData = action->messageData;
+    }
+    messageData->FillMemo(command.user);
 
     action->embed = embed;
-    action->reactionsToAdd.push_back(QStringLiteral("%f0%9f%94%81"));
+    action->reactionsToAdd = messageData->GetEmojiSet();
     if(command.targetMessage.string().length() > 0)
         action->targetMessage = command.targetMessage;
     QLOG_INFO() << QStringLiteral("Created page results");
@@ -1496,6 +1539,14 @@ QSharedPointer<SendMessageCommand> ShowFicAction::ExecuteImpl(QSharedPointer<Tas
     //temp = temp.replace("'", "\'");
     embed.description = temp.toStdString();
 
+
+    if(command.targetMessage.string().length() == 0){
+        action->messageData = std::make_shared<TrackedFicDetails>();
+        auto ficData = std::dynamic_pointer_cast<TrackedFicDetails>(messageData);
+        ficData->ficId = command.ids[0];
+        action->messageData->FillMemo(command.user);
+    }
+
     action->embed = embed;
     action->originalMessageToken.ficId = fic.identity.web.GetPrimaryId();
     action->reactionsToAdd.push_back(QStringLiteral("%F0%9F%94%8D"));
@@ -1694,6 +1745,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 

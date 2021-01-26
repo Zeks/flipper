@@ -140,6 +140,8 @@ QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowfl
     return server;
 }
 
+
+
 static constexpr auto pattern = discord::GetSimplePatternChecker();
 constexpr auto matchSimple(std::string_view sv) noexcept {
     return ctre::match<pattern>(sv);
@@ -227,86 +229,42 @@ void Client::onMessage(SleepyDiscord::Message message) {
     }
 }
 
-static std::string CreateMention(const std::string& string){
-    return "<@" + string + ">";
+
+QSharedPointer<User> Client::GetOrCreateUser(SleepyDiscord::Snowflake<SleepyDiscord::User> userID)
+{
+    An<Users> users;
+    auto userId = QString::fromStdString(userID.string());
+    if(!users->HasUser(userId)){
+
+        bool inDatabase = users->LoadUser(userId);
+        if(!inDatabase)
+        {
+            SleepyDiscord::User sleepyUser = getUser(userID);
+            QSharedPointer<discord::User> user(new discord::User(userId, QStringLiteral("-1"), QString::fromStdString(sleepyUser.username), QUuid::createUuid().toString()));
+            An<interfaces::Users> usersInterface;
+            usersInterface->WriteUser(user);
+            users->LoadUser(userId);
+        }
+    }
+    auto user = users->GetUser(userId);
+    return user;
 }
 
-
-void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
+void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel>, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
     try{
         if(userID == getID())
             return;
         if(!actionableEmoji.contains(emoji.name))
             return;
-        if(!storage->messageSourceAndTypeHash.contains(messageID.number()))
+        if(!storage->messageData.contains(messageID.number()))
+            return;
+        auto user = GetOrCreateUser(userID);
+        if(!user)
             return;
 
         QLOG_INFO() << "entered the onReaction core body with reaction: " << QString::fromStdString(emoji.name);
-        QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID,
-                                                                             storage->channelToServerHash.contains(channelID.number())
-                                                                             ? storage->channelToServerHash.value(channelID.number()) : 0);
-
-        bool isOriginalUser = storage->messageSourceAndTypeHash.same_user(messageID.number(), userID.number());
-        if(isOriginalUser || emoji.name == "🔍"){
-            An<Users> users;
-            auto userId = QString::fromStdString(userID.string());
-            if(!users->HasUser(userId)){
-
-                bool inDatabase = users->LoadUser(userId);
-                if(!inDatabase)
-                {
-                    SleepyDiscord::User sleepyUser = getUser(userID);
-                    QSharedPointer<discord::User> user(new discord::User(userId, QStringLiteral("-1"), QString::fromStdString(sleepyUser.username), QUuid::createUuid().toString()));
-                    An<interfaces::Users> usersInterface;
-                    usersInterface->WriteUser(user);
-                    users->LoadUser(userId);
-                }
-            }
-            auto user = users->GetUser(userId);
-            if(!user)
-                return;
-            QLOG_INFO() << "bot is fetching message information";
-
-            auto messageInfo = storage->messageSourceAndTypeHash.value(messageID.number());
-            messageInfo.token.messageID = messageID;
-            if(emoji.name *in("👉", "👈")){
-
-
-                bool scrollDirection = emoji.name == "👉" ? true : false;
-                CommandChain command;
-                if(messageInfo.sourceCommandType == ECommandType::ct_display_page)
-                    command = CreateChangeRecommendationsPageCommand(user,server, messageInfo.token, scrollDirection);
-                else
-                    command = CreateChangeHelpPageCommand(user,server, messageInfo.token, scrollDirection);
-
-                command += CreateRemoveReactionCommand(user,server, messageInfo.token, emoji.name == "👉" ? "%f0%9f%91%89" : "%f0%9f%91%88");
-                executor->Push(std::move(command));
-            }
-            else if(emoji.name == "🔁")
-            {
-                CommandChain commands;
-                commands = CreateRollCommand(user,server, messageInfo.token);
-                commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%f0%9f%94%81");
-                executor->Push(std::move(commands));
-            }
-            else if(emoji.name == "🔍")
-            {
-                CommandChain commands;
-                messageInfo.token.authorID = userID;
-                commands = CreateSimilarListCommand(user,server, messageInfo.token,storage->messageSourceAndTypeHash.value(messageID.number()).token.ficId);
-                commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%F0%9F%94%8D");
-                executor->Push(std::move(commands));
-            }
-
-        }
-        else if(userID != getID()){
-            QString str = QString(" Navigation emoji are only working for the person that the bot responded to. Perhaps you need to do one of the following:"
-                                  "\n- create your own recommendations with `%1recs YOUR_FFN_ID`"
-                                  "\n- repost your recommendations with `%1page`"
-                                  "\n- call your own help page with `%1help`");
-            str=str.arg(QString::fromStdString(std::string(server->GetCommandPrefix())));
-            sendMessageWrapper(channelID, server->GetServerId(), CreateMention(userID.string()) + str.toStdString());
-        }
+        auto message = storage->messageData.value(messageID.number());
+        message->ProcessReaction(this,user,emoji);
     }
     catch(const rapidjson_exception& e){
         qDebug() << e.what();
