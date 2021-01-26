@@ -47,6 +47,16 @@ CommandChain TrackedHelpPage::CloneForOtherUser()
     return {}; // intentionally empty for now, this is for the future
 }
 
+std::chrono::system_clock::time_point TrackedHelpPage::GetDataExpirationPoint()
+{
+    return std::chrono::high_resolution_clock::now();
+}
+
+void TrackedHelpPage::RetireData()
+{
+    // no point in expiring a single int value
+}
+
 
 
 
