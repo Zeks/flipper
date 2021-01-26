@@ -76,8 +76,10 @@ void FicFetcherBase::FillUserPart()
     std::set<int> filteredFandomSet{filter.fandom,filter.secondFandom};
     for(auto& token: ignoredFandoms.tokens)
     {
-        if(filteredFandomSet.find(token.id) != std::end(filteredFandomSet))
+        bool inExplicitlyShown = filteredFandomSet.find(token.id) != std::end(filteredFandomSet);
+        if(!inExplicitlyShown){
             userData.ignoredFandoms[token.id] = token.includeCrossovers;
+        }
     }
     if(filter.tagsAreUsedForAuthors)
         userData.ficIDsForActivetags = sourceficsData->sourceFics;
