@@ -13,7 +13,7 @@ TrackedFicDetails::TrackedFicDetails()
     actionableEmoji = {"🔍"};
 }
 
-CommandChain TrackedFicDetails::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
+CommandChain TrackedFicDetails::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji)
 {
     CommandChain commands;
     auto token = this->token;

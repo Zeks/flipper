@@ -10,7 +10,8 @@ discord::CommandChain discord::TrackedMessageBase::ProcessReaction(discord::Clie
 {
     if(!user)
         return {};
-    if(!(emoji.name *in(actionableEmoji)))
+    //if(std::find_if(actionableEmoji.begin(),actionableEmoji.end(), [&](const auto& i){ return i == emoji.name;}) == std::end(actionableEmoji))
+    if(std::find(actionableEmoji.begin(),actionableEmoji.end(),emoji.name) == std::end(actionableEmoji))
         return {};
 
     if(!IsOriginaluser(user->UserID())){

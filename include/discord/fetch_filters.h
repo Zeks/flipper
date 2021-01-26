@@ -22,22 +22,43 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 
 namespace discord{
 
-void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
-                                    QSharedPointer<discord::User> user,
-                                    int size,
-                                    QVector<core::Fanfic>* fics);
 
-int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source,
-                                    QSharedPointer<discord::User> user,
-                                    int size);
+class FicFetcherBase{
+public:
+    FicFetcherBase(){};
+    virtual ~FicFetcherBase(){};
+    virtual void Fetch(core::StoryFilter, QVector<core::Fanfic>* fics);
+    virtual int FetchPageCount(core::StoryFilter partialfilter);
+    virtual void FillUserPart();
+    virtual core::StoryFilter CreateFilter() = 0;
+    virtual void FillFicData() = 0;
 
-core::StoryFilter FetchFicsForDisplayRngCommand(core::StoryFilter,
-                                   QSharedPointer<FicSourceGRPC> source,
-                                   QSharedPointer<discord::User> user, QSharedPointer<core::RecommendationListFicData>,
-                                   QVector<core::Fanfic>* fics,
-                                   int listSize = 3,
-                                   int qualityCutoff = 1);
+    int size;
+    core::StoryFilter filter;
+    QSharedPointer<FicSourceGRPC> source;
+    QSharedPointer<discord::User> user;
+    QSharedPointer<core::RecommendationListFicData> sourceficsData;
+};
 
+class FicFetcherPage : public FicFetcherBase{
+public:
+    FicFetcherPage(){};
+    virtual ~FicFetcherPage(){};
+    virtual core::StoryFilter CreateFilter() override;
+    virtual void FillFicData() override;
+};
+
+class FicFetcherRNG: public FicFetcherBase{
+public:
+    FicFetcherRNG(){};
+    virtual ~FicFetcherRNG(){};
+    virtual core::StoryFilter CreateFilter() override;
+    virtual void FillFicData() override;
+    int qualityCutoff = 0;
+};
+
+// the only func that doesn't need its own class
+// because it won't be called again against the same message
 void FetchFicsForShowIdCommand(QSharedPointer<FicSourceGRPC> source,
                                     QList<int> ficIds,
                                     QVector<core::Fanfic>* fics);

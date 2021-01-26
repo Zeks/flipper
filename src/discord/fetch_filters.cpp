@@ -26,16 +26,70 @@ core::FicDateFilter CreateDateFilterFromYear(QString year, filters::EDateFilterT
     return result;
 }
 
-void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
-                      QSharedPointer<discord::User> user,
-                      int size,
-                      QVector<core::Fanfic>* fics)
+void FetchFicsForShowIdCommand(QSharedPointer<FicSourceGRPC> source, QList<int> ficIds, QVector<core::Fanfic> *fics)
+{
+    fics->clear();
+    fics->reserve(ficIds.size());
+
+    QList<core::StoryFilter::FicId> ficsTask;
+    for(auto ficId : ficIds)
+    {
+        core::StoryFilter::FicId fic;
+        fic.id = ficId;
+        fic.idType = core::StoryFilter::EUseThisFicType::utf_ffn_id;
+        ficsTask.push_back(fic);
+    }
+    source->FetchFics(ficsTask, fics);
+}
+
+void FicFetcherBase::Fetch(core::StoryFilter partialfilter, QVector<core::Fanfic> *fics)
+{
+    this->filter = partialfilter;
+    if(!this->filter.partiallyFilled)
+        this->filter = CreateFilter();
+    FillFicData();
+    FillUserPart();
+    fics->clear();
+    fics->reserve(size);
+    source->FetchData(filter, fics);
+
+    for(auto& fic : *fics)
+        fic.score = sourceficsData->ficToMetascore[fic.identity.id];
+}
+
+int FicFetcherBase::FetchPageCount(core::StoryFilter partialfilter)
+{
+    this->filter = partialfilter;
+    if(!this->filter.partiallyFilled)
+        this->filter = CreateFilter();
+    FillFicData();
+    FillUserPart();
+
+    auto count = source->GetFicCount(filter);
+    return count/size;
+}
+
+void FicFetcherBase::FillUserPart()
+{
+    UserData userData;
+    auto ignoredFandoms =  user->GetCurrentIgnoredFandoms();
+    std::set<int> filteredFandomSet{filter.fandom,filter.secondFandom};
+    for(auto& token: ignoredFandoms.tokens)
+    {
+        if(filteredFandomSet.find(token.id) != std::end(filteredFandomSet))
+            userData.ignoredFandoms[token.id] = token.includeCrossovers;
+    }
+    if(filter.tagsAreUsedForAuthors)
+        userData.ficIDsForActivetags = sourceficsData->sourceFics;
+
+    userData.allTaggedFics = user->GetIgnoredFics();
+    source->userData = userData;
+}
+
+core::StoryFilter FicFetcherPage::CreateFilter()
 {
     core::StoryFilter filter;
     filter.recordPage = user->CurrentRecommendationsPage();
-    filter.ignoreAlreadyTagged = false;
-    filter.crossoversOnly = false;
-    filter.showOriginsInLists = false;
     filter.recordLimit = size;
     auto userWordcountFilter = user->GetWordcountFilter();
     filter.minWords = userWordcountFilter.firstLimit;
@@ -52,27 +106,6 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     else
         filter.sortMode = core::StoryFilter::sm_metascore;
 
-    filter.reviewBias = core::StoryFilter::bias_none;
-    filter.mode = core::StoryFilter::filtering_in_fics;
-    //filter.mode = core::StoryFilter::filtering_in_recommendations;
-    filter.slashFilter.excludeSlash = true;
-    filter.slashFilter.includeSlash = false;
-    filter.slashFilter.slashFilterLevel = 1;
-    filter.slashFilter.slashFilterEnabled = true;
-    auto userFics = user->FicList();
-    for(int i = 0; i < userFics->fics.size(); i++)
-    {
-        if(userFics->sourceFics.contains(userFics->fics.at(i)))
-            continue;
-        if(!user->GetStrictFreshSort()
-                || (user->GetStrictFreshSort() && userFics->metascores.at(i) > 1))
-        filter.recommendationScoresSearchToken.ficToScore[userFics->fics[i]] = userFics->metascores.at(i);
-    }
-    if(user->GetSortGemsFirst())
-        filter.recommendationScoresSearchToken.ficToPureVotes = userFics->ficToVotes;
-    userFics->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
-//    userFics->ficToVotes = filter.recommendationScoresSearchToken.ficToPureVotes;
-
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
         filter.fandom = fandomFilter.tokens.at(0).id;
@@ -82,39 +115,38 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     }
     if(user->GetCurrentIgnoredFandoms().fandoms.size() > 0)
         filter.ignoreFandoms = true;
-    UserData userData;
 
-    auto ignoredFandoms =  user->GetCurrentIgnoredFandoms();
-    for(auto& token: ignoredFandoms.tokens)
-    {
-        if(!fandomFilter.fandoms.contains(token.id))
-            userData.ignoredFandoms[token.id] = token.includeCrossovers;
-    }
-    userData.allTaggedFics = user->GetIgnoredFics();
-    if(user->GetUseLikedAuthorsOnly()){
+    if(user->GetUseLikedAuthorsOnly())
         filter.tagsAreUsedForAuthors = true;
-        userData.ficIDsForActivetags = user->FicList()->sourceFics;
-    }
     if(user->GetShowCompleteOnly())
         filter.ensureCompleted = true;
     if(user->GetHideDead())
         filter.ensureActive = true;
-    //QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
     if(!user->GetPublishedFilter().isEmpty())
         filter.ficDateFilter = CreateDateFilterFromYear(user->GetPublishedFilter(), filters::dft_published);
     else if(!user->GetFinishedFilter().isEmpty())
         filter.ficDateFilter = CreateDateFilterFromYear(user->GetFinishedFilter(), filters::dft_finished);
-
-
-    fics->clear();
-    fics->reserve(size);
-    source->userData = userData;
-    source->FetchData(filter, fics);
-
+    return filter;
 }
 
+void FicFetcherPage::FillFicData()
+{
+    auto userFics = user->FicList();
+    for(int i = 0; i < userFics->fics.size(); i++)
+    {
+        if(userFics->sourceFics.contains(userFics->fics.at(i)))
+            continue;
+        if(!user->GetStrictFreshSort()
+                || (user->GetStrictFreshSort() && userFics->metascores.at(i) > 1))
+        filter.recommendationScoresSearchToken.ficToScore[userFics->fics[i]] = userFics->metascores.at(i);
+    }
+    if(filter.sortMode == core::StoryFilter::sm_gems)
+        filter.recommendationScoresSearchToken.ficToPureVotes = userFics->ficToVotes;
+    userFics->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
+}
 
-core::StoryFilter CreatNewFilterForRNGCommand(QSharedPointer<User> user, int size, int qualityCutoff){
+core::StoryFilter FicFetcherRNG::CreateFilter()
+{
     core::StoryFilter filter;
     filter.recordPage = user->CurrentRecommendationsPage();
     filter.recordLimit = size;
@@ -153,8 +185,8 @@ core::StoryFilter CreatNewFilterForRNGCommand(QSharedPointer<User> user, int siz
     return filter;
 }
 
-
-void FillFicDataInStoryFilterForRNGCommand(core::StoryFilter& filter, QSharedPointer<User> user, int qualityCutoff){
+void FicFetcherRNG::FillFicData()
+{
     auto userFics = user->FicList();
 
     for(int i = 0; i < userFics->fics.size(); i++)
@@ -165,128 +197,6 @@ void FillFicDataInStoryFilterForRNGCommand(core::StoryFilter& filter, QSharedPoi
             filter.recommendationScoresSearchToken.ficToScore[userFics->fics[i]] = userFics->metascores.at(i);
     }
     userFics->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
-}
-
-core::StoryFilter FetchFicsForDisplayRngCommand(core::StoryFilter filter, QSharedPointer<FicSourceGRPC> source, QSharedPointer<User> user, QSharedPointer<core::RecommendationListFicData>, QVector<core::Fanfic> *fics,int listSize, int qualityCutoff)
-{
-    if(!filter.partiallyFilled)
-        filter = CreatNewFilterForRNGCommand(user, listSize, qualityCutoff);
-    FillFicDataInStoryFilterForRNGCommand(filter, user, qualityCutoff);
-
-    auto fandomFilter = user->GetCurrentFandomFilter();
-    UserData userData;
-
-    auto ignoredFandoms =  user->GetCurrentIgnoredFandoms();
-    for(auto& token: ignoredFandoms.tokens)
-        if(!fandomFilter.fandoms.contains(token.id))
-            userData.ignoredFandoms[token.id] = token.includeCrossovers;
-    if(user->GetUseLikedAuthorsOnly()){
-        userData.ficIDsForActivetags = user->FicList()->sourceFics;
-    }
-    userData.allTaggedFics = user->GetIgnoredFics();
-    fics->clear();
-    fics->reserve(listSize);
-    source->userData = userData;
-    source->FetchData(filter, fics);
-    return filter;
-}
-
-int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QSharedPointer<User> user, int size)
-{
-    core::StoryFilter filter;
-    filter.recordPage = user->CurrentRecommendationsPage();
-    filter.ignoreAlreadyTagged = false;
-    filter.crossoversOnly = false;
-    filter.showOriginsInLists = false;
-    filter.recordLimit = size;
-    auto userWordcountFilter = user->GetWordcountFilter();
-    filter.minWords = userWordcountFilter.firstLimit;
-    filter.maxWords = userWordcountFilter.secondLimit;
-    filter.deadFicDaysRange = user->GetDeadFicDaysRange();
-
-    if(user->GetSortFreshFirst()){
-        filter.listOpenMode = true;
-        filter.sortMode = core::StoryFilter::sm_publisdate;
-    }else if(user->GetSortGemsFirst()){
-        filter.listOpenMode = true;
-        filter.sortMode = core::StoryFilter::sm_gems;
-    }
-    else
-        filter.sortMode = core::StoryFilter::sm_metascore;
-
-    filter.reviewBias = core::StoryFilter::bias_none;
-    filter.mode = core::StoryFilter::filtering_in_fics;
-    //filter.mode = core::StoryFilter::filtering_in_recommendations;
-    filter.slashFilter.excludeSlash = true;
-    filter.slashFilter.includeSlash = false;
-    filter.slashFilter.slashFilterLevel = 1;
-    filter.slashFilter.slashFilterEnabled = true;
-    auto userFics = user->FicList();
-    for(int i = 0; i < userFics->fics.size(); i++)
-    {
-        if(userFics->sourceFics.contains(userFics->fics.at(i)))
-            continue;
-        if(!user->GetStrictFreshSort()
-                || (user->GetStrictFreshSort() && userFics->metascores.at(i) > 1))
-        filter.recommendationScoresSearchToken.ficToScore[userFics->fics[i]] = userFics->metascores.at(i);
-    }
-    if(user->GetSortGemsFirst())
-        filter.recommendationScoresSearchToken.ficToPureVotes = userFics->ficToVotes;
-    userFics->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
-//    userFics->ficToVotes = filter.recommendationScoresSearchToken.ficToPureVotes;
-    auto fandomFilter = user->GetCurrentFandomFilter();
-    if(fandomFilter.tokens.size() > 0){
-        filter.fandom = fandomFilter.tokens.at(0).id;
-    }
-    if(fandomFilter.tokens.size() > 1){
-        filter.secondFandom = fandomFilter.tokens.at(1).id;
-    }
-    if(user->GetCurrentIgnoredFandoms().fandoms.size() > 0)
-        filter.ignoreFandoms = true;
-    UserData userData;
-
-    auto ignoredFandoms =  user->GetCurrentIgnoredFandoms();
-    for(auto& token: ignoredFandoms.tokens)
-    {
-        if(!fandomFilter.fandoms.contains(token.id))
-            userData.ignoredFandoms[token.id] = token.includeCrossovers;
-    }
-    userData.allTaggedFics = user->GetIgnoredFics();
-    if(user->GetUseLikedAuthorsOnly()){
-        filter.tagsAreUsedForAuthors = true;
-        userData.ficIDsForActivetags = user->FicList()->sourceFics;
-    }
-    if(user->GetShowCompleteOnly())
-        filter.ensureCompleted = true;
-    if(user->GetHideDead())
-        filter.ensureActive= true;
-
-    if(!user->GetPublishedFilter().isEmpty())
-        filter.ficDateFilter = CreateDateFilterFromYear(user->GetPublishedFilter(), filters::dft_published);
-    else if(!user->GetFinishedFilter().isEmpty())
-        filter.ficDateFilter = CreateDateFilterFromYear(user->GetFinishedFilter(), filters::dft_finished);
-
-    //QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
-
-    source->userData = userData;
-    auto count = source->GetFicCount(filter);
-    return count/size;
-}
-
-void FetchFicsForShowIdCommand(QSharedPointer<FicSourceGRPC> source, QList<int> ficIds, QVector<core::Fanfic> *fics)
-{
-    fics->clear();
-    fics->reserve(ficIds.size());
-
-    QList<core::StoryFilter::FicId> ficsTask;
-    for(auto ficId : ficIds)
-    {
-        core::StoryFilter::FicId fic;
-        fic.id = ficId;
-        fic.idType = core::StoryFilter::EUseThisFicType::utf_ffn_id;
-        ficsTask.push_back(fic);
-    }
-    source->FetchFics(ficsTask, fics);
 }
 
 }

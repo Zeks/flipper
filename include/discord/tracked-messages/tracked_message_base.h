@@ -40,7 +40,7 @@ class TrackedMessageBase : public std::enable_shared_from_this<TrackedMessageBas
 
     std::shared_ptr<ResultGuard> LockResult(){return std::make_shared<ResultGuard>(this);};
     std::atomic<bool> resultInUse = false;
-    QSet<std::string> actionableEmoji;
+    std::vector<std::string> actionableEmoji;
     std::mutex mutex;
 };
 

@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/tracked-messages/tracked_roll.h"
 #include "discord/tracked-messages/tracked_help_page.h"
 #include "discord/tracked-messages/tracked_fic_details.h"
-#include "discord/tracked-messages/tracked_reclist.h"
+#include "discord/tracked-messages/tracked_recommendation_list.h"
 #include "discord/tracked-messages/tracked_similarity_list.h"
 #include "discord/type_strings.h"
 #include "parsers/ffn/favparser_wrapper.h"
@@ -697,22 +697,44 @@ void  FillActiveFilterPartInEmbedAsField(SleepyDiscord::Embed& embed, QSharedPoi
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     //QLOG_TRACE() << "Creating page results";
-
     environment->ficSource->ClearUserData();
     auto page = command.ids.at(0);
-    command.user->SetPage(page);
-    An<interfaces::Users> usersDbInterface;
-    usersDbInterface->UpdateCurrentPage(command.user->UserID(), page);
 
-    QVector<core::Fanfic> fics;
+    if(!command.reactionCommand || command.reactedMessageToken.messageID == command.user->GetLastPageMessageID()){
+        command.user->SetPage(page);
+        An<interfaces::Users> usersDbInterface;
+        usersDbInterface->UpdateCurrentPage(command.user->UserID(), page);
+    }
+
     QLOG_TRACE() << "Fetching fics";
     environment->ficSource->ClearUserData();
+
     static constexpr int listSize = 9;
-    FetchFicsForDisplayPageCommand(environment->ficSource, command.user, listSize, &fics);
-    int pageCount = FetchPageCountForFilterCommand(environment->ficSource, command.user, listSize);
-    auto userFics = command.user->FicList();
-    for(auto& fic : fics)
-        fic.score = userFics->ficToMetascore[fic.identity.id];
+
+    core::StoryFilter usedFilter;
+    FicFetcherPage pageFetcher;
+    pageFetcher.source = environment->ficSource;
+    pageFetcher.size = listSize;
+    pageFetcher.user = command.user;
+    int pageCount = 0;
+
+    QVector<core::Fanfic> fics;
+    if(command.reactionCommand){
+        auto resultLocker = messageData->LockResult();
+        auto listData = static_cast<TrackedRecommendationList*>(messageData.get());
+        // we need to recreate the list before we can display anything
+        if(!listData->ficData.data)
+            listData->ficData.data = FillUserRecommendationsFromFavourites(listData->memo.userFFNId, listData->memo.sourceFics, environment,command)->ficData;
+        pageFetcher.sourceficsData = listData->ficData.data;
+        pageFetcher.Fetch(listData->memo.filter, &fics);
+        pageCount = pageFetcher.FetchPageCount(listData->memo.filter);
+
+    }else{
+        pageFetcher.sourceficsData = command.user->FicList();
+        pageFetcher.Fetch({}, &fics);
+        pageCount = pageFetcher.FetchPageCount({});
+    }
+
     //QLOG_TRACE() << "Fetched fics";
     SleepyDiscord::Embed embed;
     //QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
@@ -744,15 +766,16 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     static constexpr uint8_t promoFrequency = 7;
     bool showAppOrPatreon = rand() % promoFrequency == 0;
     SleepyDiscord::EmbedFooter footer;
-    //QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest"),
+    //
     if(showAppOrPatreon){
-        QStringList appPromo =  {QStringLiteral("If you would like to support the bot, you can do it on https://www.patreon.com/Zekses")};
-//        int shownId = rand() %2 == 0;
-        footer.text = appPromo.at(0).toStdString();
-//        if(shownId == 1)
-        footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
-//        else
-//            footer.iconUrl = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
+        QStringList appPromo =  {QStringLiteral("If you would like to support the bot, you can do it on https://www.patreon.com/Zekses"),
+                                 QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest")};
+        int shownId = rand() %2 == 0;
+            footer.text = appPromo.at(0).toStdString();
+        if(shownId == 1)
+            footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
+        else
+            footer.iconUrl = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
     }
     else{
         if(tips.size() > 0)
@@ -767,18 +790,19 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 
     FillActiveFilterPartInEmbed(embed, environment, command);
 
-    QHash<int, int> positionToId;
-    int i = 0;
-    for(const auto& fic: std::as_const(fics))
+    if(!command.reactionCommand || command.reactedMessageToken.messageID == command.user->GetLastPageMessageID())
     {
-        positionToId[i+1] = fic.identity.id;
-        i++;
-        FillListEmbedForFicAsFields(embed, fic, i);
+        QHash<int, int> positionToId;
+        int i = 0;
+        for(const auto& fic: std::as_const(fics))
+        {
+            positionToId[i+1] = fic.identity.id;
+            i++;
+            FillListEmbedForFicAsFields(embed, fic, i);
+        }
+        command.user->SetPositionsToIdsForCurrentPage(positionToId);
+        command.user->SetLastPageType(ct_display_page);
     }
-
-    command.user->SetPositionsToIdsForCurrentPage(positionToId);
-    command.user->SetLastPageType(ct_display_page);
-
 
     if(command.targetMessage.string().length() == 0){
         switch(command.commandChain.front()){
@@ -801,6 +825,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     An<ClientStorage> storage;
     if(command.reactionCommand && storage->messageData.contains(command.reactedMessageToken.messageID.number()))
         messageData = storage->messageData.value(command.reactedMessageToken.messageID.number());
+
     messageData->FillMemo(command.user);
     action->reactionsToAdd = messageData->GetEmojiSet();
 
@@ -831,38 +856,37 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     };
 
     QVector<core::Fanfic> fics;
-    auto setFicScores = [&](auto ficList){
-        for(auto& fic : fics)
-            fic.score = ficList->ficToMetascore[fic.identity.id];
-    };
-
 
     QLOG_TRACE() << QStringLiteral("Fetching fics for rng");
+
+    FicFetcherRNG rngFetcher;
+    rngFetcher.source = environment->ficSource;
+    rngFetcher.size = 3;
+    rngFetcher.user = command.user;
+
+    //rngFetcher.sourceficsData = environment->ficSource;
+
     An<ClientStorage> storage;
-    core::StoryFilter usedFilter;
-    bool regenHappened = false;
     if(command.reactionCommand){
         auto resultLocker = messageData->LockResult();
         auto rngData = static_cast<TrackedRoll*>(messageData.get());
+
+        // we need to recreate the list before we can display anything
         if(!rngData->ficData.data)
-        {
-            // we need to recreate the list before we can display anything
-            auto recList = FillUserRecommendationsFromFavourites(rngData->memo.userFFNId, rngData->memo.sourceFics, environment,command);
-            rngData->ficData.data = recList->ficData;
-            regenHappened = true;
-        }
-        rngData->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(rngData->GetDataExpirationIntervalS());
+            rngData->ficData.data = FillUserRecommendationsFromFavourites(rngData->memo.userFFNId, rngData->memo.sourceFics, environment,command)->ficData;
+
         selectScoreCutoff(rngData->ficData.data);
-        usedFilter = FetchFicsForDisplayRngCommand(rngData->memo.filter, environment->ficSource, command.user, rngData->ficData.data, &fics, 3, scoreCutoff);
-        setFicScores(rngData->ficData.data);
+        rngFetcher.qualityCutoff = scoreCutoff;
+        rngFetcher.sourceficsData = rngData->ficData.data;
+        rngFetcher.Fetch(rngData->memo.filter, &fics);
     }
     else{
         command.user->SetLastUsedRoll(quality);
         selectScoreCutoff(command.user->FicList());
-        usedFilter = FetchFicsForDisplayRngCommand(core::StoryFilter{}, environment->ficSource, command.user, command.user->FicList(), &fics, 3, scoreCutoff);
-        setFicScores(command.user->FicList());
-        command.user->SetLastUsedStoryFilter(usedFilter);
-
+        rngFetcher.qualityCutoff = scoreCutoff;
+        rngFetcher.sourceficsData = command.user->FicList();
+        rngFetcher.Fetch({}, &fics);
+        command.user->SetLastUsedStoryFilter(rngFetcher.filter);
     }
 
     QLOG_TRACE() << QStringLiteral("Fetched fics for rng");

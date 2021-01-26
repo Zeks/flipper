@@ -38,6 +38,7 @@ QStringList SendMessageCommand::tips = {};
 QSharedPointer<User> CommandCreator::user;
 void CommandChain::Push(Command&& command)
 {
+    commandTypes.push_back(command.type);
     commands.emplace_back(std::move(command));
 }
 
@@ -1076,7 +1077,6 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(const SleepyDiscord::Message& 
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_create_similar_fics_list);
-    auto commandChain = Command::CreateCommandChainVector({ct_create_similar_fics_list, ct_display_page});
     auto match = matchCommand<SimilarFicsCommand>(message.content);
     auto ficId = match.get<1>().to_string();
     if(ficId.length() == 0)
@@ -1091,7 +1091,6 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(const SleepyDiscord::Message& 
             result.Push(std::move(createRecs));
             Command displayRecs = NewCommand(server, message,ct_display_page);
             displayRecs.ids.push_back(0);
-            displayRecs.commandChain = commandChain;
             result.Push(std::move(displayRecs));
             return result;
         }
@@ -1101,7 +1100,6 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(const SleepyDiscord::Message& 
     result.Push(std::move(command));
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
-    displayRecs.commandChain = commandChain;
     result.Push(std::move(displayRecs));
     return result;
 

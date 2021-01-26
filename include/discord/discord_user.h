@@ -212,6 +212,12 @@ public:
     core::StoryFilter GetLastUsedStoryFilter() const;
     void SetLastUsedStoryFilter(const core::StoryFilter &value);
 
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastPageMessageID() const;
+    void SetLastPageMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
+
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastHelpMessageID() const;
+    void SetLastHelpMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
+
 private:
     bool isValid = false;
     QString userID;
@@ -268,6 +274,9 @@ private:
     // can be attached to a page
     QSharedPointer<core::RecommendationListFicData> fics;
     core::StoryFilter lastUsedStoryFilter;
+
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> lastPageMessageID;
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> lastHelpMessageID;
 };
 
 

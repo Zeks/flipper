@@ -99,6 +99,7 @@ struct CommandChain{
         stopExecution = false;
     };
     std::list<Command> commands;
+    std::vector<ECommandType> commandTypes;
     QSharedPointer<User> user;
     bool hasParseCommand = false;
     bool hasFullParseCommand = false;
