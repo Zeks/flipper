@@ -218,6 +218,9 @@ public:
     SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastHelpMessageID() const;
     void SetLastHelpMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
 
+    QSharedPointer<core::RecommendationListFicData> GetTemporaryFicsData() const;
+    void SetTemporaryFicsData(const QSharedPointer<core::RecommendationListFicData> &value);
+
 private:
     bool isValid = false;
     QString userID;
@@ -273,6 +276,7 @@ private:
     mutable QReadWriteLock lock;
     // can be attached to a page
     QSharedPointer<core::RecommendationListFicData> fics;
+    QSharedPointer<core::RecommendationListFicData> temporaryFicsData;
     core::StoryFilter lastUsedStoryFilter;
 
     SleepyDiscord::Snowflake<SleepyDiscord::Message> lastPageMessageID;

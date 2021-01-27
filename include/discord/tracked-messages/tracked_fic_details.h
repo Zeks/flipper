@@ -15,9 +15,9 @@ public:
     std::string GetOtherUserErrorMessage(Client *client) override;
     int GetDataExpirationIntervalS() override;
     CommandChain CloneForOtherUser() override;
-    void FillMemo(QSharedPointer<User>) override;
     std::chrono::system_clock::time_point GetDataExpirationPoint() override;
     void RetireData() override;
+    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedFicDetails>();}
 
     int ficId = 0;
 

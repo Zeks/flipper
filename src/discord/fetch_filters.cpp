@@ -50,9 +50,12 @@ void FicFetcherBase::Fetch(core::StoryFilter partialfilter, QVector<core::Fanfic
 
     filter.recordLimit = this->recordLimit;
     filter.recordPage= this->pageToUse;
+    if(displayingSimilarityList)
+        ResetFilterForSimilarityList(this->filter);
 
     FillFicData();
     FillUserPart();
+
     fics->clear();
     fics->reserve(this->recordLimit);
     source->FetchData(filter, fics);
@@ -66,8 +69,13 @@ int FicFetcherBase::FetchPageCount(core::StoryFilter partialfilter)
     this->filter = partialfilter;
     if(!this->filter.partiallyFilled)
         this->filter = CreateFilter();
+
+    if(displayingSimilarityList)
+        ResetFilterForSimilarityList(this->filter);
+
     FillFicData();
     FillUserPart();
+
 
     auto count = source->GetFicCount(filter);
     return count/recordLimit;
@@ -90,6 +98,22 @@ void FicFetcherBase::FillUserPart()
 
     userData.allTaggedFics = user->GetIgnoredFics();
     source->userData = userData;
+}
+
+void FicFetcherBase::ResetFilterForSimilarityList(core::StoryFilter & filter)
+{
+    filter.minWords = 0;
+    filter.maxWords = 0;
+    filter.strictFreshSort = false;
+    filter.listOpenMode = false;
+    filter.sortMode = core::StoryFilter::sm_metascore;
+    filter.fandom = -1;
+    filter.secondFandom = -1;
+    filter.ignoreFandoms = false;
+    filter.tagsAreUsedForAuthors = false;
+    filter.ensureCompleted = false;
+    filter.ensureActive = false;
+    filter.ficDateFilter = {};
 }
 
 core::StoryFilter FicFetcherPage::CreateFilter()

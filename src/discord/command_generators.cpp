@@ -657,9 +657,12 @@ void SendMessageCommand::Invoke(Client * client)
                                 messageData->token = newToken;
                                 storage->messageData.push(newToken.messageID.number(),messageData);
                                 storage->timedMessageData.push(newToken.messageID.number(),messageData);
+                                if(messageData->CanBeUsedAsLastPage() && originalCommandType *in(ct_display_page))
+                                    user->SetLastPageMessageID(newToken.messageID.number());
                             }
-                            if(originalCommandType *in(ct_display_page, ct_display_rng))
+                            if(messageData->CanBeUsedAsLastPage() && originalCommandType *in(ct_display_page, ct_display_rng))
                                 this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
+
                             if(targetChannel.string().length() > 0)
                                 originalMessageToken.channelID = targetChannel;
 
@@ -1099,8 +1102,9 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(const SleepyDiscord::Message& 
             return result;
         }
     }
-    user->SetSimilarFicsId(std::stoi(match.get<1>().to_string()));
+    //user->SetSimilarFicsId(std::stoi(match.get<1>().to_string()));
     command.ids.push_back(std::stoi(match.get<1>().to_string()));
+    command.variantHash["similar"] = QString::fromStdString(match.get<1>().to_string());
     result.Push(std::move(command));
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);

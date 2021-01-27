@@ -658,6 +658,18 @@ void User::SetLastHelpMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Me
     lastHelpMessageID = value;
 }
 
+QSharedPointer<core::RecommendationListFicData> User::GetTemporaryFicsData() const
+{
+    QReadLocker locker(&lock);
+    return temporaryFicsData;
+}
+
+void User::SetTemporaryFicsData(const QSharedPointer<core::RecommendationListFicData> &value)
+{
+    QWriteLocker locker(&lock);
+    temporaryFicsData = value;
+}
+
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

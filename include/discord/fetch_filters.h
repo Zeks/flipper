@@ -33,6 +33,9 @@ public:
     virtual core::StoryFilter CreateFilter() = 0;
     virtual void FillFicData() = 0;
 
+    void ResetFilterForSimilarityList(core::StoryFilter&);
+
+    bool displayingSimilarityList = false;;
     int pageToUse = 0;
     int recordLimit = 0;
     core::StoryFilter filter;

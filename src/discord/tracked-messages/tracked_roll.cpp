@@ -13,7 +13,7 @@ TrackedRoll::TrackedRoll()
     actionableEmoji = {"🔁"};
 }
 
-CommandChain TrackedRoll::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
+CommandChain TrackedRoll::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji)
 {
     QLOG_INFO() << "bot is fetching message information";
 

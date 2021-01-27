@@ -28,23 +28,6 @@ void TrackedRecommendationList::RetireData()
     ficData = {};
 }
 
-void TrackedRecommendationList::FillMemo(QSharedPointer<User> user)
-{
-    An<ClientStorage> storage;
-    this->memo.page = user->CurrentRecommendationsPage();
-    this->memo.filter = user->GetLastUsedStoryFilter();
-    this->memo.ficFavouritesCutoff = user->GetRecommendationsCutoff();
-    this->ficData.data = user->FicList();
-    this->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(this->GetDataExpirationIntervalS());
-    this->memo.userFFNId = user->FfnID();
-    this->memo.sourceFics = user->FicList()->sourceFicsFFN;
-    this->token = token;
-    if(!token.messageID.string().empty()){
-        storage->messageData.push(token.messageID.number(),this->shared_from_this());
-        storage->timedMessageData.push(token.messageID.number(),this->shared_from_this());
-    }
-}
-
 std::string TrackedRecommendationList::GetOtherUserErrorMessage(Client *)
 {
     return "";

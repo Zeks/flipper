@@ -16,8 +16,8 @@ public:
     int GetDataExpirationIntervalS() override;
     CommandChain CloneForOtherUser() override;
     std::chrono::system_clock::time_point GetDataExpirationPoint() override;
-    void FillMemo(QSharedPointer<User>) override;
     void RetireData() override;
+    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedHelpPage>();};
     std::atomic<int> currenHelpPage = 0;
 
 

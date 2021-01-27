@@ -45,14 +45,6 @@ CommandChain TrackedFicDetails::CloneForOtherUser()
     return {}; // intentionally empty for now, this is for the future
 }
 
-void TrackedFicDetails::FillMemo(QSharedPointer<User>)
-{
-    this->token = token;
-    An<ClientStorage> storage;
-    storage->messageData.push(token.messageID.number(),this->shared_from_this());
-    storage->timedMessageData.push(token.messageID.number(),this->shared_from_this());
-}
-
 std::chrono::system_clock::time_point TrackedFicDetails::GetDataExpirationPoint()
 {
     return std::chrono::high_resolution_clock::now();

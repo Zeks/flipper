@@ -20,6 +20,7 @@ public:
     QStringList GetEmojiSet() override;
     std::string GetOtherUserErrorMessage(Client *client) override;
     CommandChain CloneForOtherUser() override;
+    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedRoll>();};
 };
 
 

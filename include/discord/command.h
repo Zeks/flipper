@@ -84,17 +84,27 @@ struct CommandChain{
     Command Pop();
 
     CommandChain& operator+=(CommandChain& other){
-        for(auto&& item : other.commands)
-        this->commands.emplace_back(std::move(item));
+        for(auto&& item : other.commands){
+            this->commands.emplace_back(std::move(item));
+        }
+        for(auto&& item : other.commandTypes){
+            this->commandTypes.emplace_back(std::move(item));
+        }
+
         return *this;
     };
     CommandChain& operator+=(CommandChain&& other){
-        for(auto&& item : other.commands)
-        this->commands.emplace_back(std::move(item));
+        for(auto&& item : other.commands){
+            this->commands.emplace_back(std::move(item));
+        }
+        for(auto&& item : other.commandTypes){
+            this->commandTypes.emplace_back(std::move(item));
+        }
         return *this;
     };
     void Reset(){
         commands.clear();
+        commandTypes.clear();
         hasParseCommand = false;
         stopExecution = false;
     };

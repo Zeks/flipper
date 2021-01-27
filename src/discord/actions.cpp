@@ -105,18 +105,19 @@ QSharedPointer<SendMessageCommand> GeneralHelpAction::ExecuteImpl(QSharedPointer
 {
     auto embed = GetHelpPage(command.ids.at(0), command.server->GetCommandPrefix());
     action->embed = embed;
+    std::shared_ptr<TrackedHelpPage> helpPageData;
     if(command.targetMessage.string().length() == 0){
         command.user->SetCurrentHelpPage(command.ids.at(0));
         // we need to create memo for this help page
-        action->messageData = std::make_shared<TrackedHelpPage>();
-        action->messageData->FillMemo(command.user);
-        messageData = action->messageData;
+        helpPageData = std::make_shared<TrackedHelpPage>();
+        messageData = action->messageData = helpPageData;
     }
     else{
         // we need to edit page in the old memo
-        auto helpData = std::dynamic_pointer_cast<TrackedHelpPage>(messageData);
-        helpData->currenHelpPage = command.ids.at(0);
+        helpPageData = std::dynamic_pointer_cast<TrackedHelpPage>(messageData);
     }
+    if(helpPageData)
+        helpPageData->currenHelpPage = command.ids.at(0);
     action->reactionsToAdd = messageData->GetEmojiSet();
     return action;
 }
@@ -154,6 +155,7 @@ QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
 QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId,
                                                                                const QSet<int>& userFavourites,
                                                                                QSharedPointer<TaskEnvironment> environment,
+                                                                               int userFavouritesCutoff,
                                                                                const Command& command){
     auto recList = CreateRecommendationParams(ffnId);
     recList->ignoreBreakdowns= true;
@@ -184,7 +186,7 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
 
     environment->ficSource->userData = userData;
     //recList->resultLimit = 50;
-    recList->ficFavouritesCutoff = command.user->GetRecommendationsCutoff();
+    recList->ficFavouritesCutoff = userFavouritesCutoff;
     environment->ficSource->GetRecommendationListFromServer(recList);
     //QLOG_INFO() << "Got fics";
     // refreshing the currently saved recommendation list params for user
@@ -318,7 +320,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     if(!refreshing)
         pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
-    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command);
+    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command.user->GetRecommendationsCutoff(), command);
     if(wasAutomatic && !recList->isAutomatic)
     {
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
@@ -436,7 +438,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     if(!refreshing)
         pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
-    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment,command);
+    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command.user->GetRecommendationsCutoff(), command);
     if(wasAutomatic && !recList->isAutomatic)
     {
         command.user->SetForcedMinMatch(recList->minimumMatch);
@@ -617,12 +619,12 @@ void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed,
 
 
 
-void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, const Command& command){
+void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, QString similarFicId, const Command& command){
     auto filter = command.user->GetCurrentFandomFilter();
 
     QString result;
-    if(command.user->GetSimilarFicsId() != 0)
-        result += QString(QStringLiteral("\nDisplaying similarity list for fic: %1.")).arg(command.user->GetSimilarFicsId());
+    if(!similarFicId.isEmpty())
+        result += QString(QStringLiteral("\nDisplaying similarity list for fic: %1.")).arg(similarFicId);
     if(filter.fandoms.size() > 0){
         result += QStringLiteral("\nDisplayed recommendations are for fandom filter:\n");
         for(auto fandom: std::as_const(filter.fandoms))
@@ -695,6 +697,36 @@ void  FillActiveFilterPartInEmbedAsField(SleepyDiscord::Embed& embed, QSharedPoi
     embed.fields.push_back(field);
 }
 
+template<typename T>
+void FillPageDisplayMemo(T* fetcher,
+                         std::shared_ptr<TrackedMessageBase> messageData,
+                         bool reuseData = true,
+                         int favouritesCutoff = 0,
+                         QString userFFNId = ""){
+    if(!messageData)
+        return;
+
+    auto reclistData = std::dynamic_pointer_cast<TrackedRecommendationList>(messageData);
+
+    An<ClientStorage> storage;
+    reclistData->memo.page = fetcher->pageToUse;
+    reclistData->memo.filter = fetcher->filter;
+    if(!reuseData){
+        reclistData->memo.ficFavouritesCutoff = favouritesCutoff;
+        reclistData->memo.userFFNId = userFFNId;
+    }
+    reclistData->ficData.data = fetcher->sourceficsData;
+    reclistData->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS());
+    reclistData->memo.sourceFics = fetcher->sourceficsData->sourceFicsFFN;
+//    if constexpr(std::is_same_v<T, FicFetcherRNG>){
+//        reclistData->memo.rngQualityCutoff = fetcher->qualityCutoff;
+//    }
+    if(!reclistData->token.messageID.string().empty()){
+        storage->messageData.push(reclistData->token.messageID.number(),messageData);
+        storage->timedMessageData.push(reclistData->token.messageID.number(),messageData);
+    }
+}
+
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     //QLOG_TRACE() << "Creating page results";
@@ -713,20 +745,25 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     static constexpr int listSize = 9;
 
     core::StoryFilter usedFilter;
+    bool workingOnSimilarityList = command.commandChain.at(0) == ECommandType::ct_create_similar_fics_list;
+
     FicFetcherPage pageFetcher;
     pageFetcher.source = environment->ficSource;
     pageFetcher.recordLimit = listSize;
     pageFetcher.user = command.user;
     pageFetcher.pageToUse = page;
-    int pageCount = 0;
+    if(workingOnSimilarityList)
+        pageFetcher.displayingSimilarityList = true;
 
+    int pageCount = 0;
     QVector<core::Fanfic> fics;
+    QString similarFic;
     if(command.reactionCommand){
         auto resultLocker = messageData->LockResult();
         auto listData = static_cast<TrackedRecommendationList*>(messageData.get());
         // we need to recreate the list before we can display anything
         if(!listData->ficData.data)
-            listData->ficData.data = FillUserRecommendationsFromFavourites(listData->memo.userFFNId, listData->memo.sourceFics, environment,command)->ficData;
+            listData->ficData.data = FillUserRecommendationsFromFavourites(listData->memo.userFFNId, listData->memo.sourceFics, environment, listData->memo.ficFavouritesCutoff, command)->ficData;
         pageFetcher.sourceficsData = listData->ficData.data;
         listData->memo.filter.partiallyFilled = true;
         //listData->memo.filter.recordPage = page;
@@ -734,7 +771,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         pageCount = pageFetcher.FetchPageCount(listData->memo.filter);
 
     }else{
-        pageFetcher.sourceficsData = command.user->FicList();
+        pageFetcher.sourceficsData =  workingOnSimilarityList ? command.user->GetTemporaryFicsData() : command.user->FicList();
         pageFetcher.Fetch({}, &fics);
         pageCount = pageFetcher.FetchPageCount({});
     }
@@ -747,6 +784,9 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
     auto editPreviousPageIfPossible = command.variantHash.value(QStringLiteral("refresh_previous")).toBool();
+    if(editPreviousPageIfPossible && !command.user->GetLastHelpMessageID().string().empty()){
+        command.targetMessage = command.user->GetLastHelpMessageID();
+    }
 
     if(command.targetMessage.string().length() != 0){
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
@@ -764,7 +804,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         //        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
     }
 
-    embed.description = QString(QStringLiteral("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3")).arg(command.user->FfnID()).arg(command.user->CurrentRecommendationsPage()).arg(QString::number(pageCount)).toStdString();
+    embed.description = QString(QStringLiteral("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3")).arg(command.user->FfnID()).arg(pageFetcher.pageToUse).arg(QString::number(pageCount)).toStdString();
     auto& tips = SendMessageCommand::tips;
     int tipNumber =  rand() % tips.size();
     static constexpr uint8_t promoFrequency = 7;
@@ -791,8 +831,10 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         }
     }
     embed.footer = footer;
-
-    FillActiveFilterPartInEmbed(embed, environment, command);
+    FillActiveFilterPartInEmbed(embed,
+                                environment,
+                                command.variantHash.contains("similar") ? command.variantHash["similar"].toString() : "",
+                                command);
     QHash<int, int> positionToId;
     int i = 0;
     for(const auto& fic: std::as_const(fics))
@@ -807,29 +849,45 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         command.user->SetLastPageType(ct_display_page);
     }
 
+    An<ClientStorage> storage;
     if(command.targetMessage.string().length() == 0){
-        switch(command.commandChain.front()){
-        case ct_create_similar_fics_list:
-            action->messageData = std::make_shared<TrackedSimilarityList>();
-            break;
-        case ct_create_recs_from_mobile_page:
-            action->messageData = std::make_shared<TrackedRecommendationList>();
-            break;
-        case ct_fill_recommendations:
-            action->messageData = std::make_shared<TrackedRecommendationList>();
-            break;
-        default:
-            action->messageData = {};
+        // if we got a chain of size: 1, this means it's a !page, !next or !prev using the same recs as previously
+        // for that we need to create a new instance of whatever that was
+        // meaning accessing the last id from storage
+
+        if(command.commandChain.size() == 1){
+            auto priorMessage = command.user->GetLastPageMessageID();
+            std::shared_ptr<TrackedMessageBase> oldMessage;
+            if(!priorMessage.string().empty() && storage->messageData.contains(priorMessage.number()))
+                oldMessage = storage->messageData.value(priorMessage.number());
+            if(oldMessage)
+                action->messageData = oldMessage->NewInstance();
+        }
+        else{
+            switch(command.commandChain.front()){
+            case ct_create_similar_fics_list:
+                action->messageData = std::make_shared<TrackedSimilarityList>(command.variantHash["similar"].toString());
+                break;
+            default:
+                action->messageData = std::make_shared<TrackedRecommendationList>();
+            }
         }
         messageData = action->messageData;
-        //auto reclistDataData = std::dynamic_pointer_cast<TrackedRecommendationList>(messageData);
     }
 
-    An<ClientStorage> storage;
     if(command.reactionCommand && storage->messageData.contains(command.reactedMessageToken.messageID.number()))
         messageData = storage->messageData.value(command.reactedMessageToken.messageID.number());
 
-    messageData->FillMemo(command.user);
+    bool reuseDataInMemo = command.reactionCommand;
+    FillPageDisplayMemo(&pageFetcher,
+                        messageData,
+                        reuseDataInMemo,
+                        command.user->GetRecommendationsCutoff(),
+                        command.user->FfnID());
+//    if(!workingOnSimilarityList && command.user->GetTemporaryFicsData()){
+//        command.user->SetFicList(command.user->GetTemporaryFicsData());
+//    }
+    command.user->SetTemporaryFicsData({});
     action->reactionsToAdd = messageData->GetEmojiSet();
 
     action->embed = embed;
@@ -876,7 +934,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
         // we need to recreate the list before we can display anything
         if(!rngData->ficData.data)
-            rngData->ficData.data = FillUserRecommendationsFromFavourites(rngData->memo.userFFNId, rngData->memo.sourceFics, environment,command)->ficData;
+            rngData->ficData.data = FillUserRecommendationsFromFavourites(rngData->memo.userFFNId, rngData->memo.sourceFics, environment, rngData->memo.ficFavouritesCutoff, command)->ficData;
 
         selectScoreCutoff(rngData->ficData.data);
         rngFetcher.qualityCutoff = scoreCutoff;
@@ -928,12 +986,17 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     command.user->SetLastPageType(ct_display_rng);
-    FillActiveFilterPartInEmbed(embed, environment, command);
+    FillActiveFilterPartInEmbed(embed, environment, "", command);
     if(!messageData){
         action->messageData = std::make_shared<TrackedRoll>();
         messageData = action->messageData;
     }
-    messageData->FillMemo(command.user);
+    bool reuseDataInMemo = command.reactionCommand;
+    FillPageDisplayMemo(&rngFetcher,
+                        messageData,
+                        reuseDataInMemo,
+                        command.user->GetRecommendationsCutoff(),
+                        command.user->FfnID());
 
     action->embed = embed;
     action->reactionsToAdd = messageData->GetEmojiSet();
@@ -1313,13 +1376,13 @@ QSharedPointer<SendMessageCommand> ResetFiltersAction::ExecuteImpl(QSharedPointe
 QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     command.user->initNewEasyQuery();
-    command.user->SetRngBustScheduled(true);
+//    command.user->SetRngBustScheduled(true);
 
-    command.user->SetSortFreshFirst(false);
-    command.user->SetSortGemsFirst(false);
-    command.user->SetStrictFreshSort(false);
-    command.user->SetPublishedFilter("");
-    command.user->SetFinishedFilter("");
+//    command.user->SetSortFreshFirst(false);
+//    command.user->SetSortGemsFirst(false);
+//    command.user->SetStrictFreshSort(false);
+//    command.user->SetPublishedFilter("");
+//    command.user->SetFinishedFilter("");
 
     auto ficId = command.ids.at(0);
     QSharedPointer<core::RecommendationList> listParams;
@@ -1356,7 +1419,7 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
 
     // instantiating working set for user
     An<Users> users;
-    command.user->SetFicList(recList->ficData);
+    command.user->SetTemporaryFicsData(recList->ficData);
     //QMap<int, int> scoreStatus; // maps maptch count to fic count with this match
     //QMap<int, QSet<int>> matchFicToScore; // maps maptch count to fic count with this match
 
@@ -1569,10 +1632,9 @@ QSharedPointer<SendMessageCommand> ShowFicAction::ExecuteImpl(QSharedPointer<Tas
 
 
     if(command.targetMessage.string().length() == 0){
-        action->messageData = std::make_shared<TrackedFicDetails>();
+        messageData = action->messageData = std::make_shared<TrackedFicDetails>();
         auto ficData = std::dynamic_pointer_cast<TrackedFicDetails>(messageData);
         ficData->ficId = command.ids[0];
-        action->messageData->FillMemo(command.user);
     }
 
     action->embed = embed;

@@ -56,16 +56,4 @@ void TrackedHelpPage::RetireData()
 {
     // no point in expiring a single int value
 }
-void TrackedHelpPage::FillMemo(QSharedPointer<User> user)
-{
-    An<ClientStorage> storage;
-    this->currenHelpPage = user->GetCurrentHelpPage();
-    storage->messageData.push(token.messageID.number(),this->shared_from_this());
-    storage->timedMessageData.push(token.messageID.number(),this->shared_from_this());
-}
-
-
-
-
-
 }

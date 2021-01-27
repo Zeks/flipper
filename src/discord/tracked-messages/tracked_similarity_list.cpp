@@ -11,6 +11,7 @@ namespace discord{
 TrackedSimilarityList::TrackedSimilarityList()
 {
     actionableEmoji = {"👈","👉"};
+    canBeUsedAsLastPage = false;
 }
 
 CommandChain TrackedSimilarityList::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
@@ -21,6 +22,7 @@ CommandChain TrackedSimilarityList::ProcessReactionImpl(Client* client, QSharedP
     bool scrollDirection = emoji.name == "👉" ? true : false;
     CommandChain commands;
     commands = CreateChangeRecommendationsPageCommand(user,server, token, scrollDirection);
+    commands.commands.front().variantHash["similar"] = ficId;
     commands += CreateRemoveReactionCommand(user,server, token, emoji.name == "👉" ? "%f0%9f%91%89" : "%f0%9f%91%88");
     return commands;
 }
@@ -55,22 +57,5 @@ void TrackedSimilarityList::RetireData()
 {
     ficData = {};
 }
-
-void TrackedSimilarityList::FillMemo(QSharedPointer<User> user)
-{
-    An<ClientStorage> storage;
-    this->memo.filter = user->GetLastUsedStoryFilter();
-    this->memo.ficFavouritesCutoff = user->GetRecommendationsCutoff();
-    this->ficData.data = user->FicList();
-    this->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(this->GetDataExpirationIntervalS());
-    this->memo.userFFNId = user->FfnID();
-    this->memo.sourceFics = user->FicList()->sourceFicsFFN;
-    this->token = token;
-    storage->messageData.push(token.messageID.number(),this->shared_from_this());
-    storage->timedMessageData.push(token.messageID.number(),this->shared_from_this());
-}
-
-
-
 
 }

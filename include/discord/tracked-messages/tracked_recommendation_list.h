@@ -17,13 +17,14 @@ public:
     int GetDataExpirationIntervalS() override;
     std::chrono::system_clock::time_point GetDataExpirationPoint() override;
     void RetireData() override;
-    void FillMemo(QSharedPointer<User>) override;
+    //void FillMemo(QSharedPointer<User>) override;
 
     // own functions redefined in roll and similarity list
     std::string GetOtherUserErrorMessage(Client *client) override;
     CommandChain CloneForOtherUser() override;
     CommandChain ProcessReactionImpl(Client *client, QSharedPointer<User>, SleepyDiscord::Emoji emoji) override;
     QStringList GetEmojiSet() override;
+    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedRecommendationList>();};
 
 
     RecsMessageCreationMemo memo;
