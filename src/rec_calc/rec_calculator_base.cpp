@@ -330,7 +330,10 @@ bool RecCalculatorImplBase::CollectVotes()
             }
             vote = vote * matchCountSimilarityCoef;
             if(doTrashCounting &&  ownMajorNegatives.cardinality() > startOfTrashCounting){
-                if(allAuthors[author].negativeToPositiveMatches > (averageNegativeToPositiveMatches*2))
+                if(allAuthors[author].negativeToPositiveMatches > 1.5){
+                    vote = 0;
+                }
+                else if(allAuthors[author].negativeToPositiveMatches > (averageNegativeToPositiveMatches*2))
                 {
                     vote = vote / (1 + (allAuthors[author].negativeToPositiveMatches - averageNegativeToPositiveMatches));
                     //if(allAuthors[author].negativeToPositiveMatches > averageNegativeToPositiveMatches*2)
@@ -889,8 +892,13 @@ void RecCalculatorImplBase::CalculateNegativeToPositiveRatio()
     for(auto author : std::as_const(filteredAuthors)){
         double ratioForAuthor = static_cast<double>(allAuthors[author].negativeMatches)/static_cast<double>(allAuthors[author].matches);
         //QLOG_INFO() << "Negative matches: " << static_cast<double>(allAuthors[author].negativeMatches) << "Positive matches: " << static_cast<double>(allAuthors[author].matches);
-        averageNegativeToPositiveMatches += ratioForAuthor;
         allAuthors[author].negativeToPositiveMatches = ratioForAuthor;
+        if(allAuthors[author].negativeToPositiveMatches < 1.5 || allAuthors[author].matches <= 10)
+            averageNegativeToPositiveMatches += ratioForAuthor;
+    }
+    for(auto [id,author] : allAuthors){
+        if(author.negativeToPositiveMatches > 1.5 && author.matches > 10)
+            filteredAuthors.remove(id);
     }
     averageNegativeToPositiveMatches /=filteredAuthors.size();
     QLOG_INFO() << " average ratio division result: " << averageNegativeToPositiveMatches;
