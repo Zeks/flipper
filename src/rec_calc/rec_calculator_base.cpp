@@ -649,6 +649,8 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                 //Roaring temp = tempAuthorRoaring.operator&(ownFavourites);
                 author.matches = tempAuthorRoaring.and_cardinality(ownFavourites);
                 author.negativeMatches = tempAuthorRoaring.and_cardinality(ownMajorNegatives);
+                if(author.matches > 10 && static_cast<double>(author.negativeMatches)/static_cast<double>(author.matches) > 1.5)
+                    author.matches = 0;
                 author.sizeAfterIgnore = unignoredSize;
 
                 // not interested with lists that don't add anything new
@@ -893,12 +895,7 @@ void RecCalculatorImplBase::CalculateNegativeToPositiveRatio()
         double ratioForAuthor = static_cast<double>(allAuthors[author].negativeMatches)/static_cast<double>(allAuthors[author].matches);
         //QLOG_INFO() << "Negative matches: " << static_cast<double>(allAuthors[author].negativeMatches) << "Positive matches: " << static_cast<double>(allAuthors[author].matches);
         allAuthors[author].negativeToPositiveMatches = ratioForAuthor;
-        if(allAuthors[author].negativeToPositiveMatches < 1.5 || allAuthors[author].matches <= 10)
-            averageNegativeToPositiveMatches += ratioForAuthor;
-    }
-    for(auto [id,author] : allAuthors){
-        if(author.negativeToPositiveMatches > 1.5 && author.matches > 10)
-            filteredAuthors.remove(id);
+        averageNegativeToPositiveMatches += ratioForAuthor;
     }
     averageNegativeToPositiveMatches /=filteredAuthors.size();
     QLOG_INFO() << " average ratio division result: " << averageNegativeToPositiveMatches;
