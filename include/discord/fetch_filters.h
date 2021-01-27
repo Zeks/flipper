@@ -33,7 +33,8 @@ public:
     virtual core::StoryFilter CreateFilter() = 0;
     virtual void FillFicData() = 0;
 
-    int size;
+    int pageToUse = 0;
+    int recordLimit = 0;
     core::StoryFilter filter;
     QSharedPointer<FicSourceGRPC> source;
     QSharedPointer<discord::User> user;
@@ -46,6 +47,7 @@ public:
     virtual ~FicFetcherPage(){};
     virtual core::StoryFilter CreateFilter() override;
     virtual void FillFicData() override;
+
 };
 
 class FicFetcherRNG: public FicFetcherBase{

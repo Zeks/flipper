@@ -715,8 +715,9 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     core::StoryFilter usedFilter;
     FicFetcherPage pageFetcher;
     pageFetcher.source = environment->ficSource;
-    pageFetcher.size = listSize;
+    pageFetcher.recordLimit = listSize;
     pageFetcher.user = command.user;
+    pageFetcher.pageToUse = page;
     int pageCount = 0;
 
     QVector<core::Fanfic> fics;
@@ -727,6 +728,8 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         if(!listData->ficData.data)
             listData->ficData.data = FillUserRecommendationsFromFavourites(listData->memo.userFFNId, listData->memo.sourceFics, environment,command)->ficData;
         pageFetcher.sourceficsData = listData->ficData.data;
+        listData->memo.filter.partiallyFilled = true;
+        //listData->memo.filter.recordPage = page;
         pageFetcher.Fetch(listData->memo.filter, &fics);
         pageCount = pageFetcher.FetchPageCount(listData->memo.filter);
 
@@ -790,17 +793,16 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     embed.footer = footer;
 
     FillActiveFilterPartInEmbed(embed, environment, command);
-
+    QHash<int, int> positionToId;
+    int i = 0;
+    for(const auto& fic: std::as_const(fics))
+    {
+        positionToId[i+1] = fic.identity.id;
+        i++;
+        FillListEmbedForFicAsFields(embed, fic, i);
+    }
     if(!command.reactionCommand || command.reactedMessageToken.messageID == command.user->GetLastPageMessageID())
     {
-        QHash<int, int> positionToId;
-        int i = 0;
-        for(const auto& fic: std::as_const(fics))
-        {
-            positionToId[i+1] = fic.identity.id;
-            i++;
-            FillListEmbedForFicAsFields(embed, fic, i);
-        }
         command.user->SetPositionsToIdsForCurrentPage(positionToId);
         command.user->SetLastPageType(ct_display_page);
     }
@@ -862,7 +864,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
     FicFetcherRNG rngFetcher;
     rngFetcher.source = environment->ficSource;
-    rngFetcher.size = 3;
+    rngFetcher.recordLimit = 3;
     rngFetcher.user = command.user;
 
     //rngFetcher.sourceficsData = environment->ficSource;
@@ -879,6 +881,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         selectScoreCutoff(rngData->ficData.data);
         rngFetcher.qualityCutoff = scoreCutoff;
         rngFetcher.sourceficsData = rngData->ficData.data;
+        rngData->memo.filter.partiallyFilled = true;
         rngFetcher.Fetch(rngData->memo.filter, &fics);
     }
     else{

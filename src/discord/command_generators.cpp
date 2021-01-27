@@ -650,7 +650,8 @@ void SendMessageCommand::Invoke(Client * client)
                         if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help, ct_show_fic)){
                             MessageIdToken newToken = originalMessageToken;
                             newToken.messageID = resultingMessage.response->cast().ID.number();
-                            newToken.channelID = targetChannel;
+                            if(!targetChannel.string().empty())
+                                newToken.channelID = targetChannel;
                             if(messageData){
                                 An<ClientStorage> storage;
                                 messageData->token = newToken;

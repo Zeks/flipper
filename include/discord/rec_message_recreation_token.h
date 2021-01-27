@@ -8,6 +8,7 @@ struct RecsMessageCreationMemo{
     //int64_t originalMessage;
     int ficFavouritesCutoff = 0;
     std::atomic<int> page = 0;
+    bool strictFreshSort = 0;
     QString userFFNId = 0;
     core::StoryFilter filter;
     QSet<int> sourceFics;

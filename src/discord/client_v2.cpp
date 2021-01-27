@@ -109,7 +109,8 @@ void Client::InitCommandExecutor()
 }
 
 
-QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID)
+QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID,
+                                                           SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID)
 {
     QSharedPointer<discord::Server> server;
     if(serverID.string().length() == 0)
@@ -122,6 +123,8 @@ QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowfl
 
 QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, uint64_t serverID)
 {
+    An<ClientStorage> storage;
+    storage.getData();
     QSharedPointer<discord::Server> server;
     if(serverID == 0)
         server = storage->fictionalDMServer;
@@ -264,7 +267,8 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 
         QLOG_INFO() << "entered the onReaction core body with reaction: " << QString::fromStdString(emoji.name);
         auto message = storage->messageData.value(messageID.number());
-        message->ProcessReaction(this,user,emoji);
+        auto result = message->ProcessReaction(this,user,emoji);
+        executor->Push(std::move(result));
     }
     catch(const rapidjson_exception& e){
         qDebug() << e.what();

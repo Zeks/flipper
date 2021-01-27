@@ -149,6 +149,7 @@ struct StoryFilter{
     bool displayPurgedFics = false;
     bool displaySnoozedFics = false;
     bool wipeRngSequence = false;;
+    bool strictFreshSort = false;;
 
     SlashFilterState slashFilter;
 

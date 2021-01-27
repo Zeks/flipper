@@ -47,10 +47,14 @@ void FicFetcherBase::Fetch(core::StoryFilter partialfilter, QVector<core::Fanfic
     this->filter = partialfilter;
     if(!this->filter.partiallyFilled)
         this->filter = CreateFilter();
+
+    filter.recordLimit = this->recordLimit;
+    filter.recordPage= this->pageToUse;
+
     FillFicData();
     FillUserPart();
     fics->clear();
-    fics->reserve(size);
+    fics->reserve(this->recordLimit);
     source->FetchData(filter, fics);
 
     for(auto& fic : *fics)
@@ -66,7 +70,7 @@ int FicFetcherBase::FetchPageCount(core::StoryFilter partialfilter)
     FillUserPart();
 
     auto count = source->GetFicCount(filter);
-    return count/size;
+    return count/recordLimit;
 }
 
 void FicFetcherBase::FillUserPart()
@@ -91,12 +95,12 @@ void FicFetcherBase::FillUserPart()
 core::StoryFilter FicFetcherPage::CreateFilter()
 {
     core::StoryFilter filter;
-    filter.recordPage = user->CurrentRecommendationsPage();
-    filter.recordLimit = size;
+    filter.recordPage = pageToUse;
     auto userWordcountFilter = user->GetWordcountFilter();
     filter.minWords = userWordcountFilter.firstLimit;
     filter.maxWords = userWordcountFilter.secondLimit;
     filter.deadFicDaysRange = user->GetDeadFicDaysRange();
+    filter.strictFreshSort = user->GetStrictFreshSort();
 
     if(user->GetSortFreshFirst()){
         filter.listOpenMode = true;
@@ -133,27 +137,28 @@ core::StoryFilter FicFetcherPage::CreateFilter()
 
 void FicFetcherPage::FillFicData()
 {
-    auto userFics = user->FicList();
-    for(int i = 0; i < userFics->fics.size(); i++)
+    //auto userFics = user->FicList();
+
+    for(int i = 0; i < sourceficsData->fics.size(); i++)
     {
-        if(userFics->sourceFics.contains(userFics->fics.at(i)))
+        if(sourceficsData->sourceFics.contains(sourceficsData->fics.at(i)))
             continue;
-        if(!user->GetStrictFreshSort()
-                || (user->GetStrictFreshSort() && userFics->metascores.at(i) > 1))
-        filter.recommendationScoresSearchToken.ficToScore[userFics->fics[i]] = userFics->metascores.at(i);
+        if(!filter.strictFreshSort
+                || (filter.strictFreshSort && sourceficsData->metascores.at(i) > 1))
+        filter.recommendationScoresSearchToken.ficToScore[sourceficsData->fics[i]] = sourceficsData->metascores.at(i);
     }
     if(filter.sortMode == core::StoryFilter::sm_gems)
-        filter.recommendationScoresSearchToken.ficToPureVotes = userFics->ficToVotes;
-    userFics->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
+        filter.recommendationScoresSearchToken.ficToPureVotes = sourceficsData->ficToVotes;
+    sourceficsData->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
 }
 
 core::StoryFilter FicFetcherRNG::CreateFilter()
 {
     core::StoryFilter filter;
-    filter.recordPage = user->CurrentRecommendationsPage();
-    filter.recordLimit = size;
+    filter.recordPage = pageToUse;
+    filter.recordLimit = recordLimit;
     filter.randomizeResults = true;
-    filter.maxFics = size;
+    filter.maxFics = recordLimit;
     filter.minRecommendations = qualityCutoff;
     filter.listOpenMode = true;
     filter.rngDisambiguator += user->UserID();
@@ -162,6 +167,7 @@ core::StoryFilter FicFetcherRNG::CreateFilter()
     filter.minWords = userWordcountFilter.firstLimit;
     filter.maxWords = userWordcountFilter.secondLimit;
     filter.deadFicDaysRange = user->GetDeadFicDaysRange();
+    filter.strictFreshSort = user->GetStrictFreshSort();
 
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
@@ -189,16 +195,16 @@ core::StoryFilter FicFetcherRNG::CreateFilter()
 
 void FicFetcherRNG::FillFicData()
 {
-    auto userFics = user->FicList();
+    //auto userFics = user->FicList();
 
-    for(int i = 0; i < userFics->fics.size(); i++)
+    for(int i = 0; i < sourceficsData->fics.size(); i++)
     {
-        if(userFics->sourceFics.contains(userFics->fics.at(i)))
+        if(sourceficsData->sourceFics.contains(sourceficsData->fics.at(i)))
             continue;
-        if(userFics->metascores.at(i) >=qualityCutoff)
-            filter.recommendationScoresSearchToken.ficToScore[userFics->fics[i]] = userFics->metascores.at(i);
+        if(sourceficsData->metascores.at(i) >=qualityCutoff)
+            filter.recommendationScoresSearchToken.ficToScore[sourceficsData->fics[i]] = sourceficsData->metascores.at(i);
     }
-    userFics->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
+    sourceficsData->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
 }
 
 }
