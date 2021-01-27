@@ -45,7 +45,7 @@ CommandChain TrackedSimilarityList::CloneForOtherUser()
 
 int TrackedSimilarityList::GetDataExpirationIntervalS()
 {
-    return 5;
+    return 300;
 }
 
 std::chrono::system_clock::time_point TrackedSimilarityList::GetDataExpirationPoint()

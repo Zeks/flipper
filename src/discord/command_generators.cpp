@@ -657,11 +657,10 @@ void SendMessageCommand::Invoke(Client * client)
                                 messageData->token = newToken;
                                 storage->messageData.push(newToken.messageID.number(),messageData);
                                 storage->timedMessageData.push(newToken.messageID.number(),messageData);
-                                if(messageData->CanBeUsedAsLastPage() && originalCommandType *in(ct_display_page))
-                                    user->SetLastPageMessageID(newToken.messageID.number());
                             }
                             if(messageData->CanBeUsedAsLastPage() && originalCommandType *in(ct_display_page, ct_display_rng))
                                 this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
+                            this->user->SetLastAnyTypeMessageID(resultingMessage.response->cast());
 
                             if(targetChannel.string().length() > 0)
                                 originalMessageToken.channelID = targetChannel;
@@ -1000,6 +999,7 @@ CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
     displayRecs.user = user;
+    displayRecs.variantHash["similar"] = QString::number(ficId);
     if(server->GetDedicatedChannelId().length() > 0)
         displayRecs.targetChannelID = server->GetDedicatedChannelId();
     result.Push(std::move(displayRecs));
@@ -1108,6 +1108,7 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(const SleepyDiscord::Message& 
     result.Push(std::move(command));
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
+    displayRecs.variantHash["similar"] = QString::fromStdString(match.get<1>().to_string());
     result.Push(std::move(displayRecs));
     return result;
 

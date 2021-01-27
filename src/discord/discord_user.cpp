@@ -634,18 +634,6 @@ void User::SetLastUsedStoryFilter(const core::StoryFilter &value)
     lastUsedStoryFilter = value;
 }
 
-SleepyDiscord::Snowflake<SleepyDiscord::Message> User::GetLastPageMessageID() const
-{
-    QReadLocker locker(&lock);
-    return lastPageMessageID;
-}
-
-void User::SetLastPageMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value)
-{
-    QWriteLocker locker(&lock);
-    lastPageMessageID = value;
-}
-
 SleepyDiscord::Snowflake<SleepyDiscord::Message> User::GetLastHelpMessageID() const
 {
     QReadLocker locker(&lock);
@@ -668,6 +656,18 @@ void User::SetTemporaryFicsData(const QSharedPointer<core::RecommendationListFic
 {
     QWriteLocker locker(&lock);
     temporaryFicsData = value;
+}
+
+SleepyDiscord::Snowflake<SleepyDiscord::Message> User::GetLastAnyTypeMessageID() const
+{
+    QReadLocker locker(&lock);
+    return lastAnyTypeMessageID;
+}
+
+void User::SetLastAnyTypeMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value)
+{
+    QWriteLocker locker(&lock);
+    lastAnyTypeMessageID = value;
 }
 
 void Users::AddUser(QSharedPointer<User> user)

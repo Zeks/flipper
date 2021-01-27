@@ -212,14 +212,14 @@ public:
     core::StoryFilter GetLastUsedStoryFilter() const;
     void SetLastUsedStoryFilter(const core::StoryFilter &value);
 
-    SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastPageMessageID() const;
-    void SetLastPageMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
-
     SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastHelpMessageID() const;
     void SetLastHelpMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
 
     QSharedPointer<core::RecommendationListFicData> GetTemporaryFicsData() const;
     void SetTemporaryFicsData(const QSharedPointer<core::RecommendationListFicData> &value);
+
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastAnyTypeMessageID() const;
+    void SetLastAnyTypeMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
 
 private:
     bool isValid = false;
@@ -279,8 +279,8 @@ private:
     QSharedPointer<core::RecommendationListFicData> temporaryFicsData;
     core::StoryFilter lastUsedStoryFilter;
 
-    SleepyDiscord::Snowflake<SleepyDiscord::Message> lastPageMessageID;
     SleepyDiscord::Snowflake<SleepyDiscord::Message> lastHelpMessageID;
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> lastAnyTypeMessageID;
 };
 
 
