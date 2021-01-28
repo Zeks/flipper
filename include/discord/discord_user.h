@@ -46,6 +46,7 @@ class Users;
 }
 
 
+
 namespace discord{
 
 struct WordcountFilter{
@@ -151,8 +152,8 @@ struct User{
     QString GetLastUsedRoll() const;
     void SetLastUsedRoll(const QString &value);
 
-    LastPageCommandMemo GetLastPageMessage() const;
-    void SetLastPageMessage(const LastPageCommandMemo &value);
+    LastPageCommandMemo GetLastRecsPageMessage() const;
+    void SetLastRecsPageMessage(const LastPageCommandMemo &value);
 
     ECommandType GetLastPageType() const;
     void SetLastPageType(const ECommandType &value);
@@ -221,6 +222,9 @@ public:
     SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastAnyTypeMessageID() const;
     void SetLastAnyTypeMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
 
+    LastPageCommandMemo GetLastPostedListCommandMemo() const;
+    void SetLastPostedListCommandMemo(const LastPageCommandMemo &value);
+
 private:
     bool isValid = false;
     QString userID;
@@ -270,7 +274,9 @@ private:
     WordcountFilter wordcountFilter;
     FandomFilter ignoredFandoms;
     ECommandType lastPageType = ct_display_page;
-    LastPageCommandMemo lastPageCommandMemo;
+    LastPageCommandMemo lastRecsPageCommandMemo; // as in actual recommendations
+    LastPageCommandMemo lastPostedListCommandMemo; // similarity OR recommendation
+
     LargeListToken largeListToken;
     QHash<int, int> positionToId;
     mutable QReadWriteLock lock;

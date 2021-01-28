@@ -18,10 +18,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QVector>
 #include <QSharedPointer>
 #include "Interfaces/discord/users.h"
+#include "include/storyfilter.h"
 #include "grpc/grpc_source.h"
 
 namespace discord{
-
+struct StoryFilterDisplayToken{
+    struct RollMemo{
+        bool usingRoll = false;
+        QString rollType = "all";
+        int perfectRngFicsSize = 0;
+        int goodRngFicsSize = 0;
+    };
+    bool isArchivedPage = false;
+    QString ficId;
+    QSet<int> fandoms;
+    WordcountFilter wordCountFilter;
+    QString publishedFilter;
+    QString finishedFilter;
+    bool usingLikedFilter = false;
+    bool usingFreshSort = false;
+    bool usingGemsSort = false;
+    bool usingCompleteFilter = false;
+    bool usingDeadFilter = false;
+    RollMemo rollMemo;
+};
 
 class FicFetcherBase{
 public:
@@ -29,6 +49,7 @@ public:
     virtual ~FicFetcherBase(){};
     virtual void Fetch(core::StoryFilter, QVector<core::Fanfic>* fics);
     virtual int FetchPageCount(core::StoryFilter partialfilter);
+    virtual void FillFilterMemoToken();
     virtual void FillUserPart();
     virtual core::StoryFilter CreateFilter() = 0;
     virtual void FillFicData() = 0;
@@ -42,6 +63,7 @@ public:
     QSharedPointer<FicSourceGRPC> source;
     QSharedPointer<discord::User> user;
     QSharedPointer<core::RecommendationListFicData> sourceficsData;
+    StoryFilterDisplayToken storyFilterDisplayToken;
 };
 
 class FicFetcherPage : public FicFetcherBase{

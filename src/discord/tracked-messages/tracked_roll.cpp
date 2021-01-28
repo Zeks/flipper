@@ -26,7 +26,7 @@ CommandChain TrackedRoll::ProcessReactionImpl(Client* client, QSharedPointer<Use
 
 QStringList TrackedRoll::GetEmojiSet()
 {
-    static const QStringList emoji = {QStringLiteral("%f0%9f%91%88"), QStringLiteral("%f0%9f%91%89")};
+    static const QStringList emoji = {"%f0%9f%94%81"};
     return emoji;
 }
 

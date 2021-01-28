@@ -219,6 +219,9 @@ struct StoryFilter{
     FicDateFilter ficDateFilter;
 };
 
+
+
+
 struct ReclistFilter{
     int mainListId = -1;
     int secondListId = -1;

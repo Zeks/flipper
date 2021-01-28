@@ -386,16 +386,16 @@ void User::SetLastUsedRoll(const QString &value)
     lastUsedRoll = value;
 }
 
-LastPageCommandMemo User::GetLastPageMessage() const
+LastPageCommandMemo User::GetLastRecsPageMessage() const
 {
     QReadLocker locker(&lock);
-    return lastPageCommandMemo;
+    return lastRecsPageCommandMemo;
 }
 
-void User::SetLastPageMessage(const LastPageCommandMemo &value)
+void User::SetLastRecsPageMessage(const LastPageCommandMemo &value)
 {
     QWriteLocker locker(&lock);
-    lastPageCommandMemo = value;
+    lastRecsPageCommandMemo = value;
 }
 
 ECommandType User::GetLastPageType() const
@@ -668,6 +668,16 @@ void User::SetLastAnyTypeMessageID(const SleepyDiscord::Snowflake<SleepyDiscord:
 {
     QWriteLocker locker(&lock);
     lastAnyTypeMessageID = value;
+}
+
+LastPageCommandMemo User::GetLastPostedListCommandMemo() const
+{
+    return lastPostedListCommandMemo;
+}
+
+void User::SetLastPostedListCommandMemo(const LastPageCommandMemo &value)
+{
+    lastPostedListCommandMemo = value;
 }
 
 void Users::AddUser(QSharedPointer<User> user)

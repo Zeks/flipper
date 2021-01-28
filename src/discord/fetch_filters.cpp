@@ -45,8 +45,10 @@ void FetchFicsForShowIdCommand(QSharedPointer<FicSourceGRPC> source, QList<int> 
 void FicFetcherBase::Fetch(core::StoryFilter partialfilter, QVector<core::Fanfic> *fics)
 {
     this->filter = partialfilter;
-    if(!this->filter.partiallyFilled)
+    if(!this->filter.partiallyFilled){
         this->filter = CreateFilter();
+        FillFilterMemoToken();
+    }
 
     filter.recordLimit = this->recordLimit;
     filter.recordPage= this->pageToUse;
@@ -67,8 +69,10 @@ void FicFetcherBase::Fetch(core::StoryFilter partialfilter, QVector<core::Fanfic
 int FicFetcherBase::FetchPageCount(core::StoryFilter partialfilter)
 {
     this->filter = partialfilter;
-    if(!this->filter.partiallyFilled)
+    if(!this->filter.partiallyFilled){
         this->filter = CreateFilter();
+        FillFilterMemoToken();
+    }
 
     if(displayingSimilarityList)
         ResetFilterForSimilarityList(this->filter);
@@ -79,6 +83,19 @@ int FicFetcherBase::FetchPageCount(core::StoryFilter partialfilter)
 
     auto count = source->GetFicCount(filter);
     return count/recordLimit;
+}
+
+void FicFetcherBase::FillFilterMemoToken()
+{
+    storyFilterDisplayToken.fandoms = {filter.fandom, filter.secondFandom};
+    storyFilterDisplayToken.wordCountFilter = user->GetWordcountFilter();
+    storyFilterDisplayToken.finishedFilter = user->GetFinishedFilter();
+    storyFilterDisplayToken.publishedFilter = user->GetPublishedFilter();
+    storyFilterDisplayToken.usingCompleteFilter = user->GetShowCompleteOnly();
+    storyFilterDisplayToken.usingDeadFilter = user->GetHideDead();
+    storyFilterDisplayToken.usingFreshSort = user->GetSortFreshFirst();
+    storyFilterDisplayToken.usingGemsSort = user->GetSortGemsFirst();
+    storyFilterDisplayToken.usingLikedFilter = user->GetUseLikedAuthorsOnly();
 }
 
 void FicFetcherBase::FillUserPart()

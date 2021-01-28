@@ -658,8 +658,12 @@ void SendMessageCommand::Invoke(Client * client)
                                 storage->messageData.push(newToken.messageID.number(),messageData);
                                 storage->timedMessageData.push(newToken.messageID.number(),messageData);
                             }
-                            if(messageData->CanBeUsedAsLastPage() && originalCommandType *in(ct_display_page, ct_display_rng))
-                                this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
+                            if(originalCommandType *in(ct_display_page, ct_display_rng)){
+                                if(messageData->CanBeUsedAsLastPage() )
+                                    this->user->SetLastRecsPageMessage({resultingMessage.response->cast(), channelToSendTo});
+                                this->user->SetLastPostedListCommandMemo({resultingMessage.response->cast(), channelToSendTo});
+                            }
+
                             this->user->SetLastAnyTypeMessageID(resultingMessage.response->cast());
 
                             if(targetChannel.string().length() > 0)
