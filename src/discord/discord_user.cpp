@@ -680,6 +680,23 @@ void User::SetLastPostedListCommandMemo(const LastPageCommandMemo &value)
     lastPostedListCommandMemo = value;
 }
 
+void User::ScheduleForceNewRecsPage()
+{
+
+    QWriteLocker locker(&lock);
+    forceNewPageNextTime = true;
+}
+
+bool User::NeedsNewRecsPage()
+{
+    QWriteLocker locker(&lock);
+    if(forceNewPageNextTime){
+        forceNewPageNextTime = false;
+        return true;
+    }
+    return false;
+}
+
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

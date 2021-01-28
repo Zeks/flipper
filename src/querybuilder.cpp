@@ -455,6 +455,7 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
             int counter = 0;
             for(const auto& genre : std::as_const(filter.genreInclusion))
             {
+                Q_UNUSED(genre);
                 auto counter1 = ++counter;
                 queryString += QString(" AND f.genres like '%'||:genreinc%1||'%'").arg(QString::number(counter1));
             }
@@ -465,6 +466,7 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
             int counter = 0;
             for(const auto& genre : std::as_const(filter.genreExclusion))
             {
+                Q_UNUSED(genre);
                 auto counter1 = ++counter;
                 queryString += QString(" AND f.genres not like '%'||:genreexc%1||'%'").arg(QString::number(counter1));
             }
@@ -488,6 +490,7 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
             QStringList genreResult;
             for(const auto& genre : std::as_const(filter.genreInclusion))
             {
+                Q_UNUSED(genre);
                 auto counter1 = ++counter;
                 genreResult.push_back(QString(" true_genre1  like '%'||:genreinc%1||'%' and  true_genre1_percent/max_genre_percent > %2  ")
                                       .arg(QString::number(counter1++),QString::number(limiter)));
@@ -515,6 +518,7 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
             QStringList genreResult;
             for(const auto& genre : std::as_const(filter.genreExclusion))
             {
+                Q_UNUSED(genre);
                 auto counter1 = ++counter;
                 genreResult.push_back(QString(" true_genre1  like '%'||:genreexc%1||'%' and  true_genre1_percent/max_genre_percent > %2  ")
                                       .arg(QString::number(counter1++),QString::number(limiter)));

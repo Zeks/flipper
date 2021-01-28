@@ -472,6 +472,7 @@ bool ReadDbFile(QString file, QString connectionName)
         else
             db = sql::Database::database();
         auto isOpen = db.isOpen();
+        Q_UNUSED(isOpen);
         db.transaction();
         sql::Query q(db);
         for(QString statement: statements)

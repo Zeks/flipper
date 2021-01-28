@@ -434,6 +434,8 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     ffnId = userFavourites.ffnId;
 
 
+    if(ffnId != command.user->FfnID())
+        command.user->ScheduleForceNewRecsPage();
     command.user->SetFfnID(ffnId);
     command.ids.clear();
     command.ids.push_back(userFavourites.ffnId.toUInt());
@@ -667,6 +669,8 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed,
     QString result;
     if(!filterToken.ficId.isEmpty()){
         result += QString(QStringLiteral("\nDisplaying similarity list for fic: %1.")).arg(filterToken.ficId);
+        result += QString(QStringLiteral("\nPlease note that the only filtering that works for similarity lists are fandom and fic ignores."));
+        result += QString(QStringLiteral("Every other filtering command will be applied to your earlier displayed recommendation list."));
     }else{
         if(filterToken.fandoms.size() > 0){
             QString fandomResult;
@@ -843,13 +847,15 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
     environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
-    auto editPreviousPageIfPossible = command.variantHash.value(QStringLiteral("refresh_previous")).toBool();
+    auto editPreviousPageIfPossible = command.variantHash.value(QStringLiteral("refresh_previous")).toBool() && !command.user->NeedsNewRecsPage();
     if(editPreviousPageIfPossible && !command.user->GetLastRecsPageMessage().message.string().empty()){
         command.targetMessage = command.user->GetLastRecsPageMessage().message;
     }
 
     if(command.targetMessage.string().length() != 0){
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
+        if(!command.reactionCommand)
+            action->diagnosticText = QString::fromStdString(CreateMention(command.originalMessageToken.authorID.string()) + ", your previous results have been updated with new data." );
     }
     else{
         auto previousPage = command.user->GetLastRecsPageMessage();
@@ -865,7 +871,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         //        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
     }
 
-    embed.description = QString(QStringLiteral("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3")).arg(command.user->FfnID()).arg(pageFetcher.pageToUse).arg(QString::number(pageCount)).toStdString();
+    embed.description = QString(QStringLiteral("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3")).arg(pageFetcher.sourceficsData->id).arg(pageFetcher.pageToUse).arg(QString::number(pageCount)).toStdString();
     auto& tips = SendMessageCommand::tips;
     int tipNumber =  rand() % tips.size();
     static constexpr uint8_t promoFrequency = 7;
@@ -873,10 +879,10 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     SleepyDiscord::EmbedFooter footer;
     //
     if(showAppOrPatreon){
-        QStringList appPromo =  {QStringLiteral("If you would like to support the bot, you can do it on https://www.patreon.com/Zekses"),
-                                 QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest")};
+        QStringList appPromo =  {QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest"),
+                                 QStringLiteral("If you would like to support the bot, you can do it on https://www.patreon.com/Zekses")};
         int shownId = rand() %2 == 0;
-            footer.text = appPromo.at(0).toStdString();
+            footer.text = appPromo.at(shownId).toStdString();
         if(shownId == 1)
             footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
         else

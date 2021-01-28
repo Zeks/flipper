@@ -48,6 +48,7 @@ void FicFetcherBase::Fetch(core::StoryFilter partialfilter, QVector<core::Fanfic
     if(!this->filter.partiallyFilled){
         this->filter = CreateFilter();
         FillFilterMemoToken();
+        sourceficsData->id = user->FfnID().toInt();
     }
 
     filter.recordLimit = this->recordLimit;

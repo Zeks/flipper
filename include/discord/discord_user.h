@@ -225,6 +225,9 @@ public:
     LastPageCommandMemo GetLastPostedListCommandMemo() const;
     void SetLastPostedListCommandMemo(const LastPageCommandMemo &value);
 
+    void ScheduleForceNewRecsPage();
+    bool NeedsNewRecsPage();
+
 private:
     bool isValid = false;
     QString userID;
@@ -245,6 +248,7 @@ private:
     bool strictFreshSort = false;
     bool rngBustScheduled = false;
     bool timeoutWarningShown = false;
+    bool forceNewPageNextTime = false;
 
     int currentRecsPage = 0;
     int currentHelpPage = 0;
