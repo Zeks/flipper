@@ -66,7 +66,8 @@ Client::Client(QObject *obj):QObject(obj), SleepyDiscord::DiscordClient()
 
 void Client::InitClient()
 {
-    fictionalDMServer.reset(new discord::Server());
+    startTimer(1000);
+    storage->fictionalDMServer.reset(new discord::Server());
     discord::InitDefaultCommandSet(this->parser);
 
     InitTips();
@@ -108,11 +109,12 @@ void Client::InitCommandExecutor()
 }
 
 
-QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID)
+QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID,
+                                                           SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID)
 {
     QSharedPointer<discord::Server> server;
     if(serverID.string().length() == 0)
-        server = fictionalDMServer;
+        server = storage->fictionalDMServer;
     else
         server = GetServerInstanceForChannel(channelID,serverID.number());
 
@@ -121,23 +123,27 @@ QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowfl
 
 QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, uint64_t serverID)
 {
+    An<ClientStorage> storage;
+    storage.getData();
     QSharedPointer<discord::Server> server;
     if(serverID == 0)
-        server = fictionalDMServer;
-    else if(nonPmChannels.contains(channelID.number())){
+        server = storage->fictionalDMServer;
+    else if(storage->nonPmChannels.contains(channelID.number())){
         server = InitDiscordServerIfNecessary(serverID);
     }
     else{
         auto channel = getChannel(channelID).cast();
         if(channel.type != SleepyDiscord::Channel::DM){
-            nonPmChannels.push(channelID.number());
+            storage->nonPmChannels.push(channelID.number());
             server = InitDiscordServerIfNecessary(channel.serverID);
         }
         else
-            server = fictionalDMServer;
+            server = storage->fictionalDMServer;
     }
     return server;
 }
+
+
 
 static constexpr auto pattern = discord::GetSimplePatternChecker();
 constexpr auto matchSimple(std::string_view sv) noexcept {
@@ -215,8 +221,8 @@ void Client::onMessage(SleepyDiscord::Message message) {
             return logRest();
 
         // instantiating channel -> server pairing if necessary to avoid hitting the api in onReaction needlessly
-        if(message.serverID.string().length() > 0 && !channelToServerHash.contains(message.channelID.number())){
-            channelToServerHash.push(message.channelID.number(), message.serverID.number());
+        if(message.serverID.string().length() > 0 && !storage->channelToServerHash.contains(message.channelID.number())){
+            storage->channelToServerHash.push(message.channelID.number(), message.serverID.number());
         }
         QLOG_INFO() << "\nCOMMAND:" << QString::fromStdString(message.serverID.string() + " " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " " + message.author.ID.string() + " " + message.content + "\n");
         executor->Push(std::move(commands));
@@ -226,86 +232,43 @@ void Client::onMessage(SleepyDiscord::Message message) {
     }
 }
 
-static std::string CreateMention(const std::string& string){
-    return "<@" + string + ">";
+
+QSharedPointer<User> Client::GetOrCreateUser(SleepyDiscord::Snowflake<SleepyDiscord::User> userID)
+{
+    An<Users> users;
+    auto userId = QString::fromStdString(userID.string());
+    if(!users->HasUser(userId)){
+
+        bool inDatabase = users->LoadUser(userId);
+        if(!inDatabase)
+        {
+            SleepyDiscord::User sleepyUser = getUser(userID);
+            QSharedPointer<discord::User> user(new discord::User(userId, QStringLiteral("-1"), QString::fromStdString(sleepyUser.username), QUuid::createUuid().toString()));
+            An<interfaces::Users> usersInterface;
+            usersInterface->WriteUser(user);
+            users->LoadUser(userId);
+        }
+    }
+    auto user = users->GetUser(userId);
+    return user;
 }
 
-
-void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
+void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel>, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
     try{
         if(userID == getID())
             return;
         if(!actionableEmoji.contains(emoji.name))
             return;
-        if(!messageSourceAndTypeHash.contains(messageID.number()))
+        if(!storage->messageData.contains(messageID.number()))
+            return;
+        auto user = GetOrCreateUser(userID);
+        if(!user)
             return;
 
         QLOG_INFO() << "entered the onReaction core body with reaction: " << QString::fromStdString(emoji.name);
-        QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID,
-                                                                             channelToServerHash.contains(channelID.number())
-                                                                             ? channelToServerHash.value(channelID.number()) : 0);
-
-        bool isOriginalUser = messageSourceAndTypeHash.same_user(messageID.number(), userID.number());
-        if(isOriginalUser || emoji.name == "🔍"){
-            An<Users> users;
-            auto userId = QString::fromStdString(userID.string());
-            if(!users->HasUser(userId)){
-
-                bool inDatabase = users->LoadUser(userId);
-                if(!inDatabase)
-                {
-                    SleepyDiscord::User sleepyUser = getUser(userID);
-                    QSharedPointer<discord::User> user(new discord::User(userId, QStringLiteral("-1"), QString::fromStdString(sleepyUser.username), QUuid::createUuid().toString()));
-                    An<interfaces::Users> usersInterface;
-                    usersInterface->WriteUser(user);
-                    users->LoadUser(userId);
-                }
-            }
-            auto user = users->GetUser(userId);
-            if(!user)
-                return;
-            QLOG_INFO() << "bot is fetching message information";
-
-            auto messageInfo = messageSourceAndTypeHash.value(messageID.number());
-            messageInfo.token.messageID = messageID;
-            if(emoji.name *in("👉", "👈")){
-
-
-                bool scrollDirection = emoji.name == "👉" ? true : false;
-                CommandChain command;
-                if(messageInfo.sourceCommandType == ECommandType::ct_display_page)
-                    command = CreateChangeRecommendationsPageCommand(user,server, messageInfo.token, scrollDirection);
-                else
-                    command = CreateChangeHelpPageCommand(user,server, messageInfo.token, scrollDirection);
-
-                command += CreateRemoveReactionCommand(user,server, messageInfo.token, emoji.name == "👉" ? "%f0%9f%91%89" : "%f0%9f%91%88");
-                executor->Push(std::move(command));
-            }
-            else if(emoji.name == "🔁")
-            {
-                CommandChain commands;
-                commands = CreateRollCommand(user,server, messageInfo.token);
-                commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%f0%9f%94%81");
-                executor->Push(std::move(commands));
-            }
-            else if(emoji.name == "🔍")
-            {
-                CommandChain commands;
-                messageInfo.token.authorID = userID;
-                commands = CreateSimilarListCommand(user,server, messageInfo.token,messageSourceAndTypeHash.value(messageID.number()).token.ficId);
-                commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%F0%9F%94%8D");
-                executor->Push(std::move(commands));
-            }
-
-        }
-        else if(userID != getID()){
-            QString str = QString(" Navigation emoji are only working for the person that the bot responded to. Perhaps you need to do one of the following:"
-                                  "\n- create your own recommendations with `%1recs YOUR_FFN_ID`"
-                                  "\n- repost your recommendations with `%1page`"
-                                  "\n- call your own help page with `%1help`");
-            str=str.arg(QString::fromStdString(std::string(server->GetCommandPrefix())));
-            sendMessageWrapper(channelID, server->GetServerId(), CreateMention(userID.string()) + str.toStdString());
-        }
+        auto message = storage->messageData.value(messageID.number());
+        auto result = message->ProcessReaction(this,user,emoji);
+        executor->Push(std::move(result));
     }
     catch(const rapidjson_exception& e){
         qDebug() << e.what();
@@ -350,8 +313,16 @@ void Client::Log(const SleepyDiscord::Message& message)
 
 void Client::timerEvent(QTimerEvent *)
 {
-    An<discord::Users> users;
-    users->ClearInactiveUsers();
+    for(auto key: storage->timedMessageData.keys()){
+        auto value = storage->timedMessageData.value(key);
+        if(!value)
+            continue;
+        auto lock = value->LockResult();
+        if(value->GetDataExpirationPoint() < std::chrono::high_resolution_clock::now()){
+            value->RetireData();
+            storage->timedMessageData.remove(key);
+        }
+    }
 }
 
 void discord::Client::onReady(SleepyDiscord::Ready )

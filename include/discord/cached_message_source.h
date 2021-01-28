@@ -4,7 +4,7 @@
 #include "discord/discord_message_token.h"
 namespace discord {
 struct CachedMessageSource{
-    MessageToken token;
+    MessageIdToken token;
     ECommandType sourceCommandType;
 };
 

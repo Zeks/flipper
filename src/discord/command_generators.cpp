@@ -23,6 +23,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "logger/QsLog.h"
 #include "discord/type_functions.h"
 #include "discord/discord_message_token.h"
+#include "discord/tracked-messages/tracked_roll.h"
+#include "discord/tracked-messages/tracked_help_page.h"
+#include "discord/tracked-messages/tracked_similarity_list.h"
+#include "discord/tracked-messages/tracked_recommendation_list.h"
+#include "discord/client_storage.h"
 #include "GlobalHeaders/snippets_templates.h"
 #include <stdexcept>
 
@@ -33,6 +38,7 @@ QStringList SendMessageCommand::tips = {};
 QSharedPointer<User> CommandCreator::user;
 void CommandChain::Push(Command&& command)
 {
+    commandTypes.push_back(command.type);
     commands.emplace_back(std::move(command));
 }
 
@@ -115,7 +121,7 @@ Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::
     return command;
 }
 
-Command NewCommand(QSharedPointer<discord::Server> server, const MessageToken& message, ECommandType type){
+Command NewCommand(QSharedPointer<discord::Server> server, const MessageIdToken& message, ECommandType type){
     Command command;
     command.originalMessageToken = message;
     command.server = server;
@@ -642,11 +648,27 @@ void SendMessageCommand::Invoke(Client * client)
                         // I only need to hash messages that the user can later react to
                         // meaning page, rng and help commands
                         if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help, ct_show_fic)){
-                            if(originalCommandType *in(ct_display_page, ct_display_rng))
-                                this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
+                            MessageIdToken newToken = originalMessageToken;
+                            newToken.messageID = resultingMessage.response->cast().ID.number();
+                            if(!targetChannel.string().empty())
+                                newToken.channelID = targetChannel;
+                            if(messageData){
+                                An<ClientStorage> storage;
+                                messageData->token = newToken;
+                                storage->messageData.push(newToken.messageID.number(),messageData);
+                                storage->timedMessageData.push(newToken.messageID.number(),messageData);
+                            }
+                            if(originalCommandType *in(ct_display_page, ct_display_rng)){
+                                if(messageData->CanBeUsedAsLastPage() )
+                                    this->user->SetLastRecsPageMessage({resultingMessage.response->cast(), channelToSendTo});
+                                this->user->SetLastPostedListCommandMemo({resultingMessage.response->cast(), channelToSendTo});
+                            }
+
+                            this->user->SetLastAnyTypeMessageID(resultingMessage.response->cast());
+
                             if(targetChannel.string().length() > 0)
                                 originalMessageToken.channelID = targetChannel;
-                            client->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
+
                             addReaction(resultingMessage.response.value().cast(), targetChannel.string());
                         }
                     }
@@ -957,17 +979,19 @@ bool ResetFiltersCommand::IsThisCommand(const std::string &cmd)
 
 
 
-CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message){
+CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message){
     CommandChain result;
     Command command = NewCommand(server, message,ct_display_rng);
     command.variantHash[QStringLiteral("quality")] = user->GetLastUsedRoll();
     command.targetMessage = message.messageID;
+    command.reactedMessageToken = message;
+    command.reactionCommand = true;
     command.user = user;
     result.Push(std::move(command));
     return result;
 }
 
-CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken & message, int ficId)
+CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken & message, int ficId)
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_create_similar_fics_list);
@@ -979,6 +1003,7 @@ CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
     displayRecs.user = user;
+    displayRecs.variantHash["similar"] = QString::number(ficId);
     if(server->GetDedicatedChannelId().length() > 0)
         displayRecs.targetChannelID = server->GetDedicatedChannelId();
     result.Push(std::move(displayRecs));
@@ -986,24 +1011,33 @@ CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<
 }
 
 
-CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message, bool shiftRight)
+CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, bool shiftRight)
 {
     CommandChain result;
+    An<ClientStorage> storage;
+    if(!storage->messageData.contains(message.messageID.number()))
+        return result;
+
+    auto listData = std::dynamic_pointer_cast<TrackedRecommendationList>(storage->messageData.value(message.messageID.number()));
+
+
     Command command = NewCommand(server, message,ct_display_page);
     if(shiftRight)
-        command.ids.push_back(user->CurrentRecommendationsPage() + 1);
-    else if(user->CurrentRecommendationsPage() != 0)
-        command.ids.push_back(user->CurrentRecommendationsPage() - 1);
+        command.ids.push_back(listData->memo.page + 1);
+    else if(listData->memo.page != 0)
+        command.ids.push_back(listData->memo.page - 1);
     else
         return result;
 
     command.targetMessage = message.messageID;
+    command.reactedMessageToken = message;
+    command.reactionCommand = true;
     command.user = user;
     result.Push(std::move(command));
     return result;
 }
 
-CommandChain CreateRemoveReactionCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken & message, const std::string& reaction)
+CommandChain CreateRemoveReactionCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken & message, const std::string& reaction)
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_remove_reactions);
@@ -1017,20 +1051,26 @@ CommandChain CreateRemoveReactionCommand(QSharedPointer<User> user, QSharedPoint
 
 
 
-CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message, bool shiftRight)
+CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, bool shiftRight)
 {
+    An<ClientStorage> storage;
     CommandChain result;
+    if(!storage->messageData.contains(message.messageID.number()))
+        return result;
+
+    auto helpData = std::dynamic_pointer_cast<TrackedHelpPage>(storage->messageData.value(message.messageID.number()));
+
     Command command = NewCommand(server, message,ct_display_help);
     int maxHelpPages = static_cast<int>(discord::EHelpPages::last_help_page) + 1;
     int newPage = 0;
     if(shiftRight)
     {
-        newPage = user->GetCurrentHelpPage() + 1;
+        newPage = helpData->currenHelpPage + 1;
         if(newPage == maxHelpPages)
             newPage = 0;
     }
     else {
-        newPage = user->GetCurrentHelpPage() - 1;
+        newPage = helpData->currenHelpPage - 1;
         if(newPage < 0)
             newPage = maxHelpPages - 1;
 
@@ -1038,6 +1078,8 @@ CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPoint
     command.ids.push_back(newPage);
     command.targetMessage = message.messageID;
     command.user = user;
+    command.reactionCommand = true;
+    command.reactedMessageToken = message;
     result.Push(std::move(command));
     return result;
 }
@@ -1046,7 +1088,6 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(const SleepyDiscord::Message& 
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_create_similar_fics_list);
-
     auto match = matchCommand<SimilarFicsCommand>(message.content);
     auto ficId = match.get<1>().to_string();
     if(ficId.length() == 0)
@@ -1065,11 +1106,13 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(const SleepyDiscord::Message& 
             return result;
         }
     }
-    user->SetSimilarFicsId(std::stoi(match.get<1>().to_string()));
+    //user->SetSimilarFicsId(std::stoi(match.get<1>().to_string()));
     command.ids.push_back(std::stoi(match.get<1>().to_string()));
+    command.variantHash["similar"] = QString::fromStdString(match.get<1>().to_string());
     result.Push(std::move(command));
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
+    displayRecs.variantHash["similar"] = QString::fromStdString(match.get<1>().to_string());
     result.Push(std::move(displayRecs));
     return result;
 

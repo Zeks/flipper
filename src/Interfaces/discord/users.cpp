@@ -232,6 +232,11 @@ QString Users::GetReviewAuthor(QString reviewId)
     return database::discord_queries::GetReviewAuthor(dbToken->db, reviewId).data;
 }
 
+//QStringList Users::GetReviewIDs(QString server_id, QString fic_identifier, QString site_type, QString site_identifier)
+//{
+
+//}
+
 
 
 }

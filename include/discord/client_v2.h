@@ -25,10 +25,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma GCC diagnostic pop
 
 #include "discord/limits.h"
+#include "discord/client_storage.h"
 #include "discord/command_generators.h"
 #include "discord/discord_user.h"
 #include "discord/identity_hash.h"
 #include "discord/cached_message_source.h"
+#include "discord/tracked-messages/tracked_message_base.h"
 #include "core/section.h"
 #include <QString>
 #include <QRegularExpression>
@@ -43,18 +45,7 @@ class CommandController;
 class Server;
 
 
-struct ChannelSet{
-    inline void push(int64_t channelId){
-        QWriteLocker locker(&lock);
-        set.insert(channelId);
-    }
-    inline bool contains(int64_t channelId){
-        QReadLocker locker(&lock);
-        return set.contains(channelId);
-    }
-    QSet<int64_t> set;
-    QReadWriteLock lock;
-};
+
 
 struct MessageResponseWrapper{
     MessageResponseWrapper(){}
@@ -76,6 +67,7 @@ public:
     void InitCommandExecutor();
     QSharedPointer<discord::Server> GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel>, SleepyDiscord::Snowflake<SleepyDiscord::Server>);
     QSharedPointer<Server> GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, uint64_t serverID);
+    QSharedPointer<User> GetOrCreateUser(SleepyDiscord::Snowflake<SleepyDiscord::User> userID);
     using SleepyDiscord::DiscordClient::DiscordClient;
     void onMessage(SleepyDiscord::Message message) override;
     void onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji) override;
@@ -87,12 +79,11 @@ public:
     QSharedPointer<CommandParser> parser;
     std::regex rxCommandIdentifier;
     QSharedPointer<CommandController> executor;
-    QSharedPointer<discord::Server> fictionalDMServer;
     QSet<std::string> actionableEmoji;
-    BotIdentityMatchingHash<CachedMessageSource> messageSourceAndTypeHash;
-    BotIdentityMatchingHash<int64_t> channelToServerHash;
+
+    An<ClientStorage> storage;
+
     std::string botPrefixRequest;
-    ChannelSet nonPmChannels;
     static std::atomic<bool> allowMessages;
     static std::atomic<int64_t> mirrorTargetChannel;
     static std::atomic<int64_t> mirrorSourceChannel;

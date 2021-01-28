@@ -48,6 +48,7 @@ void TaskRunner::run()
         result.performedFullParseCommand = true;
     for(auto&& command : chainToRun.commands){
         auto action = GetAction(command.type);
+        command.commandChain = chainToRun.commandTypes;
         auto actionResult = action->Execute(environment, std::move(command));
         result.Push(actionResult);
         if(actionResult->stopChain)

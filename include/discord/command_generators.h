@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/limits.h"
 #include "discord/discord_user.h"
 #include "discord/discord_message_token.h"
+#include "discord/tracked-messages/tracked_message_base.h"
 
 
 #include <mutex>
@@ -326,7 +327,8 @@ public:
     QStringList reactionsToAdd;
     QStringList reactionsToRemove;
     QSharedPointer<User> user;
-    MessageToken originalMessageToken;
+    MessageIdToken originalMessageToken;
+    std::shared_ptr<TrackedMessageBase> messageData;
 
     SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
     SleepyDiscord::Snowflake<SleepyDiscord::Channel> targetChannel;
@@ -338,12 +340,12 @@ public:
     static QStringList tips;
 };
 
-CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken & );
-CommandChain CreateSimilarListCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken &, int ficId);
-CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken & , bool shiftRight = true);
-CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken &, bool shiftRight = true);
-CommandChain CreateRemoveReactionCommand(QSharedPointer<User> , QSharedPointer<Server> server, const MessageToken &message, const std::string &reaction);
+CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & );
+CommandChain CreateSimilarListCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &, int ficId);
+CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & , bool shiftRight = true);
+CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &, bool shiftRight = true);
+CommandChain CreateRemoveReactionCommand(QSharedPointer<User> , QSharedPointer<Server> server, const MessageIdToken &message, const std::string &reaction);
 Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::Message& message, ECommandType type);
-Command NewCommand(QSharedPointer<discord::Server> server, const MessageToken& message, ECommandType type);
+Command NewCommand(QSharedPointer<discord::Server> server, const MessageIdToken& message, ECommandType type);
 }
 

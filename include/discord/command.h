@@ -47,12 +47,15 @@ struct Command{
     };
     bool isValid = false;
     ECommandType type = ECommandType::ct_none;
+    std::vector<ECommandType> commandChain; // used to know what to do in display action where recs algo has already finished
     EOperandType operand = EOperandType::ot_unspecified;
     bool requiresThread = false;
+    bool reactionCommand = false;
 
     QList<uint64_t> ids;
     QHash<QString, QVariant> variantHash;
-    MessageToken originalMessageToken;
+    MessageIdToken originalMessageToken;
+    MessageIdToken reactedMessageToken;
     QSharedPointer<User> user;
     QSharedPointer<Server> server;
 
@@ -76,21 +79,32 @@ struct CommandChain{
     Command Pop();
 
     CommandChain& operator+=(CommandChain& other){
-        for(auto&& item : other.commands)
-        this->commands.emplace_back(std::move(item));
+        for(auto&& item : other.commands){
+            this->commands.emplace_back(std::move(item));
+        }
+        for(auto&& item : other.commandTypes){
+            this->commandTypes.emplace_back(std::move(item));
+        }
+
         return *this;
     };
     CommandChain& operator+=(CommandChain&& other){
-        for(auto&& item : other.commands)
-        this->commands.emplace_back(std::move(item));
+        for(auto&& item : other.commands){
+            this->commands.emplace_back(std::move(item));
+        }
+        for(auto&& item : other.commandTypes){
+            this->commandTypes.emplace_back(std::move(item));
+        }
         return *this;
     };
     void Reset(){
         commands.clear();
+        commandTypes.clear();
         hasParseCommand = false;
         stopExecution = false;
     };
     std::list<Command> commands;
+    std::vector<ECommandType> commandTypes;
     QSharedPointer<User> user;
     bool hasParseCommand = false;
     bool hasFullParseCommand = false;

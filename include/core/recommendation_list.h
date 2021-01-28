@@ -35,6 +35,7 @@ struct RecommendationListFicData
     void Clear();
     int id = -1;
     QSet<int> sourceFics;
+    QSet<int> sourceFicsFFN;
     QVector<int> fics;
     QVector<int> purges;
     QVector<int> metascores;
@@ -44,6 +45,13 @@ struct RecommendationListFicData
     std::unordered_map<int, int> ficToMetascore;
     std::unordered_map<int, int> ficToVotes;
     QHash<int, core::MatchBreakdown> breakdowns;
+
+    int perfectRngScoreCutoff = 0;
+    int goodRngScoreCutoff = 0;
+    int perfectRngFicsSize = 0;
+    int goodRngFicsSize = 0;
+    QSet<int> perfectRngFics;
+    QSet<int> goodRngFics;
 };
 
 

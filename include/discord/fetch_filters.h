@@ -18,25 +18,74 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QVector>
 #include <QSharedPointer>
 #include "Interfaces/discord/users.h"
+#include "include/storyfilter.h"
 #include "grpc/grpc_source.h"
 
 namespace discord{
+struct StoryFilterDisplayToken{
+    struct RollMemo{
+        bool usingRoll = false;
+        QString rollType = "all";
+        int perfectRngFicsSize = 0;
+        int goodRngFicsSize = 0;
+    };
+    bool isArchivedPage = false;
+    QString ficId;
+    QSet<int> fandoms;
+    WordcountFilter wordCountFilter;
+    QString publishedFilter;
+    QString finishedFilter;
+    bool usingLikedFilter = false;
+    bool usingFreshSort = false;
+    bool usingGemsSort = false;
+    bool usingCompleteFilter = false;
+    bool usingDeadFilter = false;
+    RollMemo rollMemo;
+};
 
-void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
-                                    QSharedPointer<discord::User> user,
-                                    int size,
-                                    QVector<core::Fanfic>* fics);
+class FicFetcherBase{
+public:
+    FicFetcherBase(){};
+    virtual ~FicFetcherBase(){};
+    virtual void Fetch(core::StoryFilter, QVector<core::Fanfic>* fics);
+    virtual int FetchPageCount(core::StoryFilter partialfilter);
+    virtual void FillFilterMemoToken();
+    virtual void FillUserPart();
+    virtual core::StoryFilter CreateFilter() = 0;
+    virtual void FillFicData() = 0;
 
-int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source,
-                                    QSharedPointer<discord::User> user,
-                                    int size);
+    void ResetFilterForSimilarityList(core::StoryFilter&);
 
-void FetchFicsForDisplayRngCommand(int size,
-                                   QSharedPointer<FicSourceGRPC> source,
-                                   QSharedPointer<discord::User> user,
-                                   QVector<core::Fanfic>* fics,
-                                   int qualityCutoff = 1);
+    bool displayingSimilarityList = false;;
+    int pageToUse = 0;
+    int recordLimit = 0;
+    core::StoryFilter filter;
+    QSharedPointer<FicSourceGRPC> source;
+    QSharedPointer<discord::User> user;
+    QSharedPointer<core::RecommendationListFicData> sourceficsData;
+    StoryFilterDisplayToken storyFilterDisplayToken;
+};
 
+class FicFetcherPage : public FicFetcherBase{
+public:
+    FicFetcherPage(){};
+    virtual ~FicFetcherPage(){};
+    virtual core::StoryFilter CreateFilter() override;
+    virtual void FillFicData() override;
+
+};
+
+class FicFetcherRNG: public FicFetcherBase{
+public:
+    FicFetcherRNG(){};
+    virtual ~FicFetcherRNG(){};
+    virtual core::StoryFilter CreateFilter() override;
+    virtual void FillFicData() override;
+    int qualityCutoff = 0;
+};
+
+// the only func that doesn't need its own class
+// because it won't be called again against the same message
 void FetchFicsForShowIdCommand(QSharedPointer<FicSourceGRPC> source,
                                     QList<int> ficIds,
                                     QVector<core::Fanfic>* fics);

@@ -25,8 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QUuid>
 #include <chrono>
 #include "core/section.h"
+#include "include/storyfilter.h"
+
 #include "discord/fandom_filter_token.h"
 #include "discord/command_types.h"
+#include "discord/timed_token.h"
 
 #include "GlobalHeaders/SingletonHolder.h"
 
@@ -41,6 +44,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 namespace interfaces{
 class Users;
 }
+
 
 
 namespace discord{
@@ -89,8 +93,6 @@ struct User{
     void SetFfnID(QString id);
     void SetPerfectRngFics(const QSet<int>&);
     void SetGoodRngFics(const QSet<int>&);
-    void SetPerfectRngScoreCutoff(int);
-    void SetGoodRngScoreCutoff(int);
     void SetUserID(QString id);
     void SetUserName(QString name);
     void SetUuid(QString);
@@ -109,9 +111,6 @@ struct User{
 
     QSet<int> GetPerfectRngFics();
     QSet<int> GetGoodRngFics();
-    int GetPerfectRngScoreCutoff() const;
-    int GetGoodRngScoreCutoff() const;
-
     void ResetFandomFilter();
     void ResetFandomIgnores();
     void ResetFicIgnores();
@@ -153,8 +152,8 @@ struct User{
     QString GetLastUsedRoll() const;
     void SetLastUsedRoll(const QString &value);
 
-    LastPageCommandMemo GetLastPageMessage() const;
-    void SetLastPageMessage(const LastPageCommandMemo &value);
+    LastPageCommandMemo GetLastRecsPageMessage() const;
+    void SetLastRecsPageMessage(const LastPageCommandMemo &value);
 
     ECommandType GetLastPageType() const;
     void SetLastPageType(const ECommandType &value);
@@ -187,12 +186,6 @@ struct User{
     LargeListToken GetLargeListToken() const;
     void SetLargeListToken(const LargeListToken &value);
 
-    int GetPerfectRngFicsSize() const;
-    void SetPerfectRngFicsSize(int value);
-
-    int GetGoodRngFicsSize() const;
-    void SetGoodRngFicsSize(int value);
-
     bool GetTimeoutWarningShown() const;
     void SetTimeoutWarningShown(bool value);
 
@@ -216,6 +209,21 @@ public:
 
     QString GetFinishedFilter() const;
     void SetFinishedFilter(const QString &value);
+
+    core::StoryFilter GetLastUsedStoryFilter() const;
+    void SetLastUsedStoryFilter(const core::StoryFilter &value);
+
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastHelpMessageID() const;
+    void SetLastHelpMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
+
+    QSharedPointer<core::RecommendationListFicData> GetTemporaryFicsData() const;
+    void SetTemporaryFicsData(const QSharedPointer<core::RecommendationListFicData> &value);
+
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastAnyTypeMessageID() const;
+    void SetLastAnyTypeMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
+
+    LastPageCommandMemo GetLastPostedListCommandMemo() const;
+    void SetLastPostedListCommandMemo(const LastPageCommandMemo &value);
 
 private:
     bool isValid = false;
@@ -245,10 +253,7 @@ private:
     int similarFicsId = 0;
     int forcedMinMatch = 0;
     int forcedRatio = 0;
-    int perfectRngScoreCutoff = 0;
-    int goodRngScoreCutoff = 0;
-    int perfectRngFicsSize = 0;
-    int goodRngFicsSize = 0;
+
     int favouritesSize = 0;
     int largeListCounter = 0;
     int recommednationsCutoff = 0;
@@ -264,19 +269,24 @@ private:
     std::chrono::system_clock::time_point lastActive;
     std::chrono::system_clock::time_point timeoutLimit;
 
-    QSharedPointer<core::RecommendationListFicData> fics;
-    QSet<int> perfectRngFics;
-    QSet<int> goodRngFics;
-
     QSet<int> ignoredFics;
     FandomFilter filteredFandoms;
     WordcountFilter wordcountFilter;
     FandomFilter ignoredFandoms;
-    QHash<int, int> positionToId;
     ECommandType lastPageType = ct_display_page;
-    LastPageCommandMemo lastPageCommandMemo;
+    LastPageCommandMemo lastRecsPageCommandMemo; // as in actual recommendations
+    LastPageCommandMemo lastPostedListCommandMemo; // similarity OR recommendation
+
     LargeListToken largeListToken;
+    QHash<int, int> positionToId;
     mutable QReadWriteLock lock;
+    // can be attached to a page
+    QSharedPointer<core::RecommendationListFicData> fics;
+    QSharedPointer<core::RecommendationListFicData> temporaryFicsData;
+    core::StoryFilter lastUsedStoryFilter;
+
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> lastHelpMessageID;
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> lastAnyTypeMessageID;
 };
 
 

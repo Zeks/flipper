@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma once
 #include "discord/task_environment.h"
+#include "discord/tracked-messages/tracked_message_base.h"
 #include "discord/command.h"
 
 
@@ -38,6 +39,7 @@ public:
     virtual ~ActionBase(){}
     virtual QSharedPointer<SendMessageCommand> Execute(QSharedPointer<TaskEnvironment>, Command&&);
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&&) = 0;
+    std::shared_ptr<TrackedMessageBase> messageData;
     QSharedPointer<SendMessageCommand> action;
 };
 
@@ -48,7 +50,7 @@ public: \
 }
 
 ACTION(GeneralHelpAction);
-ACTION(HelpAction);
+//ACTION(HelpAction);
 ACTION(DesktopRecsCreationAction);
 ACTION(MobileRecsCreationAction);
 ACTION(DisplayPageAction);

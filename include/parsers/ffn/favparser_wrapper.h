@@ -22,6 +22,7 @@ public:
     QuickParseResult QuickParseAvailable();
     void FetchFavouritesFromDesktopPage();
     void FetchFavouritesFromMobilePage(int startBoundary = 26);
+    QSet<int> GetResultAsIntSet() const;
 
     WebPage dektopPage;
     QSet<QString> result;

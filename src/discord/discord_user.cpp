@@ -141,29 +141,6 @@ void User::SetFfnID(QString id)
     this->ffnID = id;
 }
 
-void User::SetPerfectRngFics(const QSet<int>& perfectRngFics)
-{
-    QWriteLocker locker(&lock);
-    this->perfectRngFics = perfectRngFics;
-}
-
-void User::SetGoodRngFics(const QSet<int>& goodRngFics)
-{
-    QWriteLocker locker(&lock);
-    this->goodRngFics = goodRngFics;
-}
-
-void User::SetPerfectRngScoreCutoff(int perfectRngScoreCutoff)
-{
-    QWriteLocker locker(&lock);
-    this->perfectRngScoreCutoff = perfectRngScoreCutoff;
-}
-
-void User::SetGoodRngScoreCutoff(int goodRngScoreCutoff)
-{
-    QWriteLocker locker(&lock);
-    this->goodRngScoreCutoff = goodRngScoreCutoff;
-}
 
 void User::SetUserID(QString id)
 {
@@ -181,18 +158,6 @@ void User::SetUuid(QString value)
 {
     uuid = QUuid::fromString(value);
 }
-
-//void User::ToggleFandomIgnores(QSet<int> set)
-//{
-//    QWriteLocker locker(&lock);
-//    for(auto fandom: set)
-//    {
-//        if(!ignoredFandoms.contains(fandom))
-//            ignoredFandoms.insert(fandom);
-//        else
-//            ignoredFandoms.remove(fandom);
-//    }
-//}
 
 void User::SetFandomFilter(int id, bool displayCrossovers)
 {
@@ -249,30 +214,6 @@ void User::SetIgnoredFics(const QSet<int>& fics)
 {
     QWriteLocker locker(&lock);
     ignoredFics = fics;
-}
-
-QSet<int> User::GetPerfectRngFics()
-{
-    QReadLocker locker(&lock);
-    return perfectRngFics;
-}
-
-QSet<int> User::GetGoodRngFics()
-{
-    QReadLocker locker(&lock);
-    return goodRngFics;
-}
-
-int User::GetPerfectRngScoreCutoff() const
-{
-    QReadLocker locker(&lock);
-    return perfectRngScoreCutoff;
-}
-
-int User::GetGoodRngScoreCutoff() const
-{
-    QReadLocker locker(&lock);
-    return goodRngScoreCutoff;
 }
 
 void User::ResetFandomFilter()
@@ -445,16 +386,16 @@ void User::SetLastUsedRoll(const QString &value)
     lastUsedRoll = value;
 }
 
-LastPageCommandMemo User::GetLastPageMessage() const
+LastPageCommandMemo User::GetLastRecsPageMessage() const
 {
     QReadLocker locker(&lock);
-    return lastPageCommandMemo;
+    return lastRecsPageCommandMemo;
 }
 
-void User::SetLastPageMessage(const LastPageCommandMemo &value)
+void User::SetLastRecsPageMessage(const LastPageCommandMemo &value)
 {
     QWriteLocker locker(&lock);
-    lastPageCommandMemo = value;
+    lastRecsPageCommandMemo = value;
 }
 
 ECommandType User::GetLastPageType() const
@@ -589,30 +530,6 @@ void User::SetLargeListToken(const LargeListToken &value)
     largeListToken = value;
 }
 
-int User::GetPerfectRngFicsSize() const
-{
-    QReadLocker locker(&lock);
-    return perfectRngFicsSize;
-}
-
-void User::SetPerfectRngFicsSize(int value)
-{
-    QWriteLocker locker(&lock);
-    perfectRngFicsSize = value;
-}
-
-int User::GetGoodRngFicsSize() const
-{
-    QReadLocker locker(&lock);
-    return goodRngFicsSize;
-}
-
-void User::SetGoodRngFicsSize(int value)
-{
-    QWriteLocker locker(&lock);
-    goodRngFicsSize = value;
-}
-
 bool User::GetTimeoutWarningShown() const
 {
     QReadLocker locker(&lock);
@@ -703,6 +620,64 @@ void User::SetFinishedFilter(const QString &value)
 {
     QWriteLocker locker(&lock);
     finishedFilter = value;
+}
+
+core::StoryFilter User::GetLastUsedStoryFilter() const
+{
+    QReadLocker locker(&lock);
+    return lastUsedStoryFilter;
+}
+
+void User::SetLastUsedStoryFilter(const core::StoryFilter &value)
+{
+    QWriteLocker locker(&lock);
+    lastUsedStoryFilter = value;
+}
+
+SleepyDiscord::Snowflake<SleepyDiscord::Message> User::GetLastHelpMessageID() const
+{
+    QReadLocker locker(&lock);
+    return lastHelpMessageID;
+}
+
+void User::SetLastHelpMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value)
+{
+    QWriteLocker locker(&lock);
+    lastHelpMessageID = value;
+}
+
+QSharedPointer<core::RecommendationListFicData> User::GetTemporaryFicsData() const
+{
+    QReadLocker locker(&lock);
+    return temporaryFicsData;
+}
+
+void User::SetTemporaryFicsData(const QSharedPointer<core::RecommendationListFicData> &value)
+{
+    QWriteLocker locker(&lock);
+    temporaryFicsData = value;
+}
+
+SleepyDiscord::Snowflake<SleepyDiscord::Message> User::GetLastAnyTypeMessageID() const
+{
+    QReadLocker locker(&lock);
+    return lastAnyTypeMessageID;
+}
+
+void User::SetLastAnyTypeMessageID(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value)
+{
+    QWriteLocker locker(&lock);
+    lastAnyTypeMessageID = value;
+}
+
+LastPageCommandMemo User::GetLastPostedListCommandMemo() const
+{
+    return lastPostedListCommandMemo;
+}
+
+void User::SetLastPostedListCommandMemo(const LastPageCommandMemo &value)
+{
+    lastPostedListCommandMemo = value;
 }
 
 void Users::AddUser(QSharedPointer<User> user)

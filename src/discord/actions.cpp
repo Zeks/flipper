@@ -18,14 +18,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/discord_init.h"
 #include "discord/discord_ffn_page.h"
 #include "discord/client_v2.h"
+#include "discord/client_storage.h"
 #include "discord/help_generator.h"
 #include "discord/db_vendor.h"
-#include "discord/client_v2.h"
 #include "sql/discord/discord_queries.h"
 #include "discord/discord_server.h"
 #include "discord/discord_message_token.h"
 #include "discord/fetch_filters.h"
 #include "discord/favourites_fetching.h"
+#include "discord/tracked-messages/tracked_roll.h"
+#include "discord/tracked-messages/tracked_help_page.h"
+#include "discord/tracked-messages/tracked_fic_details.h"
+#include "discord/tracked-messages/tracked_recommendation_list.h"
+#include "discord/tracked-messages/tracked_similarity_list.h"
 #include "discord/type_strings.h"
 #include "parsers/ffn/favparser_wrapper.h"
 #include "include/qstring_from_stringview.h"
@@ -40,6 +45,48 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QSettings>
 namespace discord {
 
+QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
+{
+    QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
+    list->minimumMatch = 1;
+    list->isAutomatic = false;
+    list->useWeighting = false;
+    list->alwaysPickAt = 9999;
+    list->useMoodAdjustment = false;
+    list->name = QStringLiteral("Recommendations");
+    list->assignLikedToSources = true;
+    list->userFFNId = -1;
+    return list;
+}
+
+
+
+QSharedPointer<core::RecommendationList>  FillRecommendationsForSingularFic(QSharedPointer<TaskEnvironment> environment, QString ficId){
+    QSharedPointer<core::RecommendationList> listParams;
+    //QString error;
+
+    auto recList = CreateSimilarFicParams();
+    recList->ignoreBreakdowns= true;
+    recList->isAutomatic = true;
+    recList->listSizeMultiplier = 20000;
+
+    QVector<core::Identity> pack;
+    pack.resize(1);
+    pack[0].web.ffn = ficId.toInt();
+    environment->ficSource->ClearUserData();
+    environment->ficSource->GetInternalIDsForFics(&pack);
+
+    for(const auto& source: std::as_const(pack))
+    {
+        recList->ficData->sourceFics+=source.id;
+        recList->ficData->fics+=source.web.ffn;
+        recList->ficData->sourceFicsFFN+=source.web.ffn;
+    }
+    recList->resultLimit = 90;
+    environment->ficSource->GetRecommendationListFromServer(recList);
+    return recList;
+}
+
 QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     action = SendMessageCommand::Create();
@@ -50,8 +97,21 @@ QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnviro
     if(command.type != ECommandType::ct_timeout_active)
         command.user->initNewEasyQuery();
     environment->ficSource->SetUserToken(command.user->GetUuid());
-    return ExecuteImpl(environment, std::move(command));
 
+
+    An<ClientStorage> storage;
+    if(command.reactionCommand && storage->messageData.contains(command.reactedMessageToken.messageID.number()))
+        messageData = storage->messageData.value(command.reactedMessageToken.messageID.number());
+
+    auto editPreviousPageIfPossible = command.variantHash.value(QStringLiteral("refresh_previous")).toBool();
+    if(editPreviousPageIfPossible
+            && !command.user->GetLastRecsPageMessage().message.string().empty()
+            && storage->messageData.contains(command.user->GetLastRecsPageMessage().message.number())){
+        messageData = storage->messageData.value(command.user->GetLastRecsPageMessage().message.number());
+    }
+
+
+    return ExecuteImpl(environment, std::move(command));
 }
 
 template<typename T> QString GetHelpForCommandIfActive(){
@@ -61,46 +121,57 @@ template<typename T> QString GetHelpForCommandIfActive(){
     return result;
 }
 
-QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
-{
-    QString helpString;
-    helpString +=  GetHelpForCommandIfActive<RecsCreationCommand>();
-    helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
-    helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
-    helpString +=  GetHelpForCommandIfActive<PageChangeCommand>();
-    helpString +=  GetHelpForCommandIfActive<SetFandomCommand>();
-    helpString +=  GetHelpForCommandIfActive<IgnoreFandomCommand>();
-    helpString +=  GetHelpForCommandIfActive<IgnoreFicCommand>();
-    helpString +=  GetHelpForCommandIfActive<DisplayHelpCommand>();
-    helpString +=  GetHelpForCommandIfActive<RngCommand>();
-    helpString +=  GetHelpForCommandIfActive<FilterLikedAuthorsCommand>();
-    helpString +=  GetHelpForCommandIfActive<ShowFreshRecsCommand>();
-    helpString +=  GetHelpForCommandIfActive<ShowCompletedCommand>();
-    helpString +=  GetHelpForCommandIfActive<HideDeadCommand>();
-    //helpString +=  GetHelpForCommandIfActive<SimilarFicsCommand>();
-    helpString +=  GetHelpForCommandIfActive<ResetFiltersCommand>();
-    helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
-    helpString +=  GetHelpForCommandIfActive<ChangePermittedChannelCommand>();
-    helpString +=  GetHelpForCommandIfActive<PurgeCommand>();
+//QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+//{
+//    QString helpString;
+//    helpString +=  GetHelpForCommandIfActive<RecsCreationCommand>();
+//    helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
+//    helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
+//    helpString +=  GetHelpForCommandIfActive<PageChangeCommand>();
+//    helpString +=  GetHelpForCommandIfActive<SetFandomCommand>();
+//    helpString +=  GetHelpForCommandIfActive<IgnoreFandomCommand>();
+//    helpString +=  GetHelpForCommandIfActive<IgnoreFicCommand>();
+//    helpString +=  GetHelpForCommandIfActive<DisplayHelpCommand>();
+//    helpString +=  GetHelpForCommandIfActive<RngCommand>();
+//    helpString +=  GetHelpForCommandIfActive<FilterLikedAuthorsCommand>();
+//    helpString +=  GetHelpForCommandIfActive<ShowFreshRecsCommand>();
+//    helpString +=  GetHelpForCommandIfActive<ShowCompletedCommand>();
+//    helpString +=  GetHelpForCommandIfActive<HideDeadCommand>();
+//    //helpString +=  GetHelpForCommandIfActive<SimilarFicsCommand>();
+//    helpString +=  GetHelpForCommandIfActive<ResetFiltersCommand>();
+//    helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
+//    helpString +=  GetHelpForCommandIfActive<ChangePermittedChannelCommand>();
+//    helpString +=  GetHelpForCommandIfActive<PurgeCommand>();
 
 
-    //"\n!status to display the status of your recommentation list"
-    //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
-    action->text = helpString.arg(QSV(command.server->GetCommandPrefix()));
-    return action;
-}
+//    //"\n!status to display the status of your recommentation list"
+//    //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
+//    action->text = helpString.arg(QSV(command.server->GetCommandPrefix()));
+//    return action;
+//}
 
 
 QSharedPointer<SendMessageCommand> GeneralHelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
     auto embed = GetHelpPage(command.ids.at(0), command.server->GetCommandPrefix());
     action->embed = embed;
-    command.user->SetCurrentHelpPage(command.ids.at(0));
-    if(command.targetMessage.string().length() > 0)
+    std::shared_ptr<TrackedHelpPage> helpPageData;
+    if(command.targetMessage.string().length() == 0){
+        command.user->SetCurrentHelpPage(command.ids.at(0));
+        // we need to create memo for this help page
+        helpPageData = std::make_shared<TrackedHelpPage>();
+        messageData = action->messageData = helpPageData;
+    }
+    else{
+        // we need to edit page in the old memo
+        helpPageData = std::dynamic_pointer_cast<TrackedHelpPage>(messageData);
+        messageData = action->messageData = helpPageData;
         action->targetMessage = command.targetMessage;
-    action->reactionsToAdd.push_back(QStringLiteral("%f0%9f%91%88"));
-    action->reactionsToAdd.push_back(QStringLiteral("%f0%9f%91%89"));
+    }
 
+    if(helpPageData)
+        helpPageData->currenHelpPage = command.ids.at(0);
+    action->reactionsToAdd = messageData->GetEmojiSet();
     return action;
 }
 
@@ -120,21 +191,12 @@ QSharedPointer<core::RecommendationList> CreateRecommendationParams(QString ffnI
 }
 
 
-QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
-{
-    QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
-    list->minimumMatch = 1;
-    list->isAutomatic = false;
-    list->useWeighting = false;
-    list->alwaysPickAt = 9999;
-    list->useMoodAdjustment = false;
-    list->name = QStringLiteral("Recommendations");
-    list->assignLikedToSources = true;
-    list->userFFNId = -1;
-    return list;
-}
 
-QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId, const QSet<QString>& userFavourites, QSharedPointer<TaskEnvironment> environment, const Command& command){
+QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId,
+                                                                               const QSet<int>& userFavourites,
+                                                                               QSharedPointer<TaskEnvironment> environment,
+                                                                               int userFavouritesCutoff,
+                                                                               const Command& command){
     auto recList = CreateRecommendationParams(ffnId);
     recList->ignoreBreakdowns= true;
 
@@ -143,7 +205,7 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     int i = 0;
     for(const auto& source: userFavourites)
     {
-        pack[i].web.ffn = source.toInt();
+        pack[i].web.ffn = source;
         i++;
     }
 
@@ -158,19 +220,20 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     for(const auto& source: std::as_const(pack))
     {
         recList->ficData->sourceFics+=source.id;
+        recList->ficData->sourceFicsFFN+=source.web.ffn;
         recList->ficData->fics+=source.web.ffn;
     }
 
     environment->ficSource->userData = userData;
     //recList->resultLimit = 50;
-    recList->ficFavouritesCutoff = command.user->GetRecommendationsCutoff();
+    recList->ficFavouritesCutoff = userFavouritesCutoff;
     environment->ficSource->GetRecommendationListFromServer(recList);
     //QLOG_INFO() << "Got fics";
     // refreshing the currently saved recommendation list params for user
     An<interfaces::Users> usersDbInterface;
     usersDbInterface->DeleteUserList(command.user->UserID(), QStringLiteral(""));
     usersDbInterface->WriteUserList(command.user->UserID(), QStringLiteral(""), discord::elt_favourites, recList->minimumMatch, recList->maxUnmatchedPerMatch, recList->alwaysPickAt);
-    usersDbInterface->WriteUserFFNId(command.user->UserID(), command.ids.at(0));
+    usersDbInterface->WriteUserFFNId(command.user->UserID(), ffnId.toInt());
 
     // instantiating working set for user
     An<Users> users;
@@ -216,12 +279,10 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     QLOG_INFO() << QStringLiteral("Total fic count: ") << count << QStringLiteral(" Perfect Fics: ") << perfectRngFics.size() << QStringLiteral(" Good Fics: ") << goodRngFics.size();
 
     command.user->SetFfnID(ffnId);
-    //command.user->SetPerfectRngFics(perfectRngFics);
-    //command.user->SetGoodRngFics(goodRngFics);
-    command.user->SetPerfectRngScoreCutoff(perfectCutoff);
-    command.user->SetPerfectRngFicsSize(perfectRngFics.size());
-    command.user->SetGoodRngScoreCutoff(goodCutoff);
-    command.user->SetGoodRngFicsSize(goodRngFics.size());
+    recList->ficData->perfectRngScoreCutoff = perfectCutoff;
+    recList->ficData->perfectRngFicsSize = perfectRngFics.size();
+    recList->ficData->goodRngScoreCutoff = goodCutoff;
+    recList->ficData->goodRngFicsSize = goodRngFics.size();
     environment->ficSource->ClearUserData();
     return recList;
 }
@@ -244,7 +305,8 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     auto largeListToken =  command.user->GetLargeListToken();
     An<interfaces::Users> usersDbInterface;
     if(!refreshing){
-        if(largeListToken.date == QDate::currentDate() && largeListToken.counter == 1)
+        qDebug() << "asking user = " + command.user->UserID();
+        if(largeListToken.date == QDate::currentDate() && largeListToken.counter == 1 && command.user->UserID() != "102212539609280512")
         {
             action->text = "Only one profile reparse per day are allowed for lists over 500 fics.";
             action->stopChain = true;
@@ -298,7 +360,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     if(!refreshing)
         pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
-    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command);
+    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command.user->GetRecommendationsCutoff(), command);
     if(wasAutomatic && !recList->isAutomatic)
     {
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
@@ -416,7 +478,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     if(!refreshing)
         pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
-    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment,command);
+    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command.user->GetRecommendationsCutoff(), command);
     if(wasAutomatic && !recList->isAutomatic)
     {
         command.user->SetForcedMinMatch(recList->minimumMatch);
@@ -597,59 +659,71 @@ void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed,
 
 
 
-void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, const Command& command){
-    auto filter = command.user->GetCurrentFandomFilter();
+void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed,
+                                  QSharedPointer<TaskEnvironment> environment,
+                                  StoryFilterDisplayToken filterToken,
+                                  const Command& command){
 
     QString result;
-    if(command.user->GetSimilarFicsId() != 0)
-        result += QString(QStringLiteral("\nDisplaying similarity list for fic: %1.")).arg(command.user->GetSimilarFicsId());
-    if(filter.fandoms.size() > 0){
-        result += QStringLiteral("\nDisplayed recommendations are for fandom filter:\n");
-        for(auto fandom: std::as_const(filter.fandoms))
-        {
-            if(fandom != -1)
-                result += ( QStringLiteral(" - ") + environment->fandoms->GetNameForID(fandom) + QStringLiteral("\n"));
+    if(!filterToken.ficId.isEmpty()){
+        result += QString(QStringLiteral("\nDisplaying similarity list for fic: %1.")).arg(filterToken.ficId);
+    }else{
+        if(filterToken.fandoms.size() > 0){
+            QString fandomResult;
+            for(auto fandom: std::as_const(filterToken.fandoms))
+            {
+                if(fandom != -1){
+                    if(fandomResult.isEmpty())
+                        fandomResult = QStringLiteral("\nDisplayed recommendations are for fandom filter:\n");
+                    fandomResult += ( QStringLiteral(" - ") + environment->fandoms->GetNameForID(fandom) + QStringLiteral("\n"));
+                }
+            }
+            result += fandomResult;
         }
-    }
-    static constexpr uint16_t oneThousandWords = 1000;
-    auto wordcountFilter = command.user->GetWordcountFilter();
-    if(wordcountFilter.filterMode == WordcountFilter::fm_more)
-        result += QString(QStringLiteral("\nShowing fics with > %1k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords));
-    if(wordcountFilter.filterMode == WordcountFilter::fm_less)
-        result += QString(QStringLiteral("\nShowing fics with < %1k words.")).arg(QString::number(wordcountFilter.secondLimit/oneThousandWords));
-    if(wordcountFilter.filterMode == WordcountFilter::fm_between)
-        result += QString(QStringLiteral("\nShowing fics between %1k and %2k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords),QString::number(wordcountFilter.secondLimit/oneThousandWords));
+        static constexpr uint16_t oneThousandWords = 1000;
+        auto wordcountFilter = filterToken.wordCountFilter;
+        if(wordcountFilter.filterMode == WordcountFilter::fm_more)
+            result += QString(QStringLiteral("\nShowing fics with > %1k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords));
+        if(wordcountFilter.filterMode == WordcountFilter::fm_less)
+            result += QString(QStringLiteral("\nShowing fics with < %1k words.")).arg(QString::number(wordcountFilter.secondLimit/oneThousandWords));
+        if(wordcountFilter.filterMode == WordcountFilter::fm_between)
+            result += QString(QStringLiteral("\nShowing fics between %1k and %2k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords),QString::number(wordcountFilter.secondLimit/oneThousandWords));
 
-    if(!command.user->GetPublishedFilter().isEmpty())
-        result += QString(QStringLiteral("\nShowing fics started in year: %1")).arg(command.user->GetPublishedFilter());
-    if(!command.user->GetFinishedFilter().isEmpty())
-        result += QString(QStringLiteral("\nShowing fics started in year: %1")).arg(command.user->GetFinishedFilter());
+        if(!filterToken.publishedFilter.isEmpty())
+            result += QString(QStringLiteral("\nShowing fics started in year: %1")).arg(filterToken.publishedFilter);
+        if(!filterToken.finishedFilter.isEmpty())
+            result += QString(QStringLiteral("\nShowing fics started in year: %1")).arg(filterToken.finishedFilter);
 
 
-    if(command.user->GetLastPageType() == ct_display_rng)
-    {
-        auto rollType = command.user->GetLastUsedRoll();
-        result += QString(QStringLiteral("\nRolling in range: %1.")).arg(command.user->GetLastUsedRoll());
-        if(rollType == "good")
-            result += QString(QStringLiteral(" Among %1 decently matched fics")).arg(QString::number(command.user->GetGoodRngFicsSize()));
-        if(rollType == "best")
-            result += QString(QStringLiteral(" Among %1 greatly matched fics")).arg(QString::number(command.user->GetPerfectRngFicsSize()));
-    }
-    if(command.user->GetUseLikedAuthorsOnly())
-        result += QStringLiteral("\nLiked authors filter is active.");
-    if(command.user->GetSortFreshFirst())
-        result += QStringLiteral("\nFresh recommendations sorting is active.");
-    if(command.user->GetSortGemsFirst())
-        result += QStringLiteral("\nGems recommendations sorting is active.");
-    if(command.user->GetShowCompleteOnly())
-        result += QStringLiteral("\nOnly showing fics that are complete.");
-    if(command.user->GetHideDead())
-        result += QStringLiteral("\nOnly showing fics that are not dead.");
-    if(!result.isEmpty())
-    {
-        QString temp = QStringLiteral("\nTo disable any active filters, repeat the command that activates them,\nor issue %2xfilter to remove them all.");
-        temp = temp.arg(QSV(command.server->GetCommandPrefix()));
-        result += temp;
+        if(filterToken.rollMemo.usingRoll)
+        {
+            auto rollMemo  = filterToken.rollMemo;
+            result += QString(QStringLiteral("\nRolling in range: %1.")).arg(rollMemo.rollType);
+            if(rollMemo.rollType == "good")
+                result += QString(QStringLiteral(" Among %1 decently matched fics")).arg(QString::number(rollMemo.goodRngFicsSize));
+            if(rollMemo.rollType == "best")
+                result += QString(QStringLiteral(" Among %1 greatly matched fics")).arg(QString::number(rollMemo.perfectRngFicsSize));
+        }
+        if(filterToken.usingLikedFilter)
+            result += QStringLiteral("\nLiked authors filter is active.");
+        if(filterToken.usingFreshSort)
+            result += QStringLiteral("\nFresh recommendations sorting is active.");
+        if(filterToken.usingGemsSort)
+            result += QStringLiteral("\nGems recommendations sorting is active.");
+        if(filterToken.usingCompleteFilter)
+            result += QStringLiteral("\nOnly showing fics that are complete.");
+        if(filterToken.usingDeadFilter)
+            result += QStringLiteral("\nOnly showing fics that are not dead.");
+
+        if(!result.isEmpty())
+        {
+            QString temp = QStringLiteral("\nTo disable any active filters, repeat the command that activates them,\nor issue %2xfilter to remove them all.");
+            temp = temp.arg(QSV(command.server->GetCommandPrefix()));
+            result += temp;
+        }
+
+        if(filterToken.isArchivedPage)
+            result += QString(QStringLiteral("\n\nThis is an ARCHIVED message, issued ignore fic commands will work NOT on it, but on your fresher message below or in another channel."));
     }
 
     embed.description += result.toStdString();
@@ -675,25 +749,93 @@ void  FillActiveFilterPartInEmbedAsField(SleepyDiscord::Embed& embed, QSharedPoi
     embed.fields.push_back(field);
 }
 
+template<typename T>
+void FillPageDisplayMemo(T* fetcher,
+                         std::shared_ptr<TrackedMessageBase> messageData,
+                         bool reuseData = true,
+                         int favouritesCutoff = 0,
+                         QString userFFNId = ""){
+    if(!messageData)
+        return;
+
+    auto reclistData = std::dynamic_pointer_cast<TrackedRecommendationList>(messageData);
+
+    An<ClientStorage> storage;
+    reclistData->memo.storyFilterDisplayToken = fetcher->storyFilterDisplayToken;
+    reclistData->memo.page = fetcher->pageToUse;
+    reclistData->memo.filter = fetcher->filter;
+    if(!reuseData){
+        reclistData->memo.ficFavouritesCutoff = favouritesCutoff;
+        reclistData->memo.userFFNId = userFFNId;
+    }
+    reclistData->ficData.data = fetcher->sourceficsData;
+    reclistData->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS());
+    reclistData->memo.sourceFics = fetcher->sourceficsData->sourceFicsFFN;
+//    if constexpr(std::is_same_v<T, FicFetcherRNG>){
+//        reclistData->memo.rngQualityCutoff = fetcher->qualityCutoff;
+//    }
+    if(!reclistData->token.messageID.string().empty()){
+        storage->messageData.push(reclistData->token.messageID.number(),messageData);
+        storage->timedMessageData.push(reclistData->token.messageID.number(),messageData);
+    }
+}
+
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     //QLOG_TRACE() << "Creating page results";
-
     environment->ficSource->ClearUserData();
     auto page = command.ids.at(0);
-    command.user->SetPage(page);
-    An<interfaces::Users> usersDbInterface;
-    usersDbInterface->UpdateCurrentPage(command.user->UserID(), page);
 
-    QVector<core::Fanfic> fics;
+    if(!command.reactionCommand || command.reactedMessageToken.messageID == command.user->GetLastRecsPageMessage().message){
+        command.user->SetPage(page);
+        An<interfaces::Users> usersDbInterface;
+        usersDbInterface->UpdateCurrentPage(command.user->UserID(), page);
+    }
+
     QLOG_TRACE() << "Fetching fics";
-    environment->ficSource->ClearUserData();
+    //environment->ficSource->ClearUserData();
+
     static constexpr int listSize = 9;
-    FetchFicsForDisplayPageCommand(environment->ficSource, command.user, listSize, &fics);
-    int pageCount = FetchPageCountForFilterCommand(environment->ficSource, command.user, listSize);
-    auto userFics = command.user->FicList();
-    for(auto& fic : fics)
-        fic.score = userFics->ficToMetascore[fic.identity.id];
+
+    core::StoryFilter usedFilter;
+    bool workingOnSimilarityList = command.commandChain.at(0) == ECommandType::ct_create_similar_fics_list;
+
+    FicFetcherPage pageFetcher;
+    pageFetcher.source = environment->ficSource;
+    pageFetcher.recordLimit = listSize;
+    pageFetcher.user = command.user;
+    pageFetcher.pageToUse = page;
+    if(workingOnSimilarityList){
+        pageFetcher.displayingSimilarityList = true;
+        pageFetcher.storyFilterDisplayToken.ficId = command.variantHash["similar"].toString();
+    }
+
+    int pageCount = 0;
+    QVector<core::Fanfic> fics;
+    QString similarFic;
+    if(command.reactionCommand){
+        auto resultLocker = messageData->LockResult();
+        auto listData = static_cast<TrackedRecommendationList*>(messageData.get());
+        // we need to recreate the list before we can display anything
+        if(!listData->ficData.data)
+        {
+            if(command.variantHash.contains("similar"))
+                listData->ficData.data = FillRecommendationsForSingularFic(environment, command.variantHash["similar"].toString())->ficData;
+            else
+                listData->ficData.data = FillUserRecommendationsFromFavourites(listData->memo.userFFNId, listData->memo.sourceFics, environment, listData->memo.ficFavouritesCutoff, command)->ficData;
+        }
+        pageFetcher.sourceficsData = listData->ficData.data;
+        listData->memo.filter.partiallyFilled = true;
+        pageFetcher.storyFilterDisplayToken = listData->memo.storyFilterDisplayToken;
+        pageFetcher.Fetch(listData->memo.filter, &fics);
+        pageCount = pageFetcher.FetchPageCount(listData->memo.filter);
+
+    }else{
+        pageFetcher.sourceficsData =  workingOnSimilarityList ? command.user->GetTemporaryFicsData() : command.user->FicList();
+        pageFetcher.Fetch({}, &fics);
+        pageCount = pageFetcher.FetchPageCount({});
+    }
+
     //QLOG_TRACE() << "Fetched fics";
     SleepyDiscord::Embed embed;
     //QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
@@ -702,13 +844,17 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
     auto editPreviousPageIfPossible = command.variantHash.value(QStringLiteral("refresh_previous")).toBool();
+    if(editPreviousPageIfPossible && !command.user->GetLastRecsPageMessage().message.string().empty()){
+        command.targetMessage = command.user->GetLastRecsPageMessage().message;
+    }
 
     if(command.targetMessage.string().length() != 0){
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
     }
     else{
-        auto previousPage = command.user->GetLastPageMessage();
-        if(editPreviousPageIfPossible && previousPage.message.string().length() > 0 && previousPage.channel == command.originalMessageToken.channelID)
+        auto previousPage = command.user->GetLastRecsPageMessage();
+        bool pageMessageIsLastType = previousPage.message == command.user->GetLastAnyTypeMessageID();
+        if(editPreviousPageIfPossible && pageMessageIsLastType && previousPage.message.string().length() > 0 && previousPage.channel == command.originalMessageToken.channelID)
         {
             action->text = QString::fromStdString(CreateMention(command.originalMessageToken.authorID.string()) + ", here are the results:");
             action->diagnosticText = QString::fromStdString(CreateMention(command.originalMessageToken.authorID.string()) + ", your previous results have been updated with new data." );
@@ -719,21 +865,22 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         //        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
     }
 
-    embed.description = QString(QStringLiteral("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3")).arg(command.user->FfnID()).arg(command.user->CurrentRecommendationsPage()).arg(QString::number(pageCount)).toStdString();
+    embed.description = QString(QStringLiteral("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3")).arg(command.user->FfnID()).arg(pageFetcher.pageToUse).arg(QString::number(pageCount)).toStdString();
     auto& tips = SendMessageCommand::tips;
     int tipNumber =  rand() % tips.size();
     static constexpr uint8_t promoFrequency = 7;
     bool showAppOrPatreon = rand() % promoFrequency == 0;
     SleepyDiscord::EmbedFooter footer;
-    //QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest"),
+    //
     if(showAppOrPatreon){
-        QStringList appPromo =  {QStringLiteral("If you would like to support the bot, you can do it on https://www.patreon.com/Zekses")};
-//        int shownId = rand() %2 == 0;
-        footer.text = appPromo.at(0).toStdString();
-//        if(shownId == 1)
-        footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
-//        else
-//            footer.iconUrl = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
+        QStringList appPromo =  {QStringLiteral("If you would like to support the bot, you can do it on https://www.patreon.com/Zekses"),
+                                 QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest")};
+        int shownId = rand() %2 == 0;
+            footer.text = appPromo.at(0).toStdString();
+        if(shownId == 1)
+            footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
+        else
+            footer.iconUrl = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
     }
     else{
         if(tips.size() > 0)
@@ -745,9 +892,14 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         }
     }
     embed.footer = footer;
-
-    FillActiveFilterPartInEmbed(embed, environment, command);
-
+    if(command.targetMessage.string().length() != 0 && command.targetMessage != command.user->GetLastPostedListCommandMemo().message)
+    {
+        pageFetcher.storyFilterDisplayToken.isArchivedPage = true;
+    }
+    FillActiveFilterPartInEmbed(embed,
+                                environment,
+                                pageFetcher.storyFilterDisplayToken,
+                                command);
     QHash<int, int> positionToId;
     int i = 0;
     for(const auto& fic: std::as_const(fics))
@@ -756,12 +908,56 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         i++;
         FillListEmbedForFicAsFields(embed, fic, i);
     }
+    if(!command.reactionCommand
+            || command.reactedMessageToken.messageID == command.user->GetLastPostedListCommandMemo().message)
+    {
+        command.user->SetLastPageType(ct_display_page);
+        //if(command.reactedMessageToken.messageID == command.user->GetLastPageMessage().message)
+        command.user->SetPositionsToIdsForCurrentPage(positionToId);
+    }
 
-    command.user->SetPositionsToIdsForCurrentPage(positionToId);
-    command.user->SetLastPageType(ct_display_page);
+    An<ClientStorage> storage;
+    if(command.targetMessage.string().length() == 0){
+        // if we got a chain of size: 1, this means it's a !page, !next or !prev using the same recs as previously
+        // for that we need to create a new instance of whatever that was
+        // meaning accessing the last id from storage
+
+        if(command.commandChain.size() == 1){
+            auto priorMessage = command.user->GetLastRecsPageMessage().message;
+            std::shared_ptr<TrackedMessageBase> oldMessage;
+            if(!priorMessage.string().empty() && storage->messageData.contains(priorMessage.number()))
+                oldMessage = storage->messageData.value(priorMessage.number());
+            if(oldMessage)
+                action->messageData = oldMessage->NewInstance();
+        }
+        else{
+            switch(command.commandChain.front()){
+            case ct_create_similar_fics_list:
+                action->messageData = std::make_shared<TrackedSimilarityList>(command.variantHash["similar"].toString());
+                break;
+            default:
+                action->messageData = std::make_shared<TrackedRecommendationList>();
+            }
+        }
+        messageData = action->messageData;
+    }
+
+    if(command.reactionCommand && storage->messageData.contains(command.reactedMessageToken.messageID.number()))
+        messageData = storage->messageData.value(command.reactedMessageToken.messageID.number());
+
+    bool reuseDataInMemo = command.reactionCommand;
+    FillPageDisplayMemo(&pageFetcher,
+                        messageData,
+                        reuseDataInMemo,
+                        command.user->GetRecommendationsCutoff(),
+                        command.user->FfnID());
+//    if(!workingOnSimilarityList && command.user->GetTemporaryFicsData()){
+//        command.user->SetFicList(command.user->GetTemporaryFicsData());
+//    }
+    command.user->SetTemporaryFicsData({});
+    action->reactionsToAdd = messageData->GetEmojiSet();
+
     action->embed = embed;
-    action->reactionsToAdd.push_back(QStringLiteral("%f0%9f%91%88"));
-    action->reactionsToAdd.push_back(QStringLiteral("%f0%9f%91%89"));
     if(command.targetMessage.string().length() > 0)
         action->targetMessage = command.targetMessage;
     environment->ficSource->ClearUserData();
@@ -769,29 +965,64 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     return action;
 }
 
-
 QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     auto quality = command.variantHash.value(QStringLiteral("quality")).toString().trimmed();
     if(quality.length() == 0)
         quality = command.user->GetLastUsedRoll().isEmpty() ? QStringLiteral("all ") : command.user->GetLastUsedRoll();
-    QVector<core::Fanfic> fics;
-    command.user->SetLastUsedRoll(quality);
 
-    //QSet<int> filteringFicSet;
+
+
     int scoreCutoff = 1;
-    if(quality == QStringLiteral("best"))    {
-        scoreCutoff= command.user->GetPerfectRngScoreCutoff();
-    }
-    if(quality == QStringLiteral("good")){
-        scoreCutoff= command.user->GetGoodRngScoreCutoff();
-    }
+    auto selectScoreCutoff = [&](auto recList){
+        if(quality == QStringLiteral("best"))    {
+            scoreCutoff= recList->perfectRngScoreCutoff;
+        }
+        if(quality == QStringLiteral("good")){
+            scoreCutoff= recList->goodRngScoreCutoff;
+        }
+    };
+
+    QVector<core::Fanfic> fics;
 
     QLOG_TRACE() << QStringLiteral("Fetching fics for rng");
-    FetchFicsForDisplayRngCommand(3, environment->ficSource, command.user, &fics, scoreCutoff);
-    auto userFics = command.user->FicList();
-    for(auto& fic : fics)
-        fic.score = userFics->ficToMetascore[fic.identity.id];
+
+    FicFetcherRNG rngFetcher;
+    rngFetcher.source = environment->ficSource;
+    rngFetcher.recordLimit = 3;
+    rngFetcher.user = command.user;
+
+    //rngFetcher.sourceficsData = environment->ficSource;
+
+    An<ClientStorage> storage;
+    if(command.reactionCommand){
+        auto resultLocker = messageData->LockResult();
+        auto rngData = static_cast<TrackedRoll*>(messageData.get());
+
+        // we need to recreate the list before we can display anything
+        if(!rngData->ficData.data)
+            rngData->ficData.data = FillUserRecommendationsFromFavourites(rngData->memo.userFFNId, rngData->memo.sourceFics, environment, rngData->memo.ficFavouritesCutoff, command)->ficData;
+
+        selectScoreCutoff(rngData->ficData.data);
+        rngFetcher.qualityCutoff = scoreCutoff;
+        rngFetcher.sourceficsData = rngData->ficData.data;
+        rngData->memo.filter.partiallyFilled = true;
+        rngFetcher.storyFilterDisplayToken = rngData->memo.storyFilterDisplayToken;
+        rngFetcher.Fetch(rngData->memo.filter, &fics);
+    }
+    else{
+        command.user->SetLastUsedRoll(quality);
+        selectScoreCutoff(command.user->FicList());
+        rngFetcher.qualityCutoff = scoreCutoff;
+        rngFetcher.sourceficsData = command.user->FicList();
+        rngFetcher.storyFilterDisplayToken.rollMemo.usingRoll = true;
+        rngFetcher.storyFilterDisplayToken.rollMemo.rollType = quality;
+        rngFetcher.Fetch({}, &fics);
+        command.user->SetLastUsedStoryFilter(rngFetcher.filter);
+    }
+
+    rngFetcher.storyFilterDisplayToken.rollMemo.goodRngFicsSize = rngFetcher.sourceficsData->goodRngFicsSize;
+    rngFetcher.storyFilterDisplayToken.rollMemo.perfectRngFicsSize = rngFetcher.sourceficsData->perfectRngFicsSize;
 
     QLOG_TRACE() << QStringLiteral("Fetched fics for rng");
 
@@ -801,12 +1032,11 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     environment->fandoms->FetchFandomsForFics(&fics);
 
     SleepyDiscord::Embed embed;
-    //QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
     auto editPreviousPageIfPossible = command.variantHash.value(QStringLiteral("refresh_previous")).toBool();
     if(command.targetMessage.string().length() != 0)
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
     else {
-        auto previousPage = command.user->GetLastPageMessage();
+        auto previousPage = command.user->GetLastRecsPageMessage();
         if(editPreviousPageIfPossible && previousPage.message.string().length() > 0 && previousPage.channel == command.originalMessageToken.channelID)
         {
             action->text = QString::fromStdString(CreateMention(command.originalMessageToken.authorID.string()) + ", here are the results:");
@@ -829,10 +1059,20 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     command.user->SetLastPageType(ct_display_rng);
-    FillActiveFilterPartInEmbed(embed, environment, command);
+    FillActiveFilterPartInEmbed(embed, environment, rngFetcher.storyFilterDisplayToken, command);
+    if(!messageData){
+        action->messageData = std::make_shared<TrackedRoll>();
+        messageData = action->messageData;
+    }
+    bool reuseDataInMemo = command.reactionCommand;
+    FillPageDisplayMemo(&rngFetcher,
+                        messageData,
+                        reuseDataInMemo,
+                        command.user->GetRecommendationsCutoff(),
+                        command.user->FfnID());
 
     action->embed = embed;
-    action->reactionsToAdd.push_back(QStringLiteral("%f0%9f%94%81"));
+    action->reactionsToAdd = messageData->GetEmojiSet();
     if(command.targetMessage.string().length() > 0)
         action->targetMessage = command.targetMessage;
     QLOG_INFO() << QStringLiteral("Created page results");
@@ -950,6 +1190,11 @@ QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointe
 QSharedPointer<SendMessageCommand> IgnoreFicAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
     auto ficIds = command.ids;
+    if(command.user->GetLastPostedListCommandMemo().channel != command.originalMessageToken.channelID)
+    {
+        action->text = QStringLiteral("Your last posted list is not in this channel. Can't ignore.");
+        return action;
+    }
     if(command.variantHash.contains(QStringLiteral("everything")))
         ficIds = {1,2,3,4,5,6,7,8,9,10};
 
@@ -1209,13 +1454,6 @@ QSharedPointer<SendMessageCommand> ResetFiltersAction::ExecuteImpl(QSharedPointe
 QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     command.user->initNewEasyQuery();
-    command.user->SetRngBustScheduled(true);
-
-    command.user->SetSortFreshFirst(false);
-    command.user->SetSortGemsFirst(false);
-    command.user->SetStrictFreshSort(false);
-    command.user->SetPublishedFilter("");
-    command.user->SetFinishedFilter("");
 
     auto ficId = command.ids.at(0);
     QSharedPointer<core::RecommendationList> listParams;
@@ -1239,6 +1477,7 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
             hasValidId = true;
         recList->ficData->sourceFics+=source.id;
         recList->ficData->fics+=source.web.ffn;
+        recList->ficData->sourceFicsFFN+=source.web.ffn;
     }
     if(!hasValidId)
     {
@@ -1246,14 +1485,10 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
         action->stopChain = true;
         return action;
     }
-    recList->resultLimit = 90;
-    environment->ficSource->GetRecommendationListFromServer(recList);
-
+    recList = FillRecommendationsForSingularFic(environment, QString::number(command.ids.at(0)));
     // instantiating working set for user
     An<Users> users;
-    command.user->SetFicList(recList->ficData);
-    //QMap<int, int> scoreStatus; // maps maptch count to fic count with this match
-    //QMap<int, QSet<int>> matchFicToScore; // maps maptch count to fic count with this match
+    command.user->SetTemporaryFicsData(recList->ficData);
 
     if(recList->ficData->metascores.isEmpty())
     {
@@ -1410,6 +1645,8 @@ QSharedPointer<SendMessageCommand> ShowFicAction::ExecuteImpl(QSharedPointer<Tas
     QVector<core::Fanfic> fics;
     environment->ficSource->ClearUserData();
     FetchFicsForShowIdCommand(environment->ficSource, {static_cast<int>(command.ids[0])},  &fics);
+    An<interfaces::Users> usersDbInterface;
+    usersDbInterface->SetDateFilter(command.user->UserID(), filters::dft_none, "");
     if(fics.size() == 0){
         return action;
     }
@@ -1459,6 +1696,13 @@ QSharedPointer<SendMessageCommand> ShowFicAction::ExecuteImpl(QSharedPointer<Tas
     temp = temp.replace(QStringLiteral("````"), QStringLiteral("```"));
     //temp = temp.replace("'", "\'");
     embed.description = temp.toStdString();
+
+
+    if(command.targetMessage.string().length() == 0){
+        messageData = action->messageData = std::make_shared<TrackedFicDetails>();
+        auto ficData = std::dynamic_pointer_cast<TrackedFicDetails>(messageData);
+        ficData->ficId = command.ids[0];
+    }
 
     action->embed = embed;
     action->originalMessageToken.ficId = fic.identity.web.GetPrimaryId();
@@ -1658,6 +1902,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 
