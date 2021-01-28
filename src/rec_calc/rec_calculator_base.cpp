@@ -651,6 +651,8 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                 author.negativeMatches = tempAuthorRoaring.and_cardinality(ownMajorNegatives);
                 if(author.matches > 10 && static_cast<double>(author.negativeMatches)/static_cast<double>(author.matches) > 1.5)
                     author.matches = 0;
+                if(author.fullListSize > 10 && author.matches < 2)
+                    author.matches = 0;
                 author.sizeAfterIgnore = unignoredSize;
 
                 // not interested with lists that don't add anything new
