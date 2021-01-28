@@ -45,11 +45,6 @@ struct Command{
         ot_fandoms = 2,
         ot_user = 3,
     };
-    static std::vector<ECommandType> CreateCommandChainVector(std::initializer_list<ECommandType> l){
-        std::vector<ECommandType> v;
-        v.insert(v.end(), l.begin(), l.end());
-        return v;
-    };
     bool isValid = false;
     ECommandType type = ECommandType::ct_none;
     std::vector<ECommandType> commandChain; // used to know what to do in display action where recs algo has already finished
