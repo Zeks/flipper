@@ -8,10 +8,15 @@
 
 namespace discord{
 
-TrackedSimilarityList::TrackedSimilarityList()
+TrackedSimilarityList::TrackedSimilarityList(QSharedPointer<User> user):TrackedRecommendationList(user)
 {
     actionableEmoji = {"👈","👉"};
     canBeUsedAsLastPage = false;
+}
+
+TrackedSimilarityList::TrackedSimilarityList(QString fic, QSharedPointer<User> user):TrackedRecommendationList(user)
+{
+    ficId = fic; canBeUsedAsLastPage = false;this->originalUser  = user;
 }
 
 CommandChain TrackedSimilarityList::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)

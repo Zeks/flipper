@@ -8,7 +8,7 @@
 
 namespace discord{
 
-TrackedRecommendationList::TrackedRecommendationList()
+TrackedRecommendationList::TrackedRecommendationList(QSharedPointer<User> user):TrackedMessageBase(user)
 {
     actionableEmoji = {"👈","👉"};
 }

@@ -8,7 +8,7 @@
 
 namespace discord{
 
-TrackedRoll::TrackedRoll()
+TrackedRoll::TrackedRoll(QSharedPointer<User> user):TrackedRecommendationList(user)
 {
     actionableEmoji = {"🔁"};
 }

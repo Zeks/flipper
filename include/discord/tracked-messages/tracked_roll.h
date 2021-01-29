@@ -13,14 +13,14 @@ namespace discord{
 class TrackedRoll: public TrackedRecommendationList{
 
 public:
-    TrackedRoll();
+    TrackedRoll(QSharedPointer<User> user);
     virtual ~TrackedRoll(){};
     virtual CommandChain ProcessReactionImpl(Client* client, QSharedPointer<User>,
                                          SleepyDiscord::Emoji emoji) override;
     QStringList GetEmojiSet() override;
     std::string GetOtherUserErrorMessage(Client *client) override;
     CommandChain CloneForOtherUser() override;
-    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedRoll>();};
+    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedRoll>(this->originalUser);};
 };
 
 

@@ -13,7 +13,7 @@ namespace discord{
 class TrackedRecommendationList: public TrackedMessageBase{
 
 public:
-    TrackedRecommendationList();
+    TrackedRecommendationList(QSharedPointer<User> user);
     int GetDataExpirationIntervalS() override;
     std::chrono::system_clock::time_point GetDataExpirationPoint() override;
     void RetireData() override;
@@ -24,7 +24,7 @@ public:
     CommandChain CloneForOtherUser() override;
     CommandChain ProcessReactionImpl(Client *client, QSharedPointer<User>, SleepyDiscord::Emoji emoji) override;
     QStringList GetEmojiSet() override;
-    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedRecommendationList>();};
+    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedRecommendationList>(this->originalUser);};
 
 
     RecsMessageCreationMemo memo;

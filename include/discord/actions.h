@@ -85,6 +85,7 @@ ACTION(ToggleBanAction);
 ACTION(SusAction);
 ACTION(AddReviewAction); // also edit
 ACTION(DeleteReviewAction);
+ACTION(DeleteBotMessageAction);
 
 
 struct ActionChain{

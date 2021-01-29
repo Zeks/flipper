@@ -43,6 +43,7 @@ enum ECommandType{
     ct_show_fic = 40,
     ct_add_review = 41,
     ct_delete_review = 42,
+    ct_delete_bot_message = 43,
 };
 
 }

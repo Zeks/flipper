@@ -159,7 +159,7 @@ QSharedPointer<SendMessageCommand> GeneralHelpAction::ExecuteImpl(QSharedPointer
     if(command.targetMessage.string().length() == 0){
         command.user->SetCurrentHelpPage(command.ids.at(0));
         // we need to create memo for this help page
-        helpPageData = std::make_shared<TrackedHelpPage>();
+        helpPageData = std::make_shared<TrackedHelpPage>(command.user);
         messageData = action->messageData = helpPageData;
     }
     else{
@@ -939,10 +939,10 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         else{
             switch(command.commandChain.front()){
             case ct_create_similar_fics_list:
-                action->messageData = std::make_shared<TrackedSimilarityList>(command.variantHash["similar"].toString());
+                action->messageData = std::make_shared<TrackedSimilarityList>(command.variantHash["similar"].toString(),command.user);
                 break;
             default:
-                action->messageData = std::make_shared<TrackedRecommendationList>();
+                action->messageData = std::make_shared<TrackedRecommendationList>(command.user);
             }
         }
         messageData = action->messageData;
@@ -1067,7 +1067,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     command.user->SetLastPageType(ct_display_rng);
     FillActiveFilterPartInEmbed(embed, environment, rngFetcher.storyFilterDisplayToken, command);
     if(!messageData){
-        action->messageData = std::make_shared<TrackedRoll>();
+        action->messageData = std::make_shared<TrackedRoll>(command.user);
         messageData = action->messageData;
     }
     bool reuseDataInMemo = command.reactionCommand;
@@ -1705,14 +1705,14 @@ QSharedPointer<SendMessageCommand> ShowFicAction::ExecuteImpl(QSharedPointer<Tas
 
 
     if(command.targetMessage.string().length() == 0){
-        messageData = action->messageData = std::make_shared<TrackedFicDetails>();
+        messageData = action->messageData = std::make_shared<TrackedFicDetails>(command.user);
         auto ficData = std::dynamic_pointer_cast<TrackedFicDetails>(messageData);
         ficData->ficId = command.ids[0];
     }
 
     action->embed = embed;
     action->originalMessageToken.ficId = fic.identity.web.GetPrimaryId();
-    action->reactionsToAdd.push_back(QStringLiteral("%F0%9F%94%8D"));
+    action->reactionsToAdd = messageData->GetEmojiSet();
     if(command.targetMessage.string().length() > 0)
         action->targetMessage = command.targetMessage;
 
@@ -1816,6 +1816,15 @@ QSharedPointer<SendMessageCommand> DeleteReviewAction::ExecuteImpl(QSharedPointe
     return action;
 }
 
+QSharedPointer<SendMessageCommand> DeleteBotMessageAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    An<interfaces::Users> usersDbInterface;
+    action->text = "";
+    action->targetMessage = command.targetMessage;
+    action->deletionCommand = true;
+    return action;
+}
+
 
 
 QSharedPointer<ActionBase> GetAction(ECommandType type)
@@ -1889,6 +1898,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new AddReviewAction());
     case ECommandType::ct_delete_review:
         return QSharedPointer<ActionBase>(new DeleteReviewAction());
+    case ECommandType::ct_delete_bot_message:
+        return QSharedPointer<ActionBase>(new DeleteBotMessageAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }
@@ -1908,6 +1919,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 

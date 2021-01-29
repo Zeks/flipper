@@ -8,7 +8,7 @@
 
 namespace discord{
 
-TrackedHelpPage::TrackedHelpPage()
+TrackedHelpPage::TrackedHelpPage(QSharedPointer<User> user):TrackedMessageBase(user)
 {
     actionableEmoji = {"👈","👉"};
 }

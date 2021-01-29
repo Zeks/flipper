@@ -33,6 +33,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 
 #include <QSettings>
 namespace discord{
+
+
+bool CheckAdminRole(Client* client, QSharedPointer<Server> server, const SleepyDiscord::Snowflake<SleepyDiscord::User>& authorID)
+{
+    SleepyDiscord::Server sleepyServer = client->getServer(server->GetServerId());
+    const auto& member = client->getMember(server->GetServerId(), authorID).cast();
+    bool isAdmin = false;
+    auto roles = member.roles;
+    for(auto& roleId : roles){
+        auto role = sleepyServer.findRole(roleId);
+        auto permissions = role->permissions;
+        if(SleepyDiscord::hasPremission(permissions, SleepyDiscord::ADMINISTRATOR))
+        {
+            isAdmin = true;
+            break;
+        }
+    }
+    return isAdmin;
+}
+
+
+
 std::atomic<uint64_t> CommandCreator::ownerId;
 QStringList SendMessageCommand::tips = {};
 QSharedPointer<User> CommandCreator::user;
@@ -388,10 +410,10 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(const SleepyDiscord::Message&
 
     AddFilterCommand(std::move(ignoredFandoms));
 
-//    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
-//    createRecs.ids.push_back(user->FfnID().toUInt());
-//    createRecs.variantHash[QStringLiteral("refresh")] = true;
-//    result.Push(std::move(createRecs));
+    //    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+    //    createRecs.ids.push_back(user->FfnID().toUInt());
+    //    createRecs.variantHash[QStringLiteral("refresh")] = true;
+    //    result.Push(std::move(createRecs));
 
     Command displayRecs = NewCommand(server, message,user->GetLastPageType());
     displayRecs.ids.push_back(0);
@@ -672,6 +694,7 @@ void SendMessageCommand::Invoke(Client * client)
                             addReaction(resultingMessage.response.value().cast(), targetChannel.string());
                         }
                     }
+
                 }
                 catch (const SleepyDiscord::ErrorCode& error){
                     if(error != 403)
@@ -686,7 +709,12 @@ void SendMessageCommand::Invoke(Client * client)
             }
         }
         else{
-            if(reactionsToRemove.size() > 0)
+            if(this->deletionCommand){
+                An<ClientStorage> storage;
+                client->deleteMessage(originalMessageToken.channelID,targetMessage);
+                storage->messageData.remove(targetMessage.number());
+            }
+            else if(reactionsToRemove.size() > 0)
                 removeReaction(targetMessage);
             else
                 // editing message doesn't change its Id so rehashing isn't required
@@ -1010,6 +1038,37 @@ CommandChain CreateSimilarListCommand(QSharedPointer<User> user, QSharedPointer<
     return result;
 }
 
+CommandChain CreateRemoveBotMessageCommand(Client* client ,QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken & message)
+{
+    CommandChain result;
+
+    auto pushNullCommand = [&](const QString& reason){
+        Command nullCommand = NewCommand(server, message,ct_null_command);
+        nullCommand.type = ct_null_command;
+        nullCommand.variantHash[QStringLiteral("reason")] = reason;
+        nullCommand.originalMessageToken = message;
+        nullCommand.server = server;
+        nullCommand.user = user;
+        result.Push(std::move(nullCommand));
+    };
+    An<ClientStorage> storage;
+    Command command = NewCommand(server, message, ct_delete_bot_message);
+    command.user = user;
+
+    bool isAdmin = CheckAdminRole(client, server, message.authorID);
+    //if(isAdmin || sleepyServer.ownerID == message.author.ID ||  message.author.ID.string() == std::to_string(ownerId))
+
+    bool sameUser = storage->messageData.value(message.messageID.number())->originalUser->UserID() != user->UserID();
+    if(!sameUser && !isAdmin)
+    {
+        pushNullCommand(QString::fromStdString(user->CreateMention() + ", you need to be the original user or the server admin to request the deletion."));
+        return result;
+    }
+    command.targetMessage = message.messageID;
+    result.Push(std::move(command));
+    return result;
+}
+
 
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, bool shiftRight)
 {
@@ -1261,11 +1320,11 @@ CommandChain YearCommand::ProcessInputImpl(const SleepyDiscord::Message & messag
         result.Push(std::move(command));
     }
 
-//    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
-//    createRecs.ids.push_back(user->FfnID().toUInt());
-//    createRecs.variantHash[QStringLiteral("refresh")] = true;
-//    createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(user->FfnID());
-//    result.Push(std::move(createRecs));
+    //    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+    //    createRecs.ids.push_back(user->FfnID().toUInt());
+    //    createRecs.variantHash[QStringLiteral("refresh")] = true;
+    //    createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(user->FfnID());
+    //    result.Push(std::move(createRecs));
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
     result.Push(std::move(displayRecs));
@@ -1521,6 +1580,8 @@ bool StatsCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<StatsCommand>::name;
 }
+
+
 
 
 

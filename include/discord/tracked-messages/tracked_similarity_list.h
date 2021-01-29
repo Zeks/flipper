@@ -14,8 +14,8 @@ namespace discord{
 class TrackedSimilarityList: public TrackedRecommendationList{
 
 public:
-    TrackedSimilarityList();
-    TrackedSimilarityList(QString fic){ficId = fic; canBeUsedAsLastPage = false;}
+    TrackedSimilarityList(QSharedPointer<User> user);
+    TrackedSimilarityList(QString fic,QSharedPointer<User> user);
     virtual ~TrackedSimilarityList(){};
     virtual CommandChain ProcessReactionImpl(Client* client, QSharedPointer<User>,
                                          SleepyDiscord::Emoji emoji) override;
@@ -25,7 +25,7 @@ public:
     int GetDataExpirationIntervalS() override;
     std::chrono::system_clock::time_point GetDataExpirationPoint() override;
     void RetireData() override;
-    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedSimilarityList>();};
+    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedSimilarityList>(this->originalUser);};
     QString ficId;
 
 };

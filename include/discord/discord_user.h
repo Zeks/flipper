@@ -76,6 +76,9 @@ struct User{
     User(QString userID, QString ffnID, QString name);
     User(QString userID, QString ffnID, QString name, QString uuid);
     User(const User &user);
+    std::string CreateMention(){
+        return "<@" + userID.toStdString() + ">";
+    }
     void InitFicsPtr();
     User& operator=(const User &user);
     int secsSinceLastsRecQuery();

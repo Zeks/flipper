@@ -7,20 +7,29 @@
 
 namespace discord{
 
-TrackedFicDetails::TrackedFicDetails()
+TrackedFicDetails::TrackedFicDetails(QSharedPointer<User> user):TrackedMessageBase(user)
 {
     otherUserBehaviour = TrackedMessageBase::noub_legal;
-    actionableEmoji = {"🔍"};
+    actionableEmoji = {"🔍","❌"};
 }
 
-CommandChain TrackedFicDetails::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji)
+CommandChain TrackedFicDetails::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
 {
+
     CommandChain commands;
     auto token = this->token;
     token.authorID = user->UserID().toStdString();
     auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
-    commands = CreateSimilarListCommand(user,server, token, ficId);
-    commands += CreateRemoveReactionCommand(user,server, token, GetEmojiSet().at(0).toStdString());
+    if(emoji == "🔍"){
+        commands = CreateSimilarListCommand(user,server, token, ficId);
+        commands += CreateRemoveReactionCommand(user,server, token, GetEmojiSet().at(0).toStdString());
+    }
+    else{
+        commands = CreateRemoveBotMessageCommand(client, user,server, token);
+        if(commands.commands.front().type == ct_null_command)
+            commands += CreateRemoveReactionCommand(user,server, token, GetEmojiSet().at(1).toStdString());
+
+    }
     return commands;
 }
 
@@ -31,7 +40,7 @@ int TrackedFicDetails::GetDataExpirationIntervalS()
 
 QStringList TrackedFicDetails::GetEmojiSet()
 {
-    static const QStringList emoji = {QStringLiteral("%F0%9F%94%8D")};
+    static const QStringList emoji = {QStringLiteral("%F0%9F%94%8D"), QStringLiteral("%E2%9D%8C")};
     return emoji;
 }
 

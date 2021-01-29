@@ -337,15 +337,18 @@ public:
     QStringList errors;
     bool emptyAction = false;
     bool stopChain = false;
+    bool deletionCommand = false;
     static QStringList tips;
 };
 
 CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & );
 CommandChain CreateSimilarListCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &, int ficId);
+CommandChain CreateRemoveBotMessageCommand(Client *,QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &);
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & , bool shiftRight = true);
 CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &, bool shiftRight = true);
 CommandChain CreateRemoveReactionCommand(QSharedPointer<User> , QSharedPointer<Server> server, const MessageIdToken &message, const std::string &reaction);
 Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::Message& message, ECommandType type);
 Command NewCommand(QSharedPointer<discord::Server> server, const MessageIdToken& message, ECommandType type);
+bool CheckAdminRole(Client* client, QSharedPointer<Server> server, const SleepyDiscord::Snowflake<SleepyDiscord::User> &authorID);
 }
 

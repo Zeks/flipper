@@ -14,7 +14,7 @@ class TrackedMessageBase : public std::enable_shared_from_this<TrackedMessageBas
         noub_clone = 1,
         noub_legal = 2,
     };
-    TrackedMessageBase() = default;
+    TrackedMessageBase(QSharedPointer<User> user){originalUser = user;};
     virtual ~TrackedMessageBase(){};
     // base functions
     bool IsOriginaluser(QString user){return user.toStdString() == token.authorID.string();};
@@ -44,7 +44,11 @@ class TrackedMessageBase : public std::enable_shared_from_this<TrackedMessageBas
     std::atomic<bool> resultInUse = false;
     bool canBeUsedAsLastPage = true;
     std::vector<std::string> actionableEmoji;
+    QSharedPointer<User> originalUser;
     std::mutex mutex;
+protected:
+    TrackedMessageBase(){};
+
 };
 
 class ResultGuard{

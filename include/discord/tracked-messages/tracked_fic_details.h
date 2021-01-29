@@ -7,7 +7,7 @@ namespace discord{
 class TrackedFicDetails : public TrackedMessageBase{
 
 public:
-    TrackedFicDetails();
+    TrackedFicDetails(QSharedPointer<User> user);
     virtual ~TrackedFicDetails(){};
     virtual CommandChain ProcessReactionImpl(Client* client, QSharedPointer<User>,
                                          SleepyDiscord::Emoji emoji) override;
@@ -17,9 +17,11 @@ public:
     CommandChain CloneForOtherUser() override;
     std::chrono::system_clock::time_point GetDataExpirationPoint() override;
     void RetireData() override;
-    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedFicDetails>();}
+    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedFicDetails>(this->originalUser);}
 
     int ficId = 0;
+protected:
+    TrackedFicDetails(){};
 
 
 };
