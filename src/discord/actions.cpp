@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/discord_server.h"
 #include "discord/discord_message_token.h"
 #include "discord/fetch_filters.h"
+#include "discord/send_message_command.h"
 #include "discord/favourites_fetching.h"
 #include "discord/tracked-messages/tracked_roll.h"
 #include "discord/tracked-messages/tracked_help_page.h"

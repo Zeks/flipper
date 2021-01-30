@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/command.h"
 #include "discord/limits.h"
 #include "discord/discord_user.h"
+#include "discord/command_chain.h"
 #include "discord/discord_message_token.h"
 #include "discord/tracked-messages/tracked_message_base.h"
 
@@ -34,7 +35,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <mutex>
 
 namespace discord{
-class Client;
 class Server;
 struct Command;
 
@@ -308,38 +308,7 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
-class CommandParser{
-public:
-    CommandChain Execute(const std::string &command, QSharedPointer<Server> server, const SleepyDiscord::Message &);
-    QList<QSharedPointer<CommandCreator>> commandProcessors;
-    Client* client = nullptr;
-    std::mutex lock;
-};
 
-
-class SendMessageCommand{
-public:
-    static QSharedPointer<SendMessageCommand> Create() {return QSharedPointer<SendMessageCommand>(new SendMessageCommand);}
-    void Invoke(discord::Client*);
-    SleepyDiscord::Embed embed;
-    QString text;
-    QString diagnosticText;
-    QStringList reactionsToAdd;
-    QStringList reactionsToRemove;
-    QSharedPointer<User> user;
-    MessageIdToken originalMessageToken;
-    std::shared_ptr<TrackedMessageBase> messageData;
-
-    SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
-    SleepyDiscord::Snowflake<SleepyDiscord::Channel> targetChannel;
-    ECommandType originalCommandType = ct_none;
-    std::list<CommandChain> commandsToReemit;
-    QStringList errors;
-    bool emptyAction = false;
-    bool stopChain = false;
-    bool deletionCommand = false;
-    static QStringList tips;
-};
 
 CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & );
 CommandChain CreateSimilarListCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &, int ficId);

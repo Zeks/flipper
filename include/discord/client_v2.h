@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 
 #include "discord/limits.h"
 #include "discord/client_storage.h"
+#include "discord/command_parser.h"
 #include "discord/command_generators.h"
 #include "discord/discord_user.h"
 #include "discord/identity_hash.h"

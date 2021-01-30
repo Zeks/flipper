@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/actions.h"
 #include "discord/task_runner.h"
 #include "discord/task_environment.h"
+#include "discord/send_message_command.h"
 #include "discord/client_v2.h"
 #include <third_party/nanobench/nanobench.h>
 

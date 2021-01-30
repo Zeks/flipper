@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/task_runner.h"
 #include "discord/task_environment.h"
 #include "discord/client_v2.h"
+#include "discord/send_message_command.h"
 #include "discord/task.h"
 
 namespace discord {

@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/discord_init.h"
 #include "discord/command_generators.h"
+#include "discord/send_message_command.h"
 #include "discord/actions.h"
 #include "discord/type_strings.h"
 #include <regex>

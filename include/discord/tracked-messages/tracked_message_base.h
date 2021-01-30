@@ -1,6 +1,7 @@
 #pragma once
 #include "discord/discord_message_token.h"
 #include "discord/command.h"
+#include "discord/command_chain.h"
 #include <mutex>
 namespace discord{
 
