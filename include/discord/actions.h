@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/task_environment.h"
 #include "discord/tracked-messages/tracked_message_base.h"
 #include "discord/command.h"
+//#include "discord/
 
 
 
@@ -86,6 +87,7 @@ ACTION(SusAction);
 ACTION(AddReviewAction); // also edit
 ACTION(DeleteReviewAction);
 ACTION(DeleteBotMessageAction);
+ACTION(DisplayReviewAction);
 
 
 struct ActionChain{

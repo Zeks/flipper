@@ -46,6 +46,7 @@ App{
         "include/discord/help_generator.h",
         "include/discord/limits.h",
         "include/discord/rec_message_recreation_token.h",
+        "include/discord/review.h",
         "include/discord/send_message_command.h",
         "include/discord/task.h",
         "include/discord/task_environment.h",

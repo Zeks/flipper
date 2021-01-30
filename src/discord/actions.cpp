@@ -1826,6 +1826,22 @@ QSharedPointer<SendMessageCommand> DeleteBotMessageAction::ExecuteImpl(QSharedPo
     return action;
 }
 
+QSharedPointer<SendMessageCommand> DisplayReviewAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    An<interfaces::Users> usersDbInterface;
+    // fetch review id list for the server to attach to the message sorted by posting date
+    // if the review lsit is empty display "there are no reviews" and exit
+    // fetch the most recent id and fetch tinformation for that (title, text, score, date of posting, visibility mode)
+    // create an embed with this information (optionally say "you can create a title for this review with")
+    // this is possibly a reaction message and needs two processing routes
+    // needs left/right/delete buttons with confirmation against accidental misclick (aka separate message)
+    // on no - wipes the view and the asking message. needs to store info for all that
+    action->text = "";
+    action->targetMessage = command.targetMessage;
+    action->deletionCommand = true;
+    return action;
+}
+
 
 
 QSharedPointer<ActionBase> GetAction(ECommandType type)
@@ -1901,6 +1917,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new DeleteReviewAction());
     case ECommandType::ct_delete_bot_message:
         return QSharedPointer<ActionBase>(new DeleteBotMessageAction());
+    case ECommandType::ct_display_review:
+        return QSharedPointer<ActionBase>(new DisplayReviewAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

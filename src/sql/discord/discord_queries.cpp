@@ -635,19 +635,49 @@ DiagnosticSQLResult<QString> GetReviewAuthor(sql::Database db, QString review_id
     return std::move(ctx.result);
 }
 
+DiagnosticSQLResult<std::vector<std::string>> GetReviewList(sql::Database db, discord::ReviewFilter filter){
 
+    std::string qs = " select review_id from user_reviews where (server_id = :server_id {0}) and (1) {2}";
+    qs = qs=fmt::format(qs,
+                        filter.allowGlobal ? " or review_type = 'global' " : "",
+                        !filter.ficId.isEmpty() ?  " and fic_id = :fic_id " : "",
+                        !filter.userId.isEmpty() ? " and user_id = :user_id " : "");
 
+    SqlContext<std::vector<std::string>> ctx(db);
+    ctx.bindValue("server_id", filter.serverId);
+    if(!filter.ficId.isEmpty() )
+        ctx.bindValue("fic_id", filter.ficId);
+    if(!filter.userId.isEmpty() )
+        ctx.bindValue("user_id", filter.userId);
+    ctx.FetchLargeSelectIntoList<std::vector<std::string>>("review_id", std::move(qs));
+    return ctx.result;
+}
 
+DiagnosticSQLResult<discord::FicReview> GetReview(Database db, std::string review_id)
+{
+    std::string qs = "select * from user_reviews where review_id = :review_id";
+    SqlContext<discord::FicReview> ctx(db);
+    ctx.bindValue("review_id", review_id);
+    ctx.FetchSelectFunctor(std::move(qs), [](auto& data, sql::Query& q){
+        discord::FicReview review;
+        review.url = QString::fromStdString(q.value("raw_url").toString());
+        review.reviewId = QString::fromStdString(q.value("review_id").toString());
+        review.serverId = QString::fromStdString(q.value("server_id").toString());
+        review.reviewType = QString::fromStdString(q.value("review_type").toString());
+        review.text = QString::fromStdString(q.value("content").toString());
+        review.title = QString::fromStdString(q.value("title").toString());
+        review.site = QString::fromStdString(q.value("site_type").toString());
+        review.published = q.value("date_added").toDateTime();
 
+        review.score = q.value("score").toInt();
+        review.reputation = q.value("reputation").toInt();
 
-
-
-
-
-
-
-
+        data = review;
+    });
+    return std::move(ctx.result);
+}
 
 }
 }
+
 

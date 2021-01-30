@@ -24,7 +24,6 @@ namespace discord {
 
 CommandController::CommandController(QObject *parent) : QObject(parent)
 {
-
 }
 
 void CommandController::Init(int runnerAmount)

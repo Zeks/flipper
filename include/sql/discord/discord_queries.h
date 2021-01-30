@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "discord/discord_ffn_page.h"
 #include "discord/discord_server.h"
 #include "discord/fandom_filter_token.h"
+#include "discord/review.h"
 #include "sql_abstractions/sql_context.h"
 namespace database {
 using namespace sql;
@@ -95,6 +96,8 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> AddReview(sql::Database db, QString user_id, QString server_id, QString raw_url, QString site_type, QString site_identifier,int score, QString review,QString review_id);
     DiagnosticSQLResult<bool> RemoveReview(sql::Database db, QString reviewId);
     DiagnosticSQLResult<QString> GetReviewAuthor(sql::Database db, QString reviewId);
+    DiagnosticSQLResult<std::vector<std::string>> GetReviewList(sql::Database db, discord::ReviewFilter);
+    DiagnosticSQLResult<discord::FicReview> GetReview(sql::Database db, std::string);
 
 
 

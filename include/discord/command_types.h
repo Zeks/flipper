@@ -44,6 +44,7 @@ enum ECommandType{
     ct_add_review = 41,
     ct_delete_review = 42,
     ct_delete_bot_message = 43,
+    ct_display_review = 44,
 };
 
 }
