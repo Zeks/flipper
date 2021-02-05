@@ -340,3 +340,14 @@ struct TypeStringHolder<discord::ReviewCommand>{
 };
 
 
+template <>
+struct TypeStringHolder<discord::DeleteEntityCommand>{
+        static constexpr std::string_view name = "delete";
+        static constexpr std::string_view prefixlessPattern = "?<delete>delete";
+        static constexpr std::string_view pattern = "delete\\s+(review){0,1}\\s([A-Za-Z0-9\\-]+)";
+        static constexpr std::string_view help = "{0}delete command allows you to delete entitties ";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
+
+

@@ -32,7 +32,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/tracked-messages/tracked_fic_details.h"
 #include "discord/tracked-messages/tracked_recommendation_list.h"
 #include "discord/tracked-messages/tracked_similarity_list.h"
+#include "discord/tracked-messages/tracked_delete_confirmation.h"
 #include "discord/type_strings.h"
+#include "discord/review.h"
 #include "parsers/ffn/favparser_wrapper.h"
 #include "include/qstring_from_stringview.h"
 #include "Interfaces/interface_sqlite.h"
@@ -1787,23 +1789,28 @@ QSharedPointer<SendMessageCommand> AddReviewAction::ExecuteImpl(QSharedPointer<T
 
     QString review_id = QUuid::createUuid().toString();
     action->text = "Adding review: " + review_id;
-    usersDbInterface->AddReview(command.user->UserID(),
-                                QString::fromStdString(command.server->GetServerId()),
-                                identifier,
-                                website,
-                                command.variantHash["id"].toString(),
-            command.variantHash["score"].toInt(),
-            command.variantHash["review"].toString(),
-            review_id);
-
+    discord::FicReview reviewInstance;
+    reviewInstance.authorId = command.user->UserID();
+    reviewInstance.serverId = QString::fromStdString(command.server->GetServerId());
+    reviewInstance.url = identifier;
+    reviewInstance.site = website;
+    reviewInstance.siteId = command.variantHash["id"].toString();
+    reviewInstance.score = command.variantHash["score"].toInt();
+    reviewInstance.text = command.variantHash["review"].toString();
+    reviewInstance.reviewId = review_id;
+    usersDbInterface->AddReview(reviewInstance);
     return action;
 }
 
-QSharedPointer<SendMessageCommand> DeleteReviewAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+QSharedPointer<SendMessageCommand> DeleteEntityAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
     An<interfaces::Users> usersDbInterface;
-    auto identifier = command.variantHash["identifier"].toString();
+    auto identifier = command.variantHash["entity_id"].toString();
+    auto type = command.variantHash["entity_type"].toBool();
+
+    // this is checked in command generator if the user is server admin
     auto deleteAllowed = command.variantHash["allow"].toBool();
+
     if(!deleteAllowed){
         deleteAllowed = command.user->UserID() == usersDbInterface->GetReviewAuthor(identifier);
     }
@@ -1812,6 +1819,7 @@ QSharedPointer<SendMessageCommand> DeleteReviewAction::ExecuteImpl(QSharedPointe
         action->text = "You need to be the author of the review or server administrator to delete.";
         return action;
     }
+
     action->text = "Deleting review.";
     usersDbInterface->RemoveReview(identifier);
     return action;
@@ -1822,8 +1830,37 @@ QSharedPointer<SendMessageCommand> DeleteBotMessageAction::ExecuteImpl(QSharedPo
     An<interfaces::Users> usersDbInterface;
     action->text = "";
     action->targetMessage = command.targetMessage;
-    action->deletionCommand = true;
+    action->deleteOriginalMessage = true;
     return action;
+}
+
+
+void FillReviewEmbed(SleepyDiscord::Embed& embed, const FicReview& review){
+    QString title;
+    if(review.reviewTitle.isEmpty())
+        title = "A review for:\n";
+    else
+        title = review.reviewTitle;
+
+    QString urlProto = QStringLiteral("[%1](%2)");
+    if(title.isEmpty())
+        urlProto = urlProto.prepend("A review for: ");
+    QString ficTitle;
+    if(!review.ficTitle.isEmpty())
+        ficTitle = review.ficTitle;
+    else
+        ficTitle = review.url;
+
+    An<Users> users;
+    auto user = users->GetUser(review.authorId);
+
+    SleepyDiscord::EmbedField titleField;
+    titleField.isInline = false;
+    titleField.name = title.toStdString();
+    titleField.value += QString(QStringLiteral(" ") + urlProto.arg(review.url, ficTitle) + QStringLiteral("\n")).toStdString();
+    titleField.value += QString("By: " + user->UserName()).toStdString();
+    titleField.value += QString("\n```" + review.text + "```").toStdString();
+    embed.fields.push_back(titleField);
 }
 
 QSharedPointer<SendMessageCommand> DisplayReviewAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
@@ -1836,9 +1873,41 @@ QSharedPointer<SendMessageCommand> DisplayReviewAction::ExecuteImpl(QSharedPoint
     // this is possibly a reaction message and needs two processing routes
     // needs left/right/delete buttons with confirmation against accidental misclick (aka separate message)
     // on no - wipes the view and the asking message. needs to store info for all that
+
+    auto reviewId = command.variantHash["review_id"];
+    auto review = usersDbInterface->GetReview(reviewId.toString());
+
+    SleepyDiscord::Embed embed;
+
+    FillReviewEmbed(embed, review);
+
     action->text = "";
+    action->embed = embed;
     action->targetMessage = command.targetMessage;
-    action->deletionCommand = true;
+    action->deleteOriginalMessage = true;
+    return action;
+}
+
+QSharedPointer<SendMessageCommand> SpawnRemoveConfirmationAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    // needs an individual message per type
+    // needs a ping
+    // needs to remove its own prompt after a time
+    // only needs accept emoji
+    // "this message will disappear IN"
+    // need to verify that user has the right to remove the entity here
+
+    auto confirmation = std::make_shared<TrackedDeleteConfirmation>(command.user);
+    confirmation->expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS());
+
+    messageData = action->messageData = confirmation;
+
+    confirmation->entityId = command.variantHash["entity_id"].toString().toStdString();
+    confirmation->entityType = command.variantHash["entity_type"].toString().toStdString();
+
+    action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " click on the emoji to confirm deletion of your review.");
+    action->reactionsToAdd = confirmation->GetEmojiSet();
+    action->targetMessage = command.targetMessage;
     return action;
 }
 
@@ -1913,12 +1982,14 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new ShowFicAction());
     case ECommandType::ct_add_review:
         return QSharedPointer<ActionBase>(new AddReviewAction());
-    case ECommandType::ct_delete_review:
-        return QSharedPointer<ActionBase>(new DeleteReviewAction());
+//    case ECommandType::ct_delete_review:
+//        return QSharedPointer<ActionBase>(new DeleteEntityAction());
     case ECommandType::ct_delete_bot_message:
         return QSharedPointer<ActionBase>(new DeleteBotMessageAction());
     case ECommandType::ct_display_review:
         return QSharedPointer<ActionBase>(new DisplayReviewAction());
+    case ECommandType::ct_spawn_remove_confirmation:
+        return QSharedPointer<ActionBase>(new SpawnRemoveConfirmationAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

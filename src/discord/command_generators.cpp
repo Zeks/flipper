@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/discord_message_token.h"
 #include "discord/tracked-messages/tracked_roll.h"
 #include "discord/tracked-messages/tracked_help_page.h"
+#include "discord/tracked-messages/tracked_review.h"
 #include "discord/tracked-messages/tracked_similarity_list.h"
 #include "discord/tracked-messages/tracked_recommendation_list.h"
 #include "discord/client_storage.h"
@@ -108,6 +109,16 @@ bool CommandCreator::CheckAdminRole(const SleepyDiscord::Message &message)
         }
     }
     return isAdmin;
+}
+
+Command CommandCreator::CreateNullCommand(const SleepyDiscord::Message &message, QString reason)
+{
+    Command nullCommand = NewCommand(server, message,ct_null_command);
+    nullCommand.type = ct_null_command;
+    nullCommand.variantHash[QStringLiteral("reason")] = reason;
+    nullCommand.originalMessageToken = message;
+    nullCommand.server = this->server;
+    return nullCommand;
 }
 
 
@@ -774,6 +785,51 @@ CommandChain CreateRemoveBotMessageCommand(Client* client ,QSharedPointer<User> 
     return result;
 }
 
+CommandChain CreateChangeReviewPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken & message, bool shiftRight)
+{
+    CommandChain result;
+    An<ClientStorage> storage;
+    if(!storage->messageData.contains(message.messageID.number()))
+        return result;
+
+    auto listData = std::dynamic_pointer_cast<TrackedReview>(storage->messageData.value(message.messageID.number()));
+
+
+    Command command = NewCommand(server, message,ct_display_review);
+    auto currentPosition = listData->currentPosition;
+    if(shiftRight && currentPosition == listData->reviews.size() - 1)
+        currentPosition =  0;
+    else if(!shiftRight && currentPosition == 0)
+        currentPosition = listData->reviews.size() -1;
+    else
+        currentPosition = shiftRight ? currentPosition + 1 : currentPosition - 1;
+    command.variantHash["review_id"] = QString::fromStdString(listData->reviews[currentPosition]);
+
+    command.targetMessage = message.messageID;
+    command.reactedMessageToken = message;
+    command.reactionCommand = true;
+    command.user = user;
+    result.Push(std::move(command));
+    return result;
+}
+
+
+CommandChain CreateRemoveEntityCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, QString entityType, QString entityId)
+{
+    CommandChain result;
+    Command command = NewCommand(server, message,ct_remove_confirmation);
+    command.variantHash["type"]=entityType;
+    command.variantHash["identifier"]=entityId;
+    command.reactedMessageToken = message;
+    command.reactionCommand = true;
+
+    command.targetMessage = message.messageID;
+    command.user = user;
+    result.Push(std::move(command));
+    return result;
+}
+
+
 
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, bool shiftRight)
 {
@@ -1286,6 +1342,33 @@ bool StatsCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<StatsCommand>::name;
 }
 
+CommandChain DeleteEntityCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+{
+    auto match = ctre::search<TypeStringHolder<DeleteEntityCommand>::pattern>(message.content);
+
+    std::string identifier = match.get<1>().to_string();
+
+    if(identifier.empty()){
+        result.Push(CreateNullCommand(message, "You need to provide identifier to delete."));
+        return std::move(result);
+    }
+    bool isAdmin = CheckAdminRole(message);
+    Command command = NewCommand(server, message, ct_remove_entity);
+    command.variantHash["identifier"] = QString::fromStdString(identifier);
+    command.variantHash["type"] = "review";
+    command.variantHash["allow"] = isAdmin || message.author.ID == "102212539609280512";
+    result.Push(std::move(command));
+    return std::move(result);
+}
+
+bool DeleteEntityCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<DeleteEntityCommand>::name;
+}
+
+
+
+
 
 
 
@@ -1298,6 +1381,7 @@ bool StatsCommand::IsThisCommand(const std::string &cmd)
 
 
 }
+
 
 
 

@@ -56,6 +56,7 @@ public:
     void AddFilterCommand(Command&&);
     static void EnsureUserExists(QString, QString userName);
     bool CheckAdminRole(const SleepyDiscord::Message & message);
+    Command CreateNullCommand(const SleepyDiscord::Message &message, QString);
     //QRegularExpression rx;
     Command nullCommand;
     CommandChain result;
@@ -310,10 +311,21 @@ public:
 
 
 
+class DeleteEntityCommand: public CommandCreator{
+public:
+    DeleteEntityCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
+
+
 CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & );
 CommandChain CreateSimilarListCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &, int ficId);
 CommandChain CreateRemoveBotMessageCommand(Client *,QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &);
+CommandChain CreateRemoveEntityCommand(Client *,QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &);
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & , bool shiftRight = true);
+CommandChain CreateChangeReviewPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & , bool shiftRight = true);
 CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &, bool shiftRight = true);
 CommandChain CreateRemoveReactionCommand(QSharedPointer<User> , QSharedPointer<Server> server, const MessageIdToken &message, const std::string &reaction);
 Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::Message& message, ECommandType type);

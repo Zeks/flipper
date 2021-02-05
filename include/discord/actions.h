@@ -85,7 +85,8 @@ ACTION(SendMessageToChannelAction);
 ACTION(ToggleBanAction);
 ACTION(SusAction);
 ACTION(AddReviewAction); // also edit
-ACTION(DeleteReviewAction);
+ACTION(SpawnRemoveConfirmationAction);
+ACTION(DeleteEntityAction);
 ACTION(DeleteBotMessageAction);
 ACTION(DisplayReviewAction);
 

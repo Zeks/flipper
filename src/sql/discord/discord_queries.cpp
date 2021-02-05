@@ -586,10 +586,11 @@ DiagnosticSQLResult<bool> SetDateFilter(Database db, QString user_id, filters::E
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> AddReview(sql::Database db, QString user_id, QString server_id, QString raw_url, QString site_type, QString site_identifier, int score, QString review, QString review_id){
+
+DiagnosticSQLResult<bool> AddReview(sql::Database db, const discord::FicReview& review){
     std::string orPart;
     std::string qs = "delete from user_reviews where user_id = :user_id and (raw_url = :raw_url {0} )";
-    if(!(site_type.isEmpty() || site_identifier.isEmpty())){
+    if(!(review.site.isEmpty() || review.siteId.isEmpty())){
         orPart = " or (site_type = :site_type and site_identifier = :site_identifier ) ";
         qs=fmt::format(qs, orPart);
     }
@@ -597,30 +598,33 @@ DiagnosticSQLResult<bool> AddReview(sql::Database db, QString user_id, QString s
         qs=fmt::format(qs, "");
 
     SqlContext<bool> ctxDelete(db, std::move(qs));
-    ctxDelete.bindValue("user_id", user_id);
-    ctxDelete.bindValue("raw_url", raw_url);
-    if(!(site_type.isEmpty() || site_identifier.isEmpty())){
-        ctxDelete.bindValue("site_identifier", site_identifier);
-        ctxDelete.bindValue("site_type", site_type);
+    ctxDelete.bindValue("user_id", review.authorId);
+    ctxDelete.bindValue("raw_url", review.url);
+    if(!(review.site.isEmpty() || review.siteId.isEmpty())){
+        ctxDelete.bindValue("site_identifier", review.siteId);
+        ctxDelete.bindValue("site_type", review.site);
     }
     ctxDelete.ExecAndCheck(true);
 
-    qs = "insert into user_reviews(user_id, server_id, review_id, raw_url,site_identifier, site_type, score, content, date_added)"
-         "values(:user_id, :server_id, :review_id,:raw_url,:site_identifier, :site_type, :score, :content, :date_added) ";
+    qs = "insert into user_reviews(user_id, server_id, review_id, raw_url,site_identifier, site_type, score, content, review_title, fic_title, date_added)"
+         "values(:user_id, :server_id, :review_id,:raw_url,:site_identifier, :site_type, :score, :content, :review_title, :fic_title, :date_added) ";
     SqlContext<bool> ctxAdd(db, std::move(qs));
-    ctxAdd.bindValue("user_id", user_id);
-    ctxAdd.bindValue("server_id", server_id);
-    ctxAdd.bindValue("review_id", review_id);
-    ctxAdd.bindValue("raw_url", raw_url);
-    ctxAdd.bindValue("site_type", site_type);
-    ctxAdd.bindValue("site_identifier", site_identifier);
-    ctxAdd.bindValue("score", score);
-    ctxAdd.bindValue("content", review);
+    ctxAdd.bindValue("user_id", review.authorId);
+    ctxAdd.bindValue("server_id", review.serverId);
+    ctxAdd.bindValue("review_id", review.reviewId);
+    ctxAdd.bindValue("raw_url", review.url);
+    ctxAdd.bindValue("site_type", review.site);
+    ctxAdd.bindValue("site_identifier", review.siteId);
+    ctxAdd.bindValue("score", review.score);
+    ctxAdd.bindValue("content", review.text);
+    ctxAdd.bindValue("review_title", review.reviewTitle);
+    ctxAdd.bindValue("fic_title", review.ficTitle);
+    ctxAdd.bindValue("content", review.text);
     ctxAdd.bindValue("date_added", QDate::currentDate());
     ctxAdd.ExecAndCheck(true);
     return ctxAdd.result;
-
 }
+
 DiagnosticSQLResult<bool> RemoveReview(sql::Database db, QString review_id){
     std::string qs = "delete from user_reviews where review_id = :review_id";
     SqlContext<bool> ctx(db, std::move(qs), BP1(review_id));
@@ -665,7 +669,8 @@ DiagnosticSQLResult<discord::FicReview> GetReview(Database db, std::string revie
         review.serverId = QString::fromStdString(q.value("server_id").toString());
         review.reviewType = QString::fromStdString(q.value("review_type").toString());
         review.text = QString::fromStdString(q.value("content").toString());
-        review.title = QString::fromStdString(q.value("title").toString());
+        review.reviewTitle = QString::fromStdString(q.value("review_title").toString());
+        review.ficTitle = QString::fromStdString(q.value("fic_title").toString());
         review.site = QString::fromStdString(q.value("site_type").toString());
         review.published = q.value("date_added").toDateTime();
 
@@ -679,5 +684,6 @@ DiagnosticSQLResult<discord::FicReview> GetReview(Database db, std::string revie
 
 }
 }
+
 
 

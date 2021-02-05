@@ -44,6 +44,9 @@ class TrackedMessageBase : public std::enable_shared_from_this<TrackedMessageBas
     std::shared_ptr<ResultGuard> LockResult(){return std::make_shared<ResultGuard>(this);};
     std::atomic<bool> resultInUse = false;
     bool canBeUsedAsLastPage = true;
+    bool deleteOnReaction = false;
+    bool deleteOnExpiration = false;
+    std::chrono::system_clock::time_point expirationPoint;
     std::vector<std::string> actionableEmoji;
     QSharedPointer<User> originalUser;
     std::mutex mutex;

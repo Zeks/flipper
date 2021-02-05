@@ -23,13 +23,16 @@ struct FicReview{
     int score = 0; // neutral
     int reputation = 0; // neutral
 
+    QString authorId;
     QString reviewId;
     QString serverId;
     QString reviewType; 
     QString text;
-    QString title;
+    QString reviewTitle;
+    QString ficTitle;
     QString url;
     QString site;
+    QString siteId;
     QDateTime published;
 };
 

@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/db_interface.h"
 #include "discord/limits.h"
 #include "discord/discord_user.h"
+#include "discord/review.h"
 #include "filters/date_filter.h"
 #include "core/section.h"
 
@@ -78,9 +79,10 @@ public:
     void SetRecommendationsCutoff(QString userId, int);
     void SetDeadFicDaysRange(QString userId, int);
     void SetDateFilter(QString userId, filters::EDateFilterType, QString);
-    void AddReview(QString user_id, QString server_id, QString raw_url, QString site_type, QString site_identifier, int score,  QString review, QString review_id);
+    void AddReview(const discord::FicReview& review);
     void RemoveReview(QString reviewId);
     QString GetReviewAuthor(QString reviewId);
+    discord::FicReview GetReview(QString reviewId);
     //QStringList GetReviewIDs(QString server_id, QString fic_identifier, QString site_type, QString site_identifier);
 };
 
