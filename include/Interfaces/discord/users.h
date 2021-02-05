@@ -56,6 +56,7 @@ public:
     bool WriteFreshSortingParams(QString user_id, bool, bool);
     bool WriteGemSortingParams(QString user_id, bool);
     bool WriteLargeListReparseToken(QString user_id, discord::LargeListToken);
+    bool UpdateUsername(QString user_id, QString user_name);
     bool SetHideDeadFilter(QString user_id, bool);
     bool SetCompleteFilter(QString user_id, bool);
 
@@ -83,7 +84,7 @@ public:
     void RemoveReview(QString reviewId);
     QString GetReviewAuthor(QString reviewId);
     discord::FicReview GetReview(QString reviewId);
-    //QStringList GetReviewIDs(QString server_id, QString fic_identifier, QString site_type, QString site_identifier);
+    std::vector<std::string> GetReviewIDs(const discord::ReviewFilter&);
 };
 
 }

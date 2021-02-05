@@ -320,7 +320,7 @@ struct TypeStringHolder<discord::YearCommand>{
 
 
 template <>
-struct TypeStringHolder<discord::ShowCommand>{
+struct TypeStringHolder<discord::ShowFicDetailsCommand>{
         static constexpr std::string_view name = "show";
         static constexpr std::string_view prefixlessPattern = "?<show>show";
         static constexpr std::string_view pattern = "\\s(\\d{1,16})?";
@@ -333,21 +333,43 @@ template <>
 struct TypeStringHolder<discord::ReviewCommand>{
         static constexpr std::string_view name = "review";
         static constexpr std::string_view prefixlessPattern = "?<review>review";
-        static constexpr std::string_view pattern = "review\\s+(add|remove|delete){0,1}\\s((([A-Za-z0-9\\-/:.]+)\\s(([+\\-]){0,1}(\\d))\\s(([A-Za-z0-9]|[^A-Za-z0-9])+))|[{a-zA-Z0-9}\\-]+)";
+        static constexpr std::string_view selectorPattern = "review\\s+(add|remove|delete|show|display){0,1}";
+        static constexpr std::string_view removePattern = "review\\s+(delete){0,1}\\s+([A-Za-z0-9\\-{}]+)";
+        //static constexpr std::string_view showPattern = "review\\s+(show|display){0,1}\\s+(recent|(user[:][A-Za-z0-9]+#\\d{4})|([A-Za-z0-9\\-\\/:.]+))";
+
+        static constexpr std::string_view showPattern = "review\\s+(show|display){0,1}\\s+(recent|(user[:][A-Za-z0-9]+#\\d{4})|([A-Za-z0-9\\-/:.]+))";
+
+        static constexpr std::string_view addPattern = "review\\s+(add){0,1}\\s+(([A-Za-z0-9\\-/:.]+)\\s(([+\\-]){0,1}(\\d))\\s+(([A-Za-z0-9]|[^A-Za-z0-9])+))";
         static constexpr std::string_view help = "{0}review command allows you to add a review to a fic. syntax is `{0}review link score(-5/+5) review_text`";
         static constexpr std::string_view tips = "If you want to review a fic for other users use %1review command. See {0}help {0}review for full explanation.";
         static constexpr std::string_view shorthand = "";
 };
+
+//review\\s+(add){0,1}\\s+(([A-Za-z0-9-\/:.]+)\\s(([+\\-]){0,1}(\\d))\\s+(([A-Za-z0-9]|[^A-Za-z0-9])+))
+//review\\s+(show|display){0,1}\\s+(recent|(user[:][A-Za-z0-9]#\\d{4})|([A-Za-z0-9\\-\/:.]+))
+//review\\s+(delete){0,1}\\s+([A-Za-z0-9\\-{}]+)
 
 
 template <>
 struct TypeStringHolder<discord::DeleteEntityCommand>{
         static constexpr std::string_view name = "delete";
         static constexpr std::string_view prefixlessPattern = "?<delete>delete";
-        static constexpr std::string_view pattern = "delete\\s+(review){0,1}\\s([A-Za-Z0-9\\-]+)";
+        static constexpr std::string_view pattern = "delete\\s+(review){0,1}\\s+([A-Za-z0-9\\-{}]+)";
         static constexpr std::string_view help = "{0}delete command allows you to delete entitties ";
         static constexpr std::string_view tips = "";
         static constexpr std::string_view shorthand = "";
 };
+
+
+//template <>
+//struct TypeStringHolder<discord::ShowReviewCommand>{
+//        static constexpr std::string_view name = "review";
+//        static constexpr std::string_view prefixlessPattern = "?<review>review";
+//        static constexpr std::string_view pattern = "review\\s+(add|remove|delete){0,1}\\s((([A-Za-z0-9\\-/:.]+)\\s(([+\\-]){0,1}(\\d))\\s(([A-Za-z0-9]|[^A-Za-z0-9])+))|[{a-zA-Z0-9}\\-]+)";
+//        static constexpr std::string_view help = "{0}review command allows you to add a review to a fic. syntax is `{0}review link score(-5/+5) review_text`";
+//        static constexpr std::string_view tips = "If you want to review a fic for other users use %1review command. See {0}help {0}review for full explanation.";
+//        static constexpr std::string_view shorthand = "";
+//};
+
 
 

@@ -8,7 +8,7 @@
 
 namespace discord{
 
-TrackedReview::TrackedReview(std::vector<std::string> reviews):TrackedMessageBase()
+TrackedReview::TrackedReview(std::vector<std::string> reviews, QSharedPointer<User> user):TrackedMessageBase(user)
 {
     this->reviews = reviews;
     actionableEmoji = {"👈","❌","👉"};

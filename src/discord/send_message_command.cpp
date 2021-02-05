@@ -131,7 +131,7 @@ void SendMessageCommand::Invoke(Client * client)
             }
         }
         else{
-            if(this->deletionCommand){
+            if(this->deleteOriginalMessage){
                 An<ClientStorage> storage;
                 client->deleteMessage(originalMessageToken.channelID,targetMessage);
                 storage->messageData.remove(targetMessage.number());

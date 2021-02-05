@@ -66,7 +66,7 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> WriteGemSortingParams(sql::Database db, QString user_id, bool);
 
     DiagnosticSQLResult<bool> WriteLargeListReparseToken(sql::Database db, QString user_id, discord::LargeListToken);
-
+    DiagnosticSQLResult<bool> UpdateUsername(sql::Database db, QString , QString);
     DiagnosticSQLResult<bool> SetHideDeadFilter(sql::Database db, QString , bool);
     DiagnosticSQLResult<bool> SetCompleteFilter(sql::Database db, QString , bool);
 

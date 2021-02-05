@@ -24,6 +24,7 @@ struct FicReview{
     int reputation = 0; // neutral
 
     QString authorId;
+    QString authorName;
     QString reviewId;
     QString serverId;
     QString reviewType; 

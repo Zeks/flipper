@@ -28,7 +28,7 @@ public:
     QStringList errors;
     bool emptyAction = false;
     bool stopChain = false;
-    bool deletionCommand = false;
+    bool deleteOriginalMessage = false;
     static QStringList tips;
 };
 

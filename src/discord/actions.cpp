@@ -1787,10 +1787,13 @@ QSharedPointer<SendMessageCommand> AddReviewAction::ExecuteImpl(QSharedPointer<T
         website = "qq";
 
 
+    //auto sleepyUser =
+
     QString review_id = QUuid::createUuid().toString();
     action->text = "Adding review: " + review_id;
     discord::FicReview reviewInstance;
     reviewInstance.authorId = command.user->UserID();
+    reviewInstance.authorName = command.user->UserName();
     reviewInstance.serverId = QString::fromStdString(command.server->GetServerId());
     reviewInstance.url = identifier;
     reviewInstance.site = website;
@@ -1802,28 +1805,7 @@ QSharedPointer<SendMessageCommand> AddReviewAction::ExecuteImpl(QSharedPointer<T
     return action;
 }
 
-QSharedPointer<SendMessageCommand> DeleteEntityAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
-{
-    An<interfaces::Users> usersDbInterface;
-    auto identifier = command.variantHash["entity_id"].toString();
-    auto type = command.variantHash["entity_type"].toBool();
 
-    // this is checked in command generator if the user is server admin
-    auto deleteAllowed = command.variantHash["allow"].toBool();
-
-    if(!deleteAllowed){
-        deleteAllowed = command.user->UserID() == usersDbInterface->GetReviewAuthor(identifier);
-    }
-
-    if(!deleteAllowed){
-        action->text = "You need to be the author of the review or server administrator to delete.";
-        return action;
-    }
-
-    action->text = "Deleting review.";
-    usersDbInterface->RemoveReview(identifier);
-    return action;
-}
 
 QSharedPointer<SendMessageCommand> DeleteBotMessageAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
@@ -1863,6 +1845,11 @@ void FillReviewEmbed(SleepyDiscord::Embed& embed, const FicReview& review){
     embed.fields.push_back(titleField);
 }
 
+//command.variantHash["display_type"] = QString("fic"); fic/user/recent
+//command.variantHash["identifier"] = QString::fromStdString(identifier);
+//command.variantHash["id"] = QString::fromStdString(numericId);
+//command.variantHash["review"] = QString::fromStdString(text);
+
 QSharedPointer<SendMessageCommand> DisplayReviewAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
     An<interfaces::Users> usersDbInterface;
@@ -1874,13 +1861,28 @@ QSharedPointer<SendMessageCommand> DisplayReviewAction::ExecuteImpl(QSharedPoint
     // needs left/right/delete buttons with confirmation against accidental misclick (aka separate message)
     // on no - wipes the view and the asking message. needs to store info for all that
 
-    auto reviewId = command.variantHash["review_id"];
-    auto review = usersDbInterface->GetReview(reviewId.toString());
+    // first we need to determine the review that will be displayed on initial page
+    auto displayType = command.variantHash["display_type"].toString();
+    discord::ReviewFilter filter;
+    filter.allowGlobal = false;
+    if(displayType == "fic")
+        filter.ficId = command.variantHash["identifier"].toString();
+    else if(displayType == "user")
+        filter.userId = command.variantHash["identifier"].toString();
+    filter.serverId = QString::fromStdString(command.server->GetServerId());
+
+    auto ids = usersDbInterface->GetReviewIDs(filter);
+    if(ids.size() == 0){
+        action->text = "It looks like there are no reviews yet.";
+        action->stopChain = true;
+        return action;
+    }
+
+    auto reviewId = ids.at(0);
+    auto review = usersDbInterface->GetReview(QString::fromStdString(reviewId));
 
     SleepyDiscord::Embed embed;
-
     FillReviewEmbed(embed, review);
-
     action->text = "";
     action->embed = embed;
     action->targetMessage = command.targetMessage;
@@ -1897,17 +1899,44 @@ QSharedPointer<SendMessageCommand> SpawnRemoveConfirmationAction::ExecuteImpl(QS
     // "this message will disappear IN"
     // need to verify that user has the right to remove the entity here
 
-    auto confirmation = std::make_shared<TrackedDeleteConfirmation>(command.user);
+    auto confirmation = std::make_shared<TrackedDeleteConfirmation>(
+                command.variantHash["entity_type"].toString().toStdString(),
+            command.variantHash["entity_id"].toString().toStdString(),
+            command.user);
     confirmation->expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS());
 
     messageData = action->messageData = confirmation;
-
-    confirmation->entityId = command.variantHash["entity_id"].toString().toStdString();
-    confirmation->entityType = command.variantHash["entity_type"].toString().toStdString();
-
     action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " click on the emoji to confirm deletion of your review.");
     action->reactionsToAdd = confirmation->GetEmojiSet();
     action->targetMessage = command.targetMessage;
+    return action;
+}
+
+QSharedPointer<SendMessageCommand> DeleteEntityAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    An<interfaces::Users> usersDbInterface;
+    auto identifier = command.variantHash["entity_id"].toString();
+    auto type = command.variantHash["entity_type"].toString();
+
+    // this is checked in command generator if the user is server admin
+    auto deleteAllowed = command.variantHash["allow"].toBool();
+
+    auto reviewAuthor = usersDbInterface->GetReviewAuthor(identifier);
+    if(reviewAuthor.isEmpty()){
+        action->text = "Could not find the review with this identifier.";
+        return action;
+    }
+    if(!deleteAllowed){
+        deleteAllowed = command.user->UserID() == usersDbInterface->GetReviewAuthor(identifier);
+    }
+
+    if(!deleteAllowed){
+        action->text = "You need to be the author of the review or server administrator to delete.";
+        return action;
+    }
+
+    action->text = "Deleting review.";
+    usersDbInterface->RemoveReview(identifier);
     return action;
 }
 
@@ -1982,8 +2011,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new ShowFicAction());
     case ECommandType::ct_add_review:
         return QSharedPointer<ActionBase>(new AddReviewAction());
-//    case ECommandType::ct_delete_review:
-//        return QSharedPointer<ActionBase>(new DeleteEntityAction());
+    case ECommandType::ct_remove_entity:
+        return QSharedPointer<ActionBase>(new DeleteEntityAction());
     case ECommandType::ct_delete_bot_message:
         return QSharedPointer<ActionBase>(new DeleteBotMessageAction());
     case ECommandType::ct_display_review:

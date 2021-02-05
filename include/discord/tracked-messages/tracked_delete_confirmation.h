@@ -13,7 +13,7 @@ namespace discord{
 class TrackedDeleteConfirmation: public TrackedMessageBase{
 
 public:
-    TrackedDeleteConfirmation(QString identifier, QString type);
+    TrackedDeleteConfirmation(std::string type, std::string identifier, QSharedPointer<User> user);
     virtual ~TrackedDeleteConfirmation(){};
     virtual CommandChain ProcessReactionImpl(Client* client, QSharedPointer<User>,
                                          SleepyDiscord::Emoji emoji) override;
@@ -22,7 +22,7 @@ public:
     QStringList GetEmojiSet() override;
     std::string GetOtherUserErrorMessage(Client *client) override;
     CommandChain CloneForOtherUser() override;
-    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedDeleteConfirmation>(this->originalUser);};
+    std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedDeleteConfirmation>("", "",this->originalUser);};
     std::string entityType;
     std::string entityId;
 };

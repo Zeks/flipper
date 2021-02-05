@@ -236,6 +236,7 @@ private:
     QString userID;
     QString impersonatedId;
     QString userName;
+    //QString disambiguator;
     QUuid uuid;
     QString ffnID;
 

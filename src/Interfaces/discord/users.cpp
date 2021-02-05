@@ -87,6 +87,12 @@ bool Users::WriteLargeListReparseToken(QString user_id, discord::LargeListToken 
     return database::discord_queries::WriteLargeListReparseToken(dbToken->db, user_id, token).data;
 }
 
+bool Users::UpdateUsername(QString user_id, QString user_name)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    return database::discord_queries::UpdateUsername(dbToken->db, user_id, user_name).data;
+}
+
 bool Users::SetHideDeadFilter(QString user_id, bool value)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
@@ -238,10 +244,11 @@ discord::FicReview Users::GetReview(QString reviewId)
     return database::discord_queries::GetReview(dbToken->db, reviewId.toStdString()).data;
 }
 
-//QStringList Users::GetReviewIDs(QString server_id, QString fic_identifier, QString site_type, QString site_identifier)
-//{
+std::vector<std::string> Users::GetReviewIDs(const discord::ReviewFilter& filter){
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    return database::discord_queries::GetReviewList(dbToken->db, filter).data;
+}
 
-//}
 
 
 

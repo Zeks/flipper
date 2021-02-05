@@ -7,29 +7,22 @@
 
 namespace discord{
 
-TrackedDeleteConfirmation::TrackedDeleteConfirmation(QString identifier, QString type):TrackedMessageBase()
+TrackedDeleteConfirmation::TrackedDeleteConfirmation(std::string type, std::string identifier, QSharedPointer<User> user):TrackedMessageBase(user)
 {
     otherUserBehaviour = TrackedMessageBase::noub_legal;
     actionableEmoji = {"✅"};
+    entityType = type;
+    entityId = identifier;
+    deleteOnExpiration = true;
+    deleteOnReaction = true;
 }
 
 CommandChain TrackedDeleteConfirmation::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
 {
-
     CommandChain commands;
-    auto token = this->token;
-    token.authorID = user->UserID().toStdString();
-    auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
-    if(emoji == "🔍"){
-        commands = CreateSimilarListCommand(user,server, token, ficId);
-        commands += CreateRemoveReactionCommand(user,server, token, GetEmojiSet().at(0).toStdString());
-    }
-    else{
-        commands = CreateRemoveBotMessageCommand(client, user,server, token);
-        if(commands.commands.front().type == ct_null_command)
-            commands += CreateRemoveReactionCommand(user,server, token, GetEmojiSet().at(1).toStdString());
-
-    }
+//    auto token = this->token;
+//    token.authorID = user->UserID().toStdString();
+//    auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
     return commands;
 }
 

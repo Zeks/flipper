@@ -46,7 +46,7 @@ enum ECommandType{
     ct_delete_bot_message = 43,
     ct_display_review = 44,
     ct_spawn_remove_confirmation= 45,
-    ct_remove_confirmation = 46,
+    ct_remove_entity= 46,
 };
 
 }

@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "logger/QsLog.h"
 #include "GlobalHeaders/snippets_templates.h"
 #include <QRegularExpression>
+#include <QRegExp>
 #include <string_view>
 #include <QSharedPointer>
 #include <QSettings>
@@ -216,6 +217,10 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(!priorityCommand && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && (!explaining && message.channelID.string() != server->GetDedicatedChannelId()))
             return logRest();
 
+        auto user = GetOrCreateUser(message.author.ID);
+        if(!user)
+            return;
+
         auto commands = parser->Execute(result.get<0>().to_string(), server, message);
         if(commands.Size() == 0)
             return logRest();
@@ -237,6 +242,7 @@ QSharedPointer<User> Client::GetOrCreateUser(SleepyDiscord::Snowflake<SleepyDisc
 {
     An<Users> users;
     auto userId = QString::fromStdString(userID.string());
+    An<interfaces::Users> usersInterface;
     if(!users->HasUser(userId)){
 
         bool inDatabase = users->LoadUser(userId);
@@ -244,12 +250,17 @@ QSharedPointer<User> Client::GetOrCreateUser(SleepyDiscord::Snowflake<SleepyDisc
         {
             SleepyDiscord::User sleepyUser = getUser(userID);
             QSharedPointer<discord::User> user(new discord::User(userId, QStringLiteral("-1"), QString::fromStdString(sleepyUser.username), QUuid::createUuid().toString()));
-            An<interfaces::Users> usersInterface;
             usersInterface->WriteUser(user);
             users->LoadUser(userId);
         }
     }
     auto user = users->GetUser(userId);
+    if(!user->UserName().contains(QRegExp("#\\d{4}"))){
+        auto sleepyUser = getUser(userID);
+        usersInterface->UpdateUsername(QString::fromStdString(userID.string()),
+                                       QString::fromStdString(sleepyUser.cast().username  + "#" + sleepyUser.cast().discriminator));
+    }
+
     return user;
 }
 

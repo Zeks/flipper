@@ -258,9 +258,9 @@ public:
 };
 
 
-class ShowCommand: public CommandCreator{
+class ShowFicDetailsCommand: public CommandCreator{
 public:
-    ShowCommand(){}
+    ShowFicDetailsCommand(){}
     virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
     virtual bool IsThisCommand(const std::string& cmd);
 };
@@ -318,12 +318,19 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+//class ShowReviewCommand: public CommandCreator{
+//public:
+//    ShowReviewCommand(){}
+//    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+//    virtual bool IsThisCommand(const std::string& cmd);
+//};
 
 
 CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & );
 CommandChain CreateSimilarListCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &, int ficId);
 CommandChain CreateRemoveBotMessageCommand(Client *,QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &);
 CommandChain CreateRemoveEntityCommand(Client *,QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &);
+CommandChain CreateRemoveEntityConfirmationCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, QString entityType, QString entityId);
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & , bool shiftRight = true);
 CommandChain CreateChangeReviewPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken & , bool shiftRight = true);
 CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageIdToken &, bool shiftRight = true);

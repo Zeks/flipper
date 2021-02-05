@@ -97,7 +97,7 @@ bool CommandCreator::CheckAdminRole(const SleepyDiscord::Message &message)
 {
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
     const auto& member = client->getMember(this->server->GetServerId(), message.author.ID).cast();
-    bool isAdmin = false;
+    bool isAdmin = sleepyServer.ownerID == message.author.ID;
     auto roles = member.roles;
     for(auto& roleId : roles){
         auto role = sleepyServer.findRole(roleId);
@@ -817,9 +817,9 @@ CommandChain CreateChangeReviewPageCommand(QSharedPointer<User> user, QSharedPoi
 CommandChain CreateRemoveEntityCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, QString entityType, QString entityId)
 {
     CommandChain result;
-    Command command = NewCommand(server, message,ct_remove_confirmation);
-    command.variantHash["type"]=entityType;
-    command.variantHash["identifier"]=entityId;
+    Command command = NewCommand(server, message,ct_remove_entity);
+    command.variantHash["entity_type"]=entityType;
+    command.variantHash["entity_id"]=entityId;
     command.reactedMessageToken = message;
     command.reactionCommand = true;
 
@@ -829,6 +829,20 @@ CommandChain CreateRemoveEntityCommand(QSharedPointer<User> user, QSharedPointer
     return result;
 }
 
+
+CommandChain CreateRemoveEntityConfirmationCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, QString entityType, QString entityId){
+    CommandChain result;
+    Command command = NewCommand(server, message,ct_spawn_remove_confirmation);
+    command.variantHash["entity_type"]=entityType;
+    command.variantHash["entity_id"]=entityId;
+    command.reactedMessageToken = message;
+    command.reactionCommand = true;
+
+    command.targetMessage = message.messageID;
+    command.user = user;
+    result.Push(std::move(command));
+    return result;
+}
 
 
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageIdToken& message, bool shiftRight)
@@ -1098,7 +1112,7 @@ bool YearCommand::IsThisCommand(const std::string &cmd)
 }
 
 
-CommandChain ShowCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+CommandChain ShowFicDetailsCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
 {
 
     //auto match = ctre::search<TypeStringHolder<ShowCommand>::pattern>(message.content);
@@ -1106,7 +1120,7 @@ CommandChain ShowCommand::ProcessInputImpl(const SleepyDiscord::Message & messag
     static const int ficDisplayLimit = 10;
     int counter = 1;
 
-    for(auto match : ctre::range<TypeStringHolder<ShowCommand>::pattern>(message.content)){
+    for(auto match : ctre::range<TypeStringHolder<ShowFicDetailsCommand>::pattern>(message.content)){
         if(counter > ficDisplayLimit)
             break;
         auto id = match.get<0>().to_string();
@@ -1134,9 +1148,9 @@ CommandChain ShowCommand::ProcessInputImpl(const SleepyDiscord::Message & messag
     return std::move(result);
 }
 
-bool ShowCommand::IsThisCommand(const std::string &cmd)
+bool ShowFicDetailsCommand::IsThisCommand(const std::string &cmd)
 {
-    return cmd == TypeStringHolder<ShowCommand>::name;
+    return cmd == TypeStringHolder<ShowFicDetailsCommand>::name;
 }
 
 
@@ -1264,46 +1278,82 @@ bool SusCommand::IsThisCommand(const std::string &cmd)
 
 CommandChain ReviewCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
 {
-    auto createNullCommand = [&](QString reason){
-        Command nullCommand = NewCommand(server, message,ct_null_command);
-        nullCommand.type = ct_null_command;
-        nullCommand.variantHash[QStringLiteral("reason")] = reason;
-        nullCommand.originalMessageToken = message;
-        nullCommand.server = this->server;
-        result.Push(std::move(nullCommand));
-    };
-
-    auto match = ctre::search<TypeStringHolder<ReviewCommand>::pattern>(message.content);
+    auto match = ctre::search<TypeStringHolder<ReviewCommand>::selectorPattern>(message.content);
     auto mode = match.get<1>().to_string();
+    if(mode.empty())
+        mode = "add";
+
     std::string identifier,sign,score,text;
     if(mode *in("delete", "remove")){
-        identifier = match.get<2>().to_string();
+        auto removeMatch = ctre::search<TypeStringHolder<ReviewCommand>::removePattern>(message.content);
+        identifier = removeMatch.get<2>().to_string();
         if(identifier.length() == 0 ){
-            createNullCommand("You need to provide an identifier you want to delete");
+            result.Push(CreateNullCommand(message, "You need to provide an identifier you want to delete"));
             return std::move(result);
         }
-        Command command = NewCommand(server, message, ct_delete_review);
-        command.variantHash["identifier"] = QString::fromStdString(identifier);
+        bool isAdmin = CheckAdminRole(message);
+        Command command = NewCommand(server, message, ct_remove_entity);
+        command.variantHash["entity_id"] = QString::fromStdString(identifier);
+        command.variantHash["entity_type"] = "review";
+        command.variantHash["allow"] = isAdmin || message.author.ID == "102212539609280512";
+
         result.Push(std::move(command));
 
-    }else{
-        identifier = match.get<4>().to_string();
+    }if(mode *in("display", "show")){
+        auto showMatch = ctre::search<TypeStringHolder<ReviewCommand>::showPattern>(message.content);
+        Command command = NewCommand(server, message, ct_display_review);
+        if(!showMatch.get<2>().to_string().empty())
+            identifier = showMatch.get<2>().to_string();
+
+        if(identifier == "recent")
+            command.variantHash["display_type"] = QString("recent");
+        else if(identifier.find("user:") != std::string::npos)
+            command.variantHash["display_type"] = QString("user");
+        else
+            command.variantHash["display_type"] = QString("fic");
+
+        static constexpr std::string_view pattern = "(\\d{1,20}+)/";
+        std::string numericId;
+        for(auto rangeMatch : ctre::range<pattern>(identifier)){
+            numericId = rangeMatch.get<1>().to_string();
+            break;
+        }
+
+        command.variantHash["identifier"] = QString::fromStdString(identifier);
+        command.variantHash["id"] = QString::fromStdString(numericId);
+        //command.variantHash["review"] = QString::fromStdString(text);
+        result.Push(std::move(command));
+    }
+    else{
+        auto addMatch = ctre::search<TypeStringHolder<ReviewCommand>::addPattern>(message.content);
+//        auto match0 = identifier = addMatch.get<0>().to_string();
+//        auto match1 = identifier = addMatch.get<1>().to_string();
+//        auto match2 = identifier = addMatch.get<2>().to_string();
+//        auto match3 = identifier = addMatch.get<3>().to_string();
+//        auto match4 = identifier = addMatch.get<4>().to_string();
+//        auto match5 = identifier = addMatch.get<5>().to_string();
+//        auto match6 = identifier = addMatch.get<6>().to_string();
+//        auto match7 = identifier = addMatch.get<7>().to_string();
+//        auto match8 = identifier = addMatch.get<8>().to_string();
+
+
+        identifier = addMatch.get<3>().to_string();
         std::string id;
         static constexpr std::string_view pattern = "(\\d{1,20}+)/";
         for(auto rangeMatch : ctre::range<pattern>(identifier)){
             id = rangeMatch.get<1>().to_string();
             break;
         }
-        sign = match.get<6>().to_string();
-        score = match.get<7>().to_string();
-        text = match.get<8>().to_string();
+        sign = addMatch.get<5>().to_string();
+        score = addMatch.get<6>().to_string();
+        text = addMatch.get<7>().to_string();
         if(identifier.length() == 0 || score.length() == 0 || text.length() == 0){
             if(identifier.length() == 0)
-                createNullCommand("You need to provide a link you are reviewing");
+                CreateNullCommand(message,"You need to provide a link you are reviewing");
             else if(score.length() == 0)
-                createNullCommand("You need to provide a score for the fic (it can range between -5 and +5)");
+                CreateNullCommand(message, "You need to provide a score for the fic (it can range between -5 and +5)");
             else if(text.length() == 0)
-                createNullCommand("You need to provide a review for the fic");
+                CreateNullCommand(message, "You need to provide a review for the fic");
             return std::move(result);
         }
         Command command = NewCommand(server, message, ct_add_review);
@@ -1346,7 +1396,7 @@ CommandChain DeleteEntityCommand::ProcessInputImpl(const SleepyDiscord::Message 
 {
     auto match = ctre::search<TypeStringHolder<DeleteEntityCommand>::pattern>(message.content);
 
-    std::string identifier = match.get<1>().to_string();
+    std::string identifier = match.get<2>().to_string();
 
     if(identifier.empty()){
         result.Push(CreateNullCommand(message, "You need to provide identifier to delete."));
@@ -1354,8 +1404,8 @@ CommandChain DeleteEntityCommand::ProcessInputImpl(const SleepyDiscord::Message 
     }
     bool isAdmin = CheckAdminRole(message);
     Command command = NewCommand(server, message, ct_remove_entity);
-    command.variantHash["identifier"] = QString::fromStdString(identifier);
-    command.variantHash["type"] = "review";
+    command.variantHash["entity_id"] = QString::fromStdString(identifier);
+    command.variantHash["entity_type"] = "review";
     command.variantHash["allow"] = isAdmin || message.author.ID == "102212539609280512";
     result.Push(std::move(command));
     return std::move(result);
@@ -1366,6 +1416,16 @@ bool DeleteEntityCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<DeleteEntityCommand>::name;
 }
 
+//CommandChain ShowReviewCommand::ProcessInputImpl(const SleepyDiscord::Message &)
+//{
+
+//}
+
+//bool ShowReviewCommand::IsThisCommand(const std::string &cmd)
+//{
+//    return cmd == TypeStringHolder<ShowReviewCommand>::name;
+//}
+
 
 
 
@@ -1381,6 +1441,7 @@ bool DeleteEntityCommand::IsThisCommand(const std::string &cmd)
 
 
 }
+
 
 
 

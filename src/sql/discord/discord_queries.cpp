@@ -485,6 +485,16 @@ DiagnosticSQLResult<bool> WriteLargeListReparseToken(sql::Database db, QString u
     return std::move(ctx.result);
 }
 
+DiagnosticSQLResult<bool> UpdateUsername(Database db, QString user_id, QString user_name)
+{
+    std::string qs = "update discord_users set user_name = :user_name where user_id = :user_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, user_name));
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+
+}
+
+
 DiagnosticSQLResult<bool> SetHideDeadFilter(sql::Database db, QString user_id, bool hide_dead)
 {
     std::string qs = "update discord_users set hide_dead = :hide_dead where user_id = :user_id";
@@ -606,10 +616,11 @@ DiagnosticSQLResult<bool> AddReview(sql::Database db, const discord::FicReview& 
     }
     ctxDelete.ExecAndCheck(true);
 
-    qs = "insert into user_reviews(user_id, server_id, review_id, raw_url,site_identifier, site_type, score, content, review_title, fic_title, date_added)"
-         "values(:user_id, :server_id, :review_id,:raw_url,:site_identifier, :site_type, :score, :content, :review_title, :fic_title, :date_added) ";
+    qs = "insert into user_reviews(user_id, user_name, server_id, review_id, raw_url,site_identifier, site_type, score, content, review_title, fic_title, date_added)"
+         "values(:user_id, :user_name,:server_id, :review_id,:raw_url,:site_identifier, :site_type, :score, :content, :review_title, :fic_title, :date_added) ";
     SqlContext<bool> ctxAdd(db, std::move(qs));
     ctxAdd.bindValue("user_id", review.authorId);
+    ctxAdd.bindValue("user_name", review.authorName);
     ctxAdd.bindValue("server_id", review.serverId);
     ctxAdd.bindValue("review_id", review.reviewId);
     ctxAdd.bindValue("raw_url", review.url);
@@ -620,7 +631,7 @@ DiagnosticSQLResult<bool> AddReview(sql::Database db, const discord::FicReview& 
     ctxAdd.bindValue("review_title", review.reviewTitle);
     ctxAdd.bindValue("fic_title", review.ficTitle);
     ctxAdd.bindValue("content", review.text);
-    ctxAdd.bindValue("date_added", QDate::currentDate());
+    ctxAdd.bindValue("date_added", QDateTime::currentDateTimeUtc());
     ctxAdd.ExecAndCheck(true);
     return ctxAdd.result;
 }
@@ -641,19 +652,21 @@ DiagnosticSQLResult<QString> GetReviewAuthor(sql::Database db, QString review_id
 
 DiagnosticSQLResult<std::vector<std::string>> GetReviewList(sql::Database db, discord::ReviewFilter filter){
 
-    std::string qs = " select review_id from user_reviews where (server_id = :server_id {0}) and (1) {2}";
+    std::string qs = " select review_id from user_reviews where (server_id = :server_id {0}) {1} {2} order by date_added desc";
     qs = qs=fmt::format(qs,
                         filter.allowGlobal ? " or review_type = 'global' " : "",
                         !filter.ficId.isEmpty() ?  " and fic_id = :fic_id " : "",
-                        !filter.userId.isEmpty() ? " and user_id = :user_id " : "");
+                        !filter.userId.isEmpty() ? " and user_name = :user_name " : "");
 
     SqlContext<std::vector<std::string>> ctx(db);
     ctx.bindValue("server_id", filter.serverId);
     if(!filter.ficId.isEmpty() )
         ctx.bindValue("fic_id", filter.ficId);
     if(!filter.userId.isEmpty() )
-        ctx.bindValue("user_id", filter.userId);
-    ctx.FetchLargeSelectIntoList<std::vector<std::string>>("review_id", std::move(qs));
+        ctx.bindValue("user_name", filter.userId);
+    ctx.FetchLargeSelectIntoContainer<std::string, std::vector<std::string>>("review_id", std::move(qs), "", [](auto& container, const auto& value){
+        container.push_back(value);
+    });
     return ctx.result;
 }
 
@@ -667,6 +680,8 @@ DiagnosticSQLResult<discord::FicReview> GetReview(Database db, std::string revie
         review.url = QString::fromStdString(q.value("raw_url").toString());
         review.reviewId = QString::fromStdString(q.value("review_id").toString());
         review.serverId = QString::fromStdString(q.value("server_id").toString());
+        review.authorId = QString::fromStdString(q.value("user_id").toString());
+        review.authorName = QString::fromStdString(q.value("user_name").toString());
         review.reviewType = QString::fromStdString(q.value("review_type").toString());
         review.text = QString::fromStdString(q.value("content").toString());
         review.reviewTitle = QString::fromStdString(q.value("review_title").toString());
@@ -681,6 +696,7 @@ DiagnosticSQLResult<discord::FicReview> GetReview(Database db, std::string revie
     });
     return std::move(ctx.result);
 }
+
 
 }
 }
