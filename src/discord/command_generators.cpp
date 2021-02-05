@@ -40,7 +40,7 @@ bool CheckAdminRole(Client* client, QSharedPointer<Server> server, const SleepyD
 {
     SleepyDiscord::Server sleepyServer = client->getServer(server->GetServerId());
     const auto& member = client->getMember(server->GetServerId(), authorID).cast();
-    bool isAdmin = false;
+    bool isAdmin = sleepyServer.ownerID == authorID;
     auto roles = member.roles;
     for(auto& roleId : roles){
         auto role = sleepyServer.findRole(roleId);
@@ -774,13 +774,26 @@ CommandChain CreateRemoveBotMessageCommand(Client* client ,QSharedPointer<User> 
     bool isAdmin = CheckAdminRole(client, server, message.authorID);
     //if(isAdmin || sleepyServer.ownerID == message.author.ID ||  message.author.ID.string() == std::to_string(ownerId))
 
-    bool sameUser = storage->messageData.value(message.messageID.number())->originalUser->UserID() != user->UserID();
+    auto originalUserId = storage->messageData.value(message.messageID.number())->originalUser->UserID();
+    auto currentUserId = user->UserID();
+    bool sameUser = originalUserId == currentUserId;
     if(!sameUser && !isAdmin)
     {
         pushNullCommand(QString::fromStdString(user->CreateMention() + ", you need to be the original user or the server admin to request the deletion."));
         return result;
     }
     command.targetMessage = message.messageID;
+    result.Push(std::move(command));
+    return result;
+}
+
+CommandChain CreateRemoveMessageTextCommand(QSharedPointer<User> user, QSharedPointer<Server> server , const MessageIdToken & message)
+{
+    CommandChain result;
+    Command command = NewCommand(server, message, ct_remove_message_text);
+    command.user = user;
+    command.targetMessage = message.messageID;
+    command.targetChannelID = message.channelID;
     result.Push(std::move(command));
     return result;
 }
@@ -796,13 +809,14 @@ CommandChain CreateChangeReviewPageCommand(QSharedPointer<User> user, QSharedPoi
 
 
     Command command = NewCommand(server, message,ct_display_review);
-    auto currentPosition = listData->currentPosition;
+    int currentPosition = listData->currentPosition;
     if(shiftRight && currentPosition == listData->reviews.size() - 1)
         currentPosition =  0;
     else if(!shiftRight && currentPosition == 0)
         currentPosition = listData->reviews.size() -1;
     else
         currentPosition = shiftRight ? currentPosition + 1 : currentPosition - 1;
+    listData->currentPosition = currentPosition;
     command.variantHash["review_id"] = QString::fromStdString(listData->reviews[currentPosition]);
 
     command.targetMessage = message.messageID;

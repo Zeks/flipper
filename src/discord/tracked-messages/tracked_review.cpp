@@ -31,12 +31,12 @@ void TrackedReview::RetireData()
 
 std::string TrackedReview::GetOtherUserErrorMessage(Client *)
 {
-    return "";
+    return ",navigation only works for the original user.";
 }
 
 CommandChain TrackedReview::CloneForOtherUser()
 {
-    return {};
+    return {}; // not for now
 }
 
 CommandChain TrackedReview::ProcessReactionImpl(Client *client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
@@ -46,16 +46,15 @@ CommandChain TrackedReview::ProcessReactionImpl(Client *client, QSharedPointer<U
     CommandChain commands;
     auto token = this->token;
     token.authorID = user->UserID().toStdString();
+    auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
 
     if(emoji.name *in("👈","👉")){
-        auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
         bool scrollDirection = emoji.name == "👉" ? true : false;
-        CommandChain commands;
         commands = CreateChangeReviewPageCommand(user,server, token, scrollDirection);
         commands += CreateRemoveReactionCommand(user,server, token, emoji.name == "👉" ? "%f0%9f%91%89" : "%f0%9f%91%88");
     }
     else{
-
+        commands = CreateRemoveEntityConfirmationCommand(user,server, token, "review", QString::fromStdString(reviews[currentPosition]));
     }
 
     return commands;
@@ -63,7 +62,7 @@ CommandChain TrackedReview::ProcessReactionImpl(Client *client, QSharedPointer<U
 
 QStringList TrackedReview::GetEmojiSet()
 {
-    static const QStringList emoji = {QStringLiteral("%f0%9f%91%88"), QStringLiteral("%f0%9f%91%89")};
+    static const QStringList emoji = {QStringLiteral("%f0%9f%91%88"), QStringLiteral("%E2%9D%8C"), QStringLiteral("%f0%9f%91%89")};
     return emoji;
 }
 

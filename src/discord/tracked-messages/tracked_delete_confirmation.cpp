@@ -7,7 +7,7 @@
 
 namespace discord{
 
-TrackedDeleteConfirmation::TrackedDeleteConfirmation(std::string type, std::string identifier, QSharedPointer<User> user):TrackedMessageBase(user)
+TrackedDeleteConfirmation::TrackedDeleteConfirmation(QString type, QString identifier, QSharedPointer<User> user):TrackedMessageBase(user)
 {
     otherUserBehaviour = TrackedMessageBase::noub_legal;
     actionableEmoji = {"✅"};
@@ -17,12 +17,15 @@ TrackedDeleteConfirmation::TrackedDeleteConfirmation(std::string type, std::stri
     deleteOnReaction = true;
 }
 
-CommandChain TrackedDeleteConfirmation::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji emoji)
+CommandChain TrackedDeleteConfirmation::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji)
 {
     CommandChain commands;
-//    auto token = this->token;
-//    token.authorID = user->UserID().toStdString();
-//    auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
+    auto token = this->token;
+    token.authorID = user->UserID().toStdString();
+    auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
+    commands = CreateRemoveEntityCommand(user,server, token,entityType, entityId);
+    commands += CreateRemoveBotMessageCommand(client, user,server, token);
+    commands += CreateRemoveMessageTextCommand(user,server, spawnerToken);
     return commands;
 }
 

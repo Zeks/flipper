@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/send_message_command.h"
 #include "discord/favourites_fetching.h"
 #include "discord/tracked-messages/tracked_roll.h"
+#include "discord/tracked-messages/tracked_review.h"
 #include "discord/tracked-messages/tracked_help_page.h"
 #include "discord/tracked-messages/tracked_fic_details.h"
 #include "discord/tracked-messages/tracked_recommendation_list.h"
@@ -1817,7 +1818,7 @@ QSharedPointer<SendMessageCommand> DeleteBotMessageAction::ExecuteImpl(QSharedPo
 }
 
 
-void FillReviewEmbed(SleepyDiscord::Embed& embed, const FicReview& review){
+void FillReviewEmbed(SleepyDiscord::Embed& embed, const FicReview& review, int reviewCount){
     QString title;
     if(review.reviewTitle.isEmpty())
         title = "A review for:\n";
@@ -1842,6 +1843,7 @@ void FillReviewEmbed(SleepyDiscord::Embed& embed, const FicReview& review){
     titleField.value += QString(QStringLiteral(" ") + urlProto.arg(review.url, ficTitle) + QStringLiteral("\n")).toStdString();
     titleField.value += QString("By: " + user->UserName()).toStdString();
     titleField.value += QString("\n```" + review.text + "```").toStdString();
+    titleField.value += QString("\nThere are %1 reviews to show").arg(QString::number(reviewCount)).toStdString();
     embed.fields.push_back(titleField);
 }
 
@@ -1862,31 +1864,49 @@ QSharedPointer<SendMessageCommand> DisplayReviewAction::ExecuteImpl(QSharedPoint
     // on no - wipes the view and the asking message. needs to store info for all that
 
     // first we need to determine the review that will be displayed on initial page
-    auto displayType = command.variantHash["display_type"].toString();
-    discord::ReviewFilter filter;
-    filter.allowGlobal = false;
-    if(displayType == "fic")
-        filter.ficId = command.variantHash["identifier"].toString();
-    else if(displayType == "user")
-        filter.userId = command.variantHash["identifier"].toString();
-    filter.serverId = QString::fromStdString(command.server->GetServerId());
+    std::string reviewId;
+    std::vector<std::string> reviewIds;
+    if(!command.variantHash.contains("review_id")){
+        auto displayType = command.variantHash["display_type"].toString();
+        discord::ReviewFilter filter;
+        filter.allowGlobal = false;
+        if(displayType == "fic")
+            filter.ficId = command.variantHash["identifier"].toString();
+        else if(displayType == "user")
+            filter.userId = command.variantHash["identifier"].toString();
+        filter.serverId = QString::fromStdString(command.server->GetServerId());
 
-    auto ids = usersDbInterface->GetReviewIDs(filter);
-    if(ids.size() == 0){
-        action->text = "It looks like there are no reviews yet.";
-        action->stopChain = true;
+        reviewIds = usersDbInterface->GetReviewIDs(filter);
+        if(reviewIds.size() == 0){
+            action->text = "It looks like there are no reviews yet.";
+            action->stopChain = true;
+            return action;
+        }
+        reviewId = reviewIds.at(0);
+    }
+    else{
+        reviewId = command.variantHash["review_id"].toString().toStdString();
+        auto reviewData = std::dynamic_pointer_cast<TrackedReview>(messageData);
+        reviewIds = reviewData->reviews;
+    }
+    auto review = usersDbInterface->GetReview(QString::fromStdString(reviewId));
+    if(review.reviewId.isEmpty()){
         return action;
     }
 
-    auto reviewId = ids.at(0);
-    auto review = usersDbInterface->GetReview(QString::fromStdString(reviewId));
+    if(command.targetMessage.string().length() == 0){
+        auto newData = std::make_shared<TrackedReview>(reviewIds, command.user);
+        messageData = action->messageData = std::make_shared<TrackedReview>(reviewIds, command.user);
+    }
+
 
     SleepyDiscord::Embed embed;
-    FillReviewEmbed(embed, review);
-    action->text = "";
+    FillReviewEmbed(embed, review, reviewIds.size());
+
+
     action->embed = embed;
+    action->reactionsToAdd = messageData->GetEmojiSet();
     action->targetMessage = command.targetMessage;
-    action->deleteOriginalMessage = true;
     return action;
 }
 
@@ -1900,17 +1920,38 @@ QSharedPointer<SendMessageCommand> SpawnRemoveConfirmationAction::ExecuteImpl(QS
     // need to verify that user has the right to remove the entity here
 
     auto confirmation = std::make_shared<TrackedDeleteConfirmation>(
-                command.variantHash["entity_type"].toString().toStdString(),
-            command.variantHash["entity_id"].toString().toStdString(),
+                command.variantHash["entity_type"].toString(),
+            command.variantHash["entity_id"].toString(),
             command.user);
     confirmation->expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS());
+    MessageIdToken fictionalToken;
+    fictionalToken.messageID = command.targetMessage;
+    fictionalToken.channelID = command.originalMessageToken.channelID;
+    confirmation->spawnerToken = fictionalToken;
 
     messageData = action->messageData = confirmation;
-    action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " click on the emoji to confirm deletion of your review.");
+    action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " click on the emoji below to confirm deletion of your review.");
     action->reactionsToAdd = confirmation->GetEmojiSet();
-    action->targetMessage = command.targetMessage;
+//    SleepyDiscord::Embed embed;
+//    action->embed = embed;
+    action->targetMessage = "";
     return action;
 }
+
+
+QSharedPointer<SendMessageCommand> RemoveMessageTextAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command){
+    SleepyDiscord::Embed embed;
+    SleepyDiscord::EmbedField field;
+    field.isInline = false;
+    field.name = "Erased message";
+    field.value += "Text of this message has been removed on request.";
+    embed.fields.push_back(field);
+    action->embed = embed;
+    action->targetMessage = command.targetMessage;
+    action->targetChannel = command.targetChannelID;
+    return action;
+}
+
 
 QSharedPointer<SendMessageCommand> DeleteEntityAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
@@ -1935,7 +1976,7 @@ QSharedPointer<SendMessageCommand> DeleteEntityAction::ExecuteImpl(QSharedPointe
         return action;
     }
 
-    action->text = "Deleting review.";
+    action->text = "Deleting review from the database.";
     usersDbInterface->RemoveReview(identifier);
     return action;
 }
@@ -2019,6 +2060,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new DisplayReviewAction());
     case ECommandType::ct_spawn_remove_confirmation:
         return QSharedPointer<ActionBase>(new SpawnRemoveConfirmationAction());
+    case ECommandType::ct_remove_message_text:
+        return QSharedPointer<ActionBase>(new RemoveMessageTextAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }
@@ -2038,6 +2081,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 

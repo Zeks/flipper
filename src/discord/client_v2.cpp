@@ -80,7 +80,7 @@ void Client::InitClient()
     Client::mirrorTargetChannel = settings.value(QStringLiteral("Login/text_to")).toULongLong();
     Client::botPmChannel = settings.value(QStringLiteral("Login/pm_to")).toULongLong();
 
-    actionableEmoji = {"🔁","👈","👉","🔍","❌"};
+    actionableEmoji = {"🔁","👈","👉","🔍","❌","✅"};
 }
 
 QSharedPointer<discord::Server> Client::InitDiscordServerIfNecessary(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverId)

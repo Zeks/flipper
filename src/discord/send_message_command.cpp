@@ -58,6 +58,7 @@ void SendMessageCommand::Invoke(Client * client)
         auto server = servers->GetServer(originalMessageToken.serverID);
         //auto channelToSendTo = originalMessageToken.channelID;
         SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelToSendTo = targetChannel.string().length() > 0 ? targetChannel : originalMessageToken.channelID;
+        MessageResponseWrapper resultingMessage;
         if(targetMessage.string().length() == 0){
             if(targetChannel.string().length() > 0 && targetChannel.string() != "0")
                 channelToSendTo = targetChannel;
@@ -68,7 +69,7 @@ void SendMessageCommand::Invoke(Client * client)
                 {
                     try{
                         if(!server || server->IsAllowedChannelForSendMessage(channelToSendTo.string()))
-                            client->sendMessageWrapper(channelToSendTo, originalMessageToken.serverID,text.toStdString(), embed);
+                            resultingMessage = client->sendMessageWrapper(channelToSendTo, originalMessageToken.serverID,text.toStdString(), embed);
                     }
                     catch (const SleepyDiscord::ErrorCode& error){
                         if(error != 403)
@@ -81,17 +82,34 @@ void SendMessageCommand::Invoke(Client * client)
                         }
                     }
                 }
+                if(originalCommandType *in(ct_spawn_remove_confirmation)){
+                    MessageIdToken newToken = originalMessageToken;
+                    newToken.messageID = resultingMessage.response->cast().ID.number();
+                    if(!targetChannel.string().empty())
+                        newToken.channelID = targetChannel;
+                    if(messageData){
+                        An<ClientStorage> storage;
+                        messageData->token = newToken;
+                        storage->messageData.push(newToken.messageID.number(),messageData);
+                        storage->timedMessageData.push(newToken.messageID.number(),messageData);
+                    }
+                    this->user->SetLastAnyTypeMessageID(resultingMessage.response->cast());
+
+                    if(targetChannel.string().length() > 0)
+                        originalMessageToken.channelID = targetChannel;
+
+                    addReaction(resultingMessage.response.value().cast(), targetChannel.string());
+                }
             }
             else{
                 try{
 
-                    MessageResponseWrapper resultingMessage;
                     if(!server || server->IsAllowedChannelForSendMessage(originalMessageToken.channelID.string()))
                         resultingMessage = client->sendMessageWrapper(channelToSendTo, originalMessageToken.serverID, text.toStdString(), embed);
                     if(resultingMessage.response.has_value()){
                         // I only need to hash messages that the user can later react to
                         // meaning page, rng and help commands
-                        if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help, ct_show_fic)){
+                        if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help, ct_show_fic, ct_display_review,ct_spawn_remove_confirmation)){
                             MessageIdToken newToken = originalMessageToken;
                             newToken.messageID = resultingMessage.response->cast().ID.number();
                             if(!targetChannel.string().empty())

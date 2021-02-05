@@ -27,7 +27,7 @@ public:
     std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedReview>(std::vector<std::string>{}, this->originalUser);};
 
 
-    int currentPosition = 0;
+    std::atomic<int> currentPosition = 0;
     std::vector<std::string> reviews;
 };
 
