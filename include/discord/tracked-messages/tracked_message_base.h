@@ -30,13 +30,18 @@ class TrackedMessageBase : public std::enable_shared_from_this<TrackedMessageBas
     virtual std::string GetOtherUserErrorMessage(Client* client) = 0;
     virtual int GetDataExpirationIntervalS() = 0;
     //virtual void FillMemo(QSharedPointer<User>) = 0;
-    virtual std::chrono::system_clock::time_point GetDataExpirationPoint(){return std::chrono::high_resolution_clock::now();};
+    virtual std::chrono::system_clock::time_point GetDataExpirationPoint(){return expirationPoint;};
+    virtual void SetDataExpirationPoint(std::chrono::system_clock::time_point point){
+        expirationPoint = point;
+    }
+
     virtual void RetireData(){};
     virtual CommandChain CloneForOtherUser() = 0;
         virtual CommandChain ProcessReactionImpl(Client* client, QSharedPointer<User>,
                                          SleepyDiscord::Emoji emoji) = 0;
     virtual QStringList GetEmojiSet() = 0;
     virtual std::shared_ptr<TrackedMessageBase> NewInstance() = 0;
+    bool GetRetireIsFinal() const;
 
     ENonOriginalUserBehaviour otherUserBehaviour = noub_error;
     MessageIdToken token;
@@ -46,10 +51,12 @@ class TrackedMessageBase : public std::enable_shared_from_this<TrackedMessageBas
     bool canBeUsedAsLastPage = true;
     bool deleteOnReaction = false;
     bool deleteOnExpiration = false;
-    std::chrono::system_clock::time_point expirationPoint;
+    bool retireIsFinal = false;
+    std::chrono::system_clock::time_point expirationPoint = std::chrono::high_resolution_clock::now();
     std::vector<std::string> actionableEmoji;
     QSharedPointer<User> originalUser;
     std::mutex mutex;
+
 protected:
     TrackedMessageBase(){};
 

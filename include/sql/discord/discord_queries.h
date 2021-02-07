@@ -53,6 +53,9 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> WriteFFNPage(sql::Database db, QSharedPointer<discord::FFNPage>);
     DiagnosticSQLResult<bool> UpdateFFNPage(sql::Database db, QSharedPointer<discord::FFNPage>);
     DiagnosticSQLResult<bool> WriteServerPrefix(sql::Database db, const std::string&, QString);
+    DiagnosticSQLResult<bool> WriteServerReviewsAllowed(sql::Database db, const std::string&, bool);
+    DiagnosticSQLResult<bool> WriteServerExplainAllowed(sql::Database db, const std::string&, bool);
+
     DiagnosticSQLResult<bool> WriteServerDedicatedChannel(sql::Database db, const std::string&, const std::string&);
     DiagnosticSQLResult<bool> WriteUserFFNId(sql::Database db, QString user_id, int ffn_id);
     DiagnosticSQLResult<bool> WriteUserFavouritesSize(sql::Database db, QString, int);

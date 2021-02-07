@@ -55,6 +55,7 @@ namespace discord {
                 TypeStringHolder<ShowFicDetailsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ReviewCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<DeleteEntityCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<ToggleFunctionalityCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<SimilarFicsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,

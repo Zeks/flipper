@@ -48,6 +48,7 @@ enum ECommandType{
     ct_spawn_remove_confirmation= 45,
     ct_remove_entity= 46,
     ct_remove_message_text= 47,
+    ct_toggle_functionality_for_server= 48,
 };
 
 }

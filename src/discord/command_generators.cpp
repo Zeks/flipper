@@ -1319,12 +1319,17 @@ CommandChain ReviewCommand::ProcessInputImpl(const SleepyDiscord::Message & mess
         if(!showMatch.get<2>().to_string().empty())
             identifier = showMatch.get<2>().to_string();
 
-        if(identifier == "recent")
+        if(identifier == "recent"){
             command.variantHash["display_type"] = QString("recent");
-        else if(identifier.find("user:") != std::string::npos)
+        }
+        else if(identifier.find("user:") != std::string::npos){
+            command.variantHash["identifier"] = QString::fromStdString(identifier).mid(5);
             command.variantHash["display_type"] = QString("user");
-        else
+        }
+        else{
             command.variantHash["display_type"] = QString("fic");
+            command.variantHash["identifier"] = QString::fromStdString(identifier);
+        }
 
         static constexpr std::string_view pattern = "(\\d{1,20}+)/";
         std::string numericId;
@@ -1333,19 +1338,19 @@ CommandChain ReviewCommand::ProcessInputImpl(const SleepyDiscord::Message & mess
             break;
         }
 
-        command.variantHash["identifier"] = QString::fromStdString(identifier);
+        //command.variantHash["identifier"] = QString::fromStdString(identifier);
         command.variantHash["id"] = QString::fromStdString(numericId);
         //command.variantHash["review"] = QString::fromStdString(text);
         result.Push(std::move(command));
     }
     else{
         auto addMatch = ctre::search<TypeStringHolder<ReviewCommand>::addPattern>(message.content);
-//        auto match0 = identifier = addMatch.get<0>().to_string();
-//        auto match1 = identifier = addMatch.get<1>().to_string();
-//        auto match2 = identifier = addMatch.get<2>().to_string();
-//        auto match3 = identifier = addMatch.get<3>().to_string();
-//        auto match4 = identifier = addMatch.get<4>().to_string();
-//        auto match5 = identifier = addMatch.get<5>().to_string();
+        auto match0 = identifier = addMatch.get<0>().to_string();
+        auto match1 = identifier = addMatch.get<1>().to_string();
+        auto match2 = identifier = addMatch.get<2>().to_string();
+        auto match3 = identifier = addMatch.get<3>().to_string();
+        auto match4 = identifier = addMatch.get<4>().to_string();
+        auto match5 = identifier = addMatch.get<5>().to_string();
 //        auto match6 = identifier = addMatch.get<6>().to_string();
 //        auto match7 = identifier = addMatch.get<7>().to_string();
 //        auto match8 = identifier = addMatch.get<8>().to_string();
@@ -1358,10 +1363,10 @@ CommandChain ReviewCommand::ProcessInputImpl(const SleepyDiscord::Message & mess
             id = rangeMatch.get<1>().to_string();
             break;
         }
-        sign = addMatch.get<5>().to_string();
-        score = addMatch.get<6>().to_string();
-        text = addMatch.get<7>().to_string();
-        if(identifier.length() == 0 || score.length() == 0 || text.length() == 0){
+        //sign = addMatch.get<5>().to_string();
+        //score = addMatch.get<6>().to_string();
+        text = addMatch.get<4>().to_string();
+        if(identifier.length() == 0 || text.length() == 0){
             if(identifier.length() == 0)
                 CreateNullCommand(message,"You need to provide a link you are reviewing");
             else if(score.length() == 0)
@@ -1428,6 +1433,29 @@ CommandChain DeleteEntityCommand::ProcessInputImpl(const SleepyDiscord::Message 
 bool DeleteEntityCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<DeleteEntityCommand>::name;
+}
+
+
+CommandChain ToggleFunctionalityCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+{
+    bool isAdmin = CheckAdminRole(message);
+    if(!isAdmin){
+        Command command = NewCommand(server, message,ct_insufficient_permissions);
+        result.Push(std::move(command));
+    }
+    else{
+        auto match = ctre::search<TypeStringHolder<ToggleFunctionalityCommand>::pattern>(message.content);
+        std::string type = match.get<1>().to_string();
+        Command command = NewCommand(server, message, ct_toggle_functionality_for_server);
+        command.variantHash["entity_type"] = QString::fromStdString(type);
+        result.Push(std::move(command));
+    }
+    return std::move(result);
+}
+
+bool ToggleFunctionalityCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ToggleFunctionalityCommand>::name;
 }
 
 //CommandChain ShowReviewCommand::ProcessInputImpl(const SleepyDiscord::Message &)

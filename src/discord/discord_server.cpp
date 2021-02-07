@@ -259,6 +259,18 @@ namespace discord {
         QWriteLocker locker(&lock);
         explanationAllowed = value;
     }
+
+    bool Server::GetReviewsAllowed() const
+    {
+        QReadLocker locker(&lock);
+        return reviewsAllowed;
+    }
+
+    void Server::SetReviewsAllowed(bool value)
+    {
+        QWriteLocker locker(&lock);
+        reviewsAllowed = value;
+    }
     
     void Servers::AddServer(QSharedPointer<Server> server)
     {

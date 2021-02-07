@@ -90,6 +90,7 @@ ACTION(DeleteEntityAction);
 ACTION(DeleteBotMessageAction);
 ACTION(DisplayReviewAction);
 ACTION(RemoveMessageTextAction);
+ACTION(ToggleFunctionalityForServerAction);
 
 
 struct ActionChain{

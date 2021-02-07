@@ -10,23 +10,19 @@ namespace discord{
 
 TrackedReview::TrackedReview(std::vector<std::string> reviews, QSharedPointer<User> user):TrackedMessageBase(user)
 {
+    retireIsFinal = true;
     this->reviews = reviews;
     actionableEmoji = {"👈","❌","👉"};
 }
 
 int TrackedReview::GetDataExpirationIntervalS()
 {
-    return 300;
-}
-
-std::chrono::system_clock::time_point TrackedReview::GetDataExpirationPoint()
-{
-    return std::chrono::high_resolution_clock::now();
+    return 600;
 }
 
 void TrackedReview::RetireData()
 {
-    // not much point for now
+    reviews.clear();
 }
 
 std::string TrackedReview::GetOtherUserErrorMessage(Client *)

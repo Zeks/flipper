@@ -339,7 +339,8 @@ struct TypeStringHolder<discord::ReviewCommand>{
 
         static constexpr std::string_view showPattern = "review\\s+(show|display){0,1}\\s+(recent|(user[:][A-Za-z0-9]+#\\d{4})|([A-Za-z0-9\\-/:.]+))";
 
-        static constexpr std::string_view addPattern = "review\\s+(add){0,1}\\s+(([A-Za-z0-9\\-/:.]+)\\s(([+\\-]){0,1}(\\d))\\s+(([A-Za-z0-9]|[^A-Za-z0-9])+))";
+        //static constexpr std::string_view addPattern = "review\\s+(add){0,1}\\s+(([A-Za-z0-9\\-/:.]+)(\\s[+\\-](\\d)){0,1}\\s+(([A-Za-z0-9]|[^A-Za-z0-9])+))";
+        static constexpr std::string_view addPattern = "review\\s+(add){0,1}\\s+(([A-Za-z0-9\\-/:.]+)\\s+(([A-Za-z0-9]|[^A-Za-z0-9])+))";
         static constexpr std::string_view help = "{0}review command allows you to add a review to a fic. syntax is `{0}review link score(-5/+5) review_text`";
         static constexpr std::string_view tips = "If you want to review a fic for other users use %1review command. See {0}help {0}review for full explanation.";
         static constexpr std::string_view shorthand = "";
@@ -359,6 +360,20 @@ struct TypeStringHolder<discord::DeleteEntityCommand>{
         static constexpr std::string_view tips = "";
         static constexpr std::string_view shorthand = "";
 };
+
+
+template <>
+struct TypeStringHolder<discord::ToggleFunctionalityCommand>{
+        static constexpr std::string_view name = "toggle";
+        static constexpr std::string_view prefixlessPattern = "?<toggle>toggle";
+        static constexpr std::string_view pattern = "toggle\\s+(fics|reviews)";
+        static constexpr std::string_view help = "{0}toggle command enable/disable submodules of the bot. Options are `reviews` and `fics`";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
+
+
+
 
 
 //template <>

@@ -25,6 +25,11 @@ discord::CommandChain discord::TrackedMessageBase::ProcessReaction(discord::Clie
     return ProcessReactionImpl(client, user, emoji);
 }
 
+bool TrackedMessageBase::GetRetireIsFinal() const
+{
+    return retireIsFinal;
+}
+
 
 
 }

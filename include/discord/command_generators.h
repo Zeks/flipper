@@ -318,6 +318,14 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+
+class ToggleFunctionalityCommand: public CommandCreator{
+public:
+    ToggleFunctionalityCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 //class ShowReviewCommand: public CommandCreator{
 //public:
 //    ShowReviewCommand(){}

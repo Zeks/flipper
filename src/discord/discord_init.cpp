@@ -52,6 +52,7 @@ namespace discord {
         RegisterCommand<ShowFicDetailsCommand>(parser);
         RegisterCommand<ReviewCommand>(parser);
         RegisterCommand<DeleteEntityCommand>(parser);
+        RegisterCommand<ToggleFunctionalityCommand>(parser);
         //RegisterCommand<ForceListParamsCommand>(parser);
         //RegisterCommand<SetIdentityCommand>(parser);
         //RegisterCommand<SimilarFicsCommand>(parser);

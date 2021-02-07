@@ -12,6 +12,7 @@ struct ReviewFilter{
     QString serverId;
     QString userId;
     QString ficId;
+    QString ficUrl;
     QString reviewType; 
     bool allowGlobal = false;
     int reviewScoreCutoff = -5;

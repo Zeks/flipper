@@ -1702,9 +1702,30 @@ QSharedPointer<SendMessageCommand> ShowFicAction::ExecuteImpl(QSharedPointer<Tas
     embed.description += QString(QStringLiteral("\nGenre: `") + genre + "`").toStdString();
     embed.description += (QString(QStringLiteral("\n```")) + fic.summary + QString(QStringLiteral("```"))).toStdString();
     embed.description += "\n";
+
+    //temp = temp.replace("'", "\'");
+
+    // trying to find reviews
+    if(command.server->GetReviewsAllowed()){
+        discord::ReviewFilter filter;
+        filter.allowGlobal = false;
+        QString searchProto = QStringLiteral("fanfiction.net/s/%1");
+        filter.ficUrl = searchProto.arg(fic.identity.web.GetPrimaryId());
+        filter.serverId = QString::fromStdString(command.server->GetServerId());
+        auto reviewIds = usersDbInterface->GetReviewIDs(filter);
+        auto prefix = QString::fromStdString(std::string(command.server->GetCommandPrefix()));
+        if(reviewIds.size() == 0){
+            embed.description += "\nThere are no reviews for this fic from users of this server yet.";
+            embed.description += QString("\nIf you want to add one, use `%1review add [url] [text]`.").arg(prefix).toStdString();
+            embed.description += QString("\nIf you want to see all recent reviews, use `%1review show recent`.").arg(prefix).toStdString();
+        }else{
+            embed.description += QString("\nThere are %1 reviews for this fic from users of this server.").arg(QString::number(reviewIds.size())).toStdString();
+            embed.description += QString("\nIf you want to see them, call `%1review show %2` .").arg(prefix, QString::number(fic.identity.web.GetPrimaryId())).toStdString();
+            embed.description += QString("\nIf you want to add another one, use `%1review add [url] [text]`.").arg(prefix).toStdString();
+        }
+    }
     auto temp =  QString::fromStdString(embed.description);
     temp = temp.replace(QStringLiteral("````"), QStringLiteral("```"));
-    //temp = temp.replace("'", "\'");
     embed.description = temp.toStdString();
 
 
@@ -1716,7 +1737,10 @@ QSharedPointer<SendMessageCommand> ShowFicAction::ExecuteImpl(QSharedPointer<Tas
 
     action->embed = embed;
     action->originalMessageToken.ficId = fic.identity.web.GetPrimaryId();
+    //if(reviewIds.size() > 0 )
     action->reactionsToAdd = messageData->GetEmojiSet();
+//    else
+//        action->reactionsToAdd = QStringList{messageData->GetEmojiSet().at(0)};
     if(command.targetMessage.string().length() > 0)
         action->targetMessage = command.targetMessage;
 
@@ -1818,6 +1842,7 @@ QSharedPointer<SendMessageCommand> DeleteBotMessageAction::ExecuteImpl(QSharedPo
 }
 
 
+
 void FillReviewEmbed(SleepyDiscord::Embed& embed, const FicReview& review, int reviewCount){
     QString title;
     if(review.reviewTitle.isEmpty())
@@ -1841,10 +1866,16 @@ void FillReviewEmbed(SleepyDiscord::Embed& embed, const FicReview& review, int r
     titleField.isInline = false;
     titleField.name = title.toStdString();
     titleField.value += QString(QStringLiteral(" ") + urlProto.arg(review.url, ficTitle) + QStringLiteral("\n")).toStdString();
-    titleField.value += QString("By: " + user->UserName()).toStdString();
-    titleField.value += QString("\n```" + review.text + "```").toStdString();
-    titleField.value += QString("\nThere are %1 reviews to show").arg(QString::number(reviewCount)).toStdString();
+    titleField.value += QString("By: " + review.authorName).toStdString();
     embed.fields.push_back(titleField);
+
+    //embed.description += QString("\n```" + review.text + "```").toStdString();
+//    firstField.value += QString("\n```" + review.text + "```").toStdString();
+//    //firstField.value += QString("\nThere are %1 reviews to show").arg(QString::number(reviewCount)).toStdString();
+//    secondField.value += QString("\n```" + review.text + "```").toStdString();
+//    //secondField.value += QString("\nThere are %1 reviews to show").arg(QString::number(reviewCount)).toStdString();
+//    embed.fields.push_back(firstField);
+//    embed.fields.push_back(secondField);
 }
 
 //command.variantHash["display_type"] = QString("fic"); fic/user/recent
@@ -1870,8 +1901,10 @@ QSharedPointer<SendMessageCommand> DisplayReviewAction::ExecuteImpl(QSharedPoint
         auto displayType = command.variantHash["display_type"].toString();
         discord::ReviewFilter filter;
         filter.allowGlobal = false;
-        if(displayType == "fic")
-            filter.ficId = command.variantHash["identifier"].toString();
+        if(displayType == "fic"){
+            //filter.ficId = command.variantHash["identifier"].toString();
+            filter.ficUrl = command.variantHash["identifier"].toString();
+        }
         else if(displayType == "user")
             filter.userId = command.variantHash["identifier"].toString();
         filter.serverId = QString::fromStdString(command.server->GetServerId());
@@ -1898,14 +1931,18 @@ QSharedPointer<SendMessageCommand> DisplayReviewAction::ExecuteImpl(QSharedPoint
         auto newData = std::make_shared<TrackedReview>(reviewIds, command.user);
         messageData = action->messageData = std::make_shared<TrackedReview>(reviewIds, command.user);
     }
+    messageData->SetDataExpirationPoint(std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS()));
 
 
     SleepyDiscord::Embed embed;
     FillReviewEmbed(embed, review, reviewIds.size());
 
-
+    action->text = QString("```" + review.text + "```");
     action->embed = embed;
-    action->reactionsToAdd = messageData->GetEmojiSet();
+    if(reviewIds.size() > 1)
+        action->reactionsToAdd = messageData->GetEmojiSet();
+    else
+        action->reactionsToAdd = QStringList{messageData->GetEmojiSet().at(1)};
     action->targetMessage = command.targetMessage;
     return action;
 }
@@ -1978,6 +2015,25 @@ QSharedPointer<SendMessageCommand> DeleteEntityAction::ExecuteImpl(QSharedPointe
 
     action->text = "Deleting review from the database.";
     usersDbInterface->RemoveReview(identifier);
+    return action;
+}
+
+
+
+QSharedPointer<SendMessageCommand> ToggleFunctionalityForServerAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    auto entityType = command.variantHash["entity_type"].toString();
+    auto server = command.server;
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    if(entityType == "reviews"){
+        server->SetReviewsAllowed(!server->GetReviewsAllowed());
+        database::discord_queries::WriteServerReviewsAllowed(dbToken->db, command.server->GetServerId(), server->GetReviewsAllowed());
+        action->text = QString("Review module is now %1.").arg(server->GetReviewsAllowed() ? "enabled" : "disabled");
+    }else if(entityType == "fics"){
+        server->SetExplanationAllowed(!server->GetExplanationAllowed());
+        database::discord_queries::WriteServerExplainAllowed(dbToken->db, command.server->GetServerId(), server->GetExplanationAllowed());
+        action->text = QString("Fic display module is now %1.").arg(server->GetExplanationAllowed() ? "enabled" : "disabled");
+    }
     return action;
 }
 
@@ -2062,6 +2118,9 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SpawnRemoveConfirmationAction());
     case ECommandType::ct_remove_message_text:
         return QSharedPointer<ActionBase>(new RemoveMessageTextAction());
+    case ECommandType::ct_toggle_functionality_for_server:
+        return QSharedPointer<ActionBase>(new ToggleFunctionalityForServerAction());
+
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }
@@ -2081,6 +2140,8 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
+
 
 
 

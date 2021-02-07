@@ -91,6 +91,9 @@ struct Server{
     bool GetExplanationAllowed() const;
     void SetExplanationAllowed(bool value);
 
+    bool GetReviewsAllowed() const;
+    void SetReviewsAllowed(bool value);
+
 private:
     std::string serverId;
     QString serverName;
@@ -109,6 +112,7 @@ private:
     bool allowedToAddReactions = true;
     bool allowedToEditMessages = true;
     bool explanationAllowed = false;
+    bool reviewsAllowed = false;
 
 
 

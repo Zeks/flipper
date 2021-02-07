@@ -253,6 +253,23 @@ DiagnosticSQLResult<bool> WriteServerPrefix(sql::Database db, const std::string&
     return std::move(ctx.result);
 }
 
+DiagnosticSQLResult<bool> WriteServerReviewsAllowed(sql::Database db, const std::string& server_id, bool review_allowed){
+    std::string qs = "update discord_servers set review_allowed = :review_allowed where server_id = :server_id";
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.bindValue("review_allowed", review_allowed);
+    ctx.bindValue("server_id", server_id);
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+DiagnosticSQLResult<bool> WriteServerExplainAllowed(sql::Database db, const std::string& server_id, bool explain_allowed){
+    std::string qs = "update discord_servers set explain_allowed = :explain_allowed where server_id = :server_id";
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.bindValue("explain_allowed", explain_allowed);
+    ctx.bindValue("server_id", server_id);
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
 DiagnosticSQLResult<bool> WriteServerDedicatedChannel(sql::Database db, const std::string &serverId, const std::string & dedicatedChannelI)
 {
     std::string qs = "update discord_servers set dedicated_channel_id = :dedicated_channel_id where server_id = :server_id";
@@ -599,7 +616,7 @@ DiagnosticSQLResult<bool> SetDateFilter(Database db, QString user_id, filters::E
 
 DiagnosticSQLResult<bool> AddReview(sql::Database db, const discord::FicReview& review){
     std::string orPart;
-    std::string qs = "delete from user_reviews where user_id = :user_id and (raw_url = :raw_url {0} )";
+    std::string qs = "delete from user_reviews where user_id = :user_id and server_id = :server_id and (raw_url = :raw_url {0} )";
     if(!(review.site.isEmpty() || review.siteId.isEmpty())){
         orPart = " or (site_type = :site_type and site_identifier = :site_identifier ) ";
         qs=fmt::format(qs, orPart);
@@ -609,6 +626,7 @@ DiagnosticSQLResult<bool> AddReview(sql::Database db, const discord::FicReview& 
 
     SqlContext<bool> ctxDelete(db, std::move(qs));
     ctxDelete.bindValue("user_id", review.authorId);
+    ctxDelete.bindValue("server_id", review.serverId);
     ctxDelete.bindValue("raw_url", review.url);
     if(!(review.site.isEmpty() || review.siteId.isEmpty())){
         ctxDelete.bindValue("site_identifier", review.siteId);
@@ -652,11 +670,12 @@ DiagnosticSQLResult<QString> GetReviewAuthor(sql::Database db, QString review_id
 
 DiagnosticSQLResult<std::vector<std::string>> GetReviewList(sql::Database db, discord::ReviewFilter filter){
 
-    std::string qs = " select review_id from user_reviews where (server_id = :server_id {0}) {1} {2} order by date_added desc";
+    std::string qs = " select review_id from user_reviews where (server_id = :server_id {0}) {1} {2} {3} order by date_added desc";
     qs = qs=fmt::format(qs,
                         filter.allowGlobal ? " or review_type = 'global' " : "",
                         !filter.ficId.isEmpty() ?  " and fic_id = :fic_id " : "",
-                        !filter.userId.isEmpty() ? " and user_name = :user_name " : "");
+                        !filter.userId.isEmpty() ? " and user_name = :user_name " : "",
+                        !filter.ficUrl.isEmpty() ? " and raw_url like '%'||:raw_url||'%'" : "");
 
     SqlContext<std::vector<std::string>> ctx(db);
     ctx.bindValue("server_id", filter.serverId);
@@ -664,6 +683,8 @@ DiagnosticSQLResult<std::vector<std::string>> GetReviewList(sql::Database db, di
         ctx.bindValue("fic_id", filter.ficId);
     if(!filter.userId.isEmpty() )
         ctx.bindValue("user_name", filter.userId);
+    if(!filter.ficUrl.isEmpty() )
+        ctx.bindValue("raw_url", filter.ficUrl);
     ctx.FetchLargeSelectIntoContainer<std::string, std::vector<std::string>>("review_id", std::move(qs), "", [](auto& container, const auto& value){
         container.push_back(value);
     });

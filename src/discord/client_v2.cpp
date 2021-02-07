@@ -202,7 +202,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(sv.substr(0, commandPrefix.length()) != commandPrefix)
             return logRest();
 
-        if(message.content.length() > 500){
+        if(message.content.length() > 500 && message.content.find("review add") == std::string::npos){
             sendMessageWrapper(message.channelID, message.serverID, "Your command is too long. Perhaps you've mistyped accidentally?");
             return logRest();
         }
@@ -332,6 +332,9 @@ void Client::timerEvent(QTimerEvent *)
         if(value->GetDataExpirationPoint() < std::chrono::high_resolution_clock::now()){
             value->RetireData();
             storage->timedMessageData.remove(key);
+            if(value->GetRetireIsFinal()){
+                storage->messageData.remove(key);
+            }
         }
     }
 }

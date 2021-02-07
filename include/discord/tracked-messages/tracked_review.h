@@ -15,7 +15,6 @@ class TrackedReview : public TrackedMessageBase{
 public:
     TrackedReview(std::vector<std::string> reviews, QSharedPointer<User> user);
     int GetDataExpirationIntervalS() override;
-    std::chrono::system_clock::time_point GetDataExpirationPoint() override;
     void RetireData() override;
     //void FillMemo(QSharedPointer<User>) override;
 
