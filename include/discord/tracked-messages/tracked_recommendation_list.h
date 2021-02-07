@@ -24,10 +24,16 @@ public:
     CommandChain CloneForOtherUser() override;
     CommandChain ProcessReactionImpl(Client *client, QSharedPointer<User>, SleepyDiscord::Emoji emoji) override;
     QStringList GetEmojiSet() override;
+    virtual void SetDataExpirationPoint(std::chrono::system_clock::time_point point) override;
     std::shared_ptr<TrackedMessageBase> NewInstance() override{return std::make_shared<TrackedRecommendationList>(this->originalUser);};
+    void SetFicdata(QSharedPointer<core::RecommendationListFicData>);
+    QSharedPointer<core::RecommendationListFicData> GetFicData();
+    bool FicDataEmpty() const;
 
 
     RecsMessageCreationMemo memo;
+
+protected:
     TimedEntity<QSharedPointer<core::RecommendationListFicData>> ficData;
 
 };

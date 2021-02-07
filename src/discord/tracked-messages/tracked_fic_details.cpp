@@ -20,7 +20,7 @@ CommandChain TrackedFicDetails::ProcessReactionImpl(Client* client, QSharedPoint
     auto token = this->token;
     token.authorID = user->UserID().toStdString();
     auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
-    if(emoji == "🔍"){
+    if(emoji.name == "🔍"){
         commands = CreateSimilarListCommand(user,server, token, ficId);
         commands += CreateRemoveReactionCommand(user,server, token, GetEmojiSet().at(0).toStdString());
     }

@@ -186,7 +186,8 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     {
         QTextStream in(&favouritesfile);
         result.content = in.readAll();
-        result.isValid = true;
+        if(result.content.contains("favstories"))
+            result.isValid = true;
         result.url = url;
         result.source = EPageSource::network;
     }

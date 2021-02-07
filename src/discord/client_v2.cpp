@@ -255,7 +255,7 @@ QSharedPointer<User> Client::GetOrCreateUser(SleepyDiscord::Snowflake<SleepyDisc
         }
     }
     auto user = users->GetUser(userId);
-    if(!user->UserName().contains(QRegExp("#\\d{4}"))){
+    if(user && !user->UserName().contains(QRegExp("#\\d{4}"))){
         auto sleepyUser = getUser(userID);
         usersInterface->UpdateUsername(QString::fromStdString(userID.string()),
                                        QString::fromStdString(sleepyUser.cast().username  + "#" + sleepyUser.cast().discriminator));
@@ -324,6 +324,8 @@ void Client::Log(const SleepyDiscord::Message& message)
 
 void Client::timerEvent(QTimerEvent *)
 {
+    An<Users> users;
+    users->ClearInactiveUsers();
     for(auto key: storage->timedMessageData.keys()){
         auto value = storage->timedMessageData.value(key);
         if(!value)

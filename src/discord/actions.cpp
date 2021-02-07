@@ -776,8 +776,8 @@ void FillPageDisplayMemo(T* fetcher,
         reclistData->memo.ficFavouritesCutoff = favouritesCutoff;
         reclistData->memo.userFFNId = userFFNId;
     }
-    reclistData->ficData.data = fetcher->sourceficsData;
-    reclistData->ficData.expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS());
+    reclistData->SetFicdata(fetcher->sourceficsData);
+    reclistData->SetDataExpirationPoint(std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS()));
     reclistData->memo.sourceFics = fetcher->sourceficsData->sourceFicsFFN;
 //    if constexpr(std::is_same_v<T, FicFetcherRNG>){
 //        reclistData->memo.rngQualityCutoff = fetcher->qualityCutoff;
@@ -825,20 +825,21 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         auto resultLocker = messageData->LockResult();
         auto listData = static_cast<TrackedRecommendationList*>(messageData.get());
         // we need to recreate the list before we can display anything
-        if(!listData->ficData.data)
+        if(listData->FicDataEmpty())
         {
             if(command.variantHash.contains("similar"))
-                listData->ficData.data = FillRecommendationsForSingularFic(environment, command.variantHash["similar"].toString())->ficData;
+                listData->SetFicdata(FillRecommendationsForSingularFic(environment, command.variantHash["similar"].toString())->ficData);
             else
-                listData->ficData.data = FillUserRecommendationsFromFavourites(listData->memo.userFFNId, listData->memo.sourceFics, environment, listData->memo.ficFavouritesCutoff, command)->ficData;
+                listData->SetFicdata(FillUserRecommendationsFromFavourites(listData->memo.userFFNId, listData->memo.sourceFics, environment, listData->memo.ficFavouritesCutoff, command)->ficData);
         }
-        pageFetcher.sourceficsData = listData->ficData.data;
+        pageFetcher.sourceficsData = listData->GetFicData();
         listData->memo.filter.partiallyFilled = true;
         pageFetcher.storyFilterDisplayToken = listData->memo.storyFilterDisplayToken;
         pageFetcher.Fetch(listData->memo.filter, &fics);
         pageCount = pageFetcher.FetchPageCount(listData->memo.filter);
 
     }else{
+        auto ficList = command.user->FicList();
         pageFetcher.sourceficsData =  workingOnSimilarityList ? command.user->GetTemporaryFicsData() : command.user->FicList();
         pageFetcher.Fetch({}, &fics);
         pageCount = pageFetcher.FetchPageCount({});
@@ -965,8 +966,9 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 //        command.user->SetFicList(command.user->GetTemporaryFicsData());
 //    }
     command.user->SetTemporaryFicsData({});
-    action->reactionsToAdd = messageData->GetEmojiSet();
+    //command.user->SetFicList({});
 
+    action->reactionsToAdd = messageData->GetEmojiSet();
     action->embed = embed;
     if(command.targetMessage.string().length() > 0)
         action->targetMessage = command.targetMessage;
@@ -1010,12 +1012,12 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         auto rngData = static_cast<TrackedRoll*>(messageData.get());
 
         // we need to recreate the list before we can display anything
-        if(!rngData->ficData.data)
-            rngData->ficData.data = FillUserRecommendationsFromFavourites(rngData->memo.userFFNId, rngData->memo.sourceFics, environment, rngData->memo.ficFavouritesCutoff, command)->ficData;
+        if(rngData->FicDataEmpty())
+            rngData->SetFicdata(FillUserRecommendationsFromFavourites(rngData->memo.userFFNId, rngData->memo.sourceFics, environment, rngData->memo.ficFavouritesCutoff, command)->ficData);
 
-        selectScoreCutoff(rngData->ficData.data);
+        selectScoreCutoff(rngData->GetFicData());
         rngFetcher.qualityCutoff = scoreCutoff;
-        rngFetcher.sourceficsData = rngData->ficData.data;
+        rngFetcher.sourceficsData = rngData->GetFicData();
         rngData->memo.filter.partiallyFilled = true;
         rngFetcher.storyFilterDisplayToken = rngData->memo.storyFilterDisplayToken;
         rngFetcher.Fetch(rngData->memo.filter, &fics);
@@ -1081,6 +1083,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
                         command.user->GetRecommendationsCutoff(),
                         command.user->FfnID());
 
+   // command.user->SetFicList({});
     action->embed = embed;
     action->reactionsToAdd = messageData->GetEmojiSet();
     if(command.targetMessage.string().length() > 0)
@@ -1815,7 +1818,8 @@ QSharedPointer<SendMessageCommand> AddReviewAction::ExecuteImpl(QSharedPointer<T
     //auto sleepyUser =
 
     QString review_id = QUuid::createUuid().toString();
-    action->text = "Adding review: " + review_id;
+    //action->text = "Adding review: " + review_id;
+    action->text = "Adding review.";
     discord::FicReview reviewInstance;
     reviewInstance.authorId = command.user->UserID();
     reviewInstance.authorName = command.user->UserName();
@@ -1931,18 +1935,23 @@ QSharedPointer<SendMessageCommand> DisplayReviewAction::ExecuteImpl(QSharedPoint
         auto newData = std::make_shared<TrackedReview>(reviewIds, command.user);
         messageData = action->messageData = std::make_shared<TrackedReview>(reviewIds, command.user);
     }
+
     messageData->SetDataExpirationPoint(std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS()));
 
 
     SleepyDiscord::Embed embed;
     FillReviewEmbed(embed, review, reviewIds.size());
 
-    action->text = QString("```" + review.text + "```");
+    action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()));
+    action->text += QString("\n```" + review.text + "```");
     action->embed = embed;
     if(reviewIds.size() > 1)
         action->reactionsToAdd = messageData->GetEmojiSet();
     else
-        action->reactionsToAdd = QStringList{messageData->GetEmojiSet().at(1)};
+        action->reactionsToAdd = QStringList{messageData->GetEmojiSet().at(2)};
+    if(command.server->GetDedicatedChannelId().length() > 0){
+        action->targetChannel = command.server->GetDedicatedChannelId();
+    }
     action->targetMessage = command.targetMessage;
     return action;
 }
@@ -1960,7 +1969,8 @@ QSharedPointer<SendMessageCommand> SpawnRemoveConfirmationAction::ExecuteImpl(QS
                 command.variantHash["entity_type"].toString(),
             command.variantHash["entity_id"].toString(),
             command.user);
-    confirmation->expirationPoint = std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS());
+    confirmation->SetDataExpirationPoint(std::chrono::system_clock::now() + std::chrono::seconds(messageData->GetDataExpirationIntervalS()));
+
     MessageIdToken fictionalToken;
     fictionalToken.messageID = command.targetMessage;
     fictionalToken.channelID = command.originalMessageToken.channelID;

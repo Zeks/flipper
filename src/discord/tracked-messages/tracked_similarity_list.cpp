@@ -60,6 +60,7 @@ std::chrono::system_clock::time_point TrackedSimilarityList::GetDataExpirationPo
 
 void TrackedSimilarityList::RetireData()
 {
+    QLOG_INFO() << "Retiring similarity data of size: " << ficData.data->fics.size();
     ficData = {};
 }
 

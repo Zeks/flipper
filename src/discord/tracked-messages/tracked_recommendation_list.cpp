@@ -25,6 +25,7 @@ std::chrono::system_clock::time_point TrackedRecommendationList::GetDataExpirati
 
 void TrackedRecommendationList::RetireData()
 {
+    QLOG_INFO() << "Retiring data of size: " << ficData.data->fics.size();
     ficData = {};
 }
 
@@ -54,6 +55,26 @@ QStringList TrackedRecommendationList::GetEmojiSet()
 {
     static const QStringList emoji = {QStringLiteral("%f0%9f%91%88"), QStringLiteral("%f0%9f%91%89")};
     return emoji;
+}
+
+void TrackedRecommendationList::SetDataExpirationPoint(std::chrono::system_clock::time_point point)
+{
+    ficData.expirationPoint = point;
+}
+
+void TrackedRecommendationList::SetFicdata(QSharedPointer<core::RecommendationListFicData> data)
+{
+    ficData.data = data;
+}
+
+QSharedPointer<core::RecommendationListFicData> TrackedRecommendationList::GetFicData()
+{
+    return ficData.data;
+}
+
+bool TrackedRecommendationList::FicDataEmpty() const
+{
+    return !ficData.data;
 }
 
 

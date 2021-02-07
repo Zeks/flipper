@@ -12,7 +12,7 @@ TrackedReview::TrackedReview(std::vector<std::string> reviews, QSharedPointer<Us
 {
     retireIsFinal = true;
     this->reviews = reviews;
-    actionableEmoji = {"👈","❌","👉"};
+    actionableEmoji = {"👈","👉","❌"};
 }
 
 int TrackedReview::GetDataExpirationIntervalS()
@@ -58,7 +58,7 @@ CommandChain TrackedReview::ProcessReactionImpl(Client *client, QSharedPointer<U
 
 QStringList TrackedReview::GetEmojiSet()
 {
-    static const QStringList emoji = {QStringLiteral("%f0%9f%91%88"), QStringLiteral("%E2%9D%8C"), QStringLiteral("%f0%9f%91%89")};
+    static const QStringList emoji = {QStringLiteral("%f0%9f%91%88"), QStringLiteral("%f0%9f%91%89"),QStringLiteral("%E2%9D%8C")};
     return emoji;
 }
 

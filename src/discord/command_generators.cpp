@@ -1345,12 +1345,12 @@ CommandChain ReviewCommand::ProcessInputImpl(const SleepyDiscord::Message & mess
     }
     else{
         auto addMatch = ctre::search<TypeStringHolder<ReviewCommand>::addPattern>(message.content);
-        auto match0 = identifier = addMatch.get<0>().to_string();
-        auto match1 = identifier = addMatch.get<1>().to_string();
-        auto match2 = identifier = addMatch.get<2>().to_string();
-        auto match3 = identifier = addMatch.get<3>().to_string();
-        auto match4 = identifier = addMatch.get<4>().to_string();
-        auto match5 = identifier = addMatch.get<5>().to_string();
+//        auto match0 = identifier = addMatch.get<0>().to_string();
+//        auto match1 = identifier = addMatch.get<1>().to_string();
+//        auto match2 = identifier = addMatch.get<2>().to_string();
+//        auto match3 = identifier = addMatch.get<3>().to_string();
+//        auto match4 = identifier = addMatch.get<4>().to_string();
+//        auto match5 = identifier = addMatch.get<5>().to_string();
 //        auto match6 = identifier = addMatch.get<6>().to_string();
 //        auto match7 = identifier = addMatch.get<7>().to_string();
 //        auto match8 = identifier = addMatch.get<8>().to_string();
