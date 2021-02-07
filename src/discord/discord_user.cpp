@@ -752,10 +752,11 @@ void Users::ClearInactiveUsers()
     });
     static const int activeUserDataLimit = 100;
     static const int startOfUserDataEraseRange = 25;
-    if(userVec.size() > activeUserDataLimit)
+    if(userVec.size() > activeUserDataLimit){
         userVec.erase(userVec.begin()+startOfUserDataEraseRange, userVec.end());
-    users.clear();
-    for(const auto& user: userVec)
-        users[user->UserID()] = user;
+        users.clear();
+        for(const auto& user: userVec)
+            users[user->UserID()] = user;
+    }
 }
 }
