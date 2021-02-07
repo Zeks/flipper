@@ -98,7 +98,8 @@ bool CommandCreator::CheckAdminRole(const SleepyDiscord::Message &message)
 {
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
     const auto& member = client->getMember(this->server->GetServerId(), message.author.ID).cast();
-    bool isAdmin = sleepyServer.ownerID == message.author.ID || (message.author.ID.string() == "102212539609280512");
+    bool botOwner = message.author.ID.string() == "102212539609280512";
+    bool isAdmin = botOwner || sleepyServer.ownerID == message.author.ID ;
     auto roles = member.roles;
     for(auto& roleId : roles){
         auto role = sleepyServer.findRole(roleId);

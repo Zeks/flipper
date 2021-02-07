@@ -188,7 +188,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(server->GetExplanationAllowed()){
             auto result = FetchFFNUrls(message.content);
             std::string command = std::string(commandPrefix) + "show";
-            if(result.size() > 0 && message.content.find("review add") == std::string::npos)
+            if(result.size() > 0 && message.content.find(std::string(commandPrefix) + "review") == std::string::npos)
             {
                 explaining = true;
                 for(auto bit: result)
