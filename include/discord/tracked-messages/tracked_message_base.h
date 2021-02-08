@@ -14,6 +14,7 @@ class TrackedMessageBase : public std::enable_shared_from_this<TrackedMessageBas
         noub_error = 0,
         noub_clone = 1,
         noub_legal = 2,
+        noub_admin_allowed = 3,
     };
     TrackedMessageBase(QSharedPointer<User> user){originalUser = user;};
     virtual ~TrackedMessageBase(){};

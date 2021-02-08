@@ -36,27 +36,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QSettings>
 namespace discord{
 
-bool CheckAdminRole(Client* client, QSharedPointer<Server> server, const SleepyDiscord::Snowflake<SleepyDiscord::User>& authorID)
-{
-    SleepyDiscord::Server sleepyServer = client->getServer(server->GetServerId());
-    const auto& member = client->getMember(server->GetServerId(), authorID).cast();
-    bool isAdmin = sleepyServer.ownerID == authorID || (authorID.string() == "102212539609280512");
-
-    auto roles = member.roles;
-    for(auto& roleId : roles){
-        auto role = sleepyServer.findRole(roleId);
-        auto permissions = role->permissions;
-        if(SleepyDiscord::hasPremission(permissions, SleepyDiscord::ADMINISTRATOR))
-        {
-            isAdmin = true;
-            break;
-        }
-    }
-    return isAdmin;
-}
-
-
-
 std::atomic<uint64_t> CommandCreator::ownerId;
 QSharedPointer<User> CommandCreator::user;
 

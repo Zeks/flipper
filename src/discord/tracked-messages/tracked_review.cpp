@@ -10,6 +10,7 @@ namespace discord{
 
 TrackedReview::TrackedReview(std::vector<std::string> reviews, QSharedPointer<User> user):TrackedMessageBase(user)
 {
+    otherUserBehaviour = TrackedMessageBase::noub_legal;
     retireIsFinal = true;
     this->reviews = reviews;
     actionableEmoji = {"👈","👉","❌"};
@@ -45,11 +46,21 @@ CommandChain TrackedReview::ProcessReactionImpl(Client *client, QSharedPointer<U
     auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
 
     if(emoji.name *in("👈","👉")){
+        if(!IsOriginaluser(user->UserID())){
+            client->sendMessageWrapper(token.channelID, token.serverID, CreateMention(user->UserID().toStdString()) + ", only the user that requested a review list can scroll it.");
+            return commands;
+        }
         bool scrollDirection = emoji.name == "👉" ? true : false;
         commands = CreateChangeReviewPageCommand(user,server, token, scrollDirection);
         commands += CreateRemoveReactionCommand(user,server, token, emoji.name == "👉" ? "%f0%9f%91%89" : "%f0%9f%91%88");
     }
     else{
+        auto isAdmin = CheckAdminRole(client, server, user->UserID().toStdString());
+        if(!IsOriginaluser(user->UserID()) && !isAdmin){
+            client->sendMessageWrapper(token.channelID, token.serverID, CreateMention(user->UserID().toStdString()) + ", only the original review author or an admin can delete reviews");
+            return commands;
+        }
+
         commands = CreateRemoveEntityConfirmationCommand(user,server, token, "review", QString::fromStdString(reviews[currentPosition]));
     }
 

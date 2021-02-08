@@ -93,6 +93,7 @@ public:
 protected:
     virtual void timerEvent(QTimerEvent *) override;
 };
+bool CheckAdminRole(Client* client, QSharedPointer<Server> server, const SleepyDiscord::Snowflake<SleepyDiscord::User>& authorID);
 
 }
 

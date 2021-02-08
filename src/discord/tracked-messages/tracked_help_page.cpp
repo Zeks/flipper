@@ -39,7 +39,7 @@ QStringList TrackedHelpPage::GetEmojiSet()
 
 std::string TrackedHelpPage::GetOtherUserErrorMessage(Client* client)
 {
-    return fmt::format("You need to spawn your own help page with {0}help", client->GetServerInstanceForChannel(token.channelID,token.serverID)->GetCommandPrefix());
+    return fmt::format(" You need to spawn your own help page with {0}help", client->GetServerInstanceForChannel(token.channelID,token.serverID)->GetCommandPrefix());
 }
 
 CommandChain TrackedHelpPage::CloneForOtherUser()

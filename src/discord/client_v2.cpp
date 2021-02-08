@@ -43,11 +43,36 @@ rapidjson_exception() : std::runtime_error("json schema invalid") {}
 #define RAPIDJSON_ASSERT(x)  if(x); else throw rapidjson_exception();
 
 namespace discord {
+
+
+
 std::atomic<bool> Client::allowMessages = true;
 
 std::atomic<int64_t> Client::mirrorTargetChannel = 0;
 std::atomic<int64_t> Client::mirrorSourceChannel = 0;
 std::atomic<int64_t> Client::botPmChannel = 0;
+
+bool CheckAdminRole(Client* client, QSharedPointer<Server> server, const SleepyDiscord::Snowflake<SleepyDiscord::User>& authorID)
+{
+    SleepyDiscord::Server sleepyServer = client->getServer(server->GetServerId());
+    const auto& member = client->getMember(server->GetServerId(), authorID).cast();
+    bool isAdmin = sleepyServer.ownerID == authorID || (authorID.string() == "102212539609280512");
+
+    auto roles = member.roles;
+    for(auto& roleId : roles){
+        auto role = sleepyServer.findRole(roleId);
+        auto permissions = role->permissions;
+        if(SleepyDiscord::hasPremission(permissions, SleepyDiscord::ADMINISTRATOR))
+        {
+            isAdmin = true;
+            break;
+        }
+    }
+    return isAdmin;
+}
+
+
+
 
 Client::Client(const std::string token, const char numOfThreads, QObject *obj):QObject(obj),
     SleepyDiscord::DiscordClient(token, numOfThreads)

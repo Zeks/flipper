@@ -15,8 +15,15 @@ discord::CommandChain discord::TrackedMessageBase::ProcessReaction(discord::Clie
         return {};
 
     if(!IsOriginaluser(user->UserID())){
-        if(otherUserBehaviour == noub_error){
-            client->sendMessageWrapper(token.channelID, token.serverID, CreateMention(token.authorID.string()) + GetOtherUserErrorMessage(client));
+
+        bool isAdmin = false;
+        if(otherUserBehaviour == noub_admin_allowed){
+            An<Servers> servers;
+            auto server = servers->GetServer(token.serverID);
+            isAdmin = CheckAdminRole(client, server, user->UserID().toStdString());
+        }
+        if(otherUserBehaviour == noub_error || (otherUserBehaviour == noub_admin_allowed && !isAdmin)){
+            client->sendMessageWrapper(token.channelID, token.serverID, CreateMention(user->UserID().toStdString()) + GetOtherUserErrorMessage(client));
             return {};
         }else if(otherUserBehaviour == noub_error){
             return CloneForOtherUser();

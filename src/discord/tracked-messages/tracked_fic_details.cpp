@@ -25,6 +25,15 @@ CommandChain TrackedFicDetails::ProcessReactionImpl(Client* client, QSharedPoint
         commands += CreateRemoveReactionCommand(user,server, token, GetEmojiSet().at(0).toStdString());
     }
     else{
+        An<Servers> servers;
+        auto server = servers->GetServer(token.serverID);
+        auto isAdmin = CheckAdminRole(client, server, user->UserID().toStdString());
+
+        if(!IsOriginaluser(user->UserID()) && !isAdmin){
+            client->sendMessageWrapper(token.channelID, token.serverID, CreateMention(user->UserID().toStdString()) + ", only the original user or an admin can use that");
+            return commands;
+        }
+
         commands = CreateRemoveBotMessageCommand(client, user,server, token);
         if(commands.commands.front().type == ct_null_command)
             commands += CreateRemoveReactionCommand(user,server, token, GetEmojiSet().at(1).toStdString());

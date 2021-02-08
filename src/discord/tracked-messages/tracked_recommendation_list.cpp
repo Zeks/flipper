@@ -2,6 +2,16 @@
 #include "discord/client_v2.h"
 #include "discord/discord_server.h"
 #include "discord/discord_user.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy"
+#include "sleepy_discord/websocketpp_websocket.h"
+#include "sleepy_discord/sleepy_discord.h"
+#include "sleepy_discord/message.h"
+#pragma GCC diagnostic pop
+
 #include "fmt/format.h"
 #include "GlobalHeaders/snippets_templates.h"
 
@@ -29,9 +39,16 @@ void TrackedRecommendationList::RetireData()
     ficData = {};
 }
 
-std::string TrackedRecommendationList::GetOtherUserErrorMessage(Client *)
+std::string TrackedRecommendationList::GetOtherUserErrorMessage(Client *client)
 {
-    return "";
+    An<Servers> servers;
+    auto server = servers->GetServer(token.serverID);
+    auto prefix = QString::fromStdString(std::string(server->GetCommandPrefix()));
+    QString str = QString(" Navigation emoji are only working for the person that the bot responded to. Perhaps you need to do one of the following:"
+                      "\n- create your own recommendations with `%1recs YOUR_FFN_ID`"
+                      "\n- repost your recommendations with `%1page`"
+                      "\n- call your own help page with `%1help`");
+    return str.arg(prefix).toStdString();
 }
 
 CommandChain TrackedRecommendationList::CloneForOtherUser()

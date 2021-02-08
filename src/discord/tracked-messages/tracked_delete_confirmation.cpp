@@ -9,7 +9,7 @@ namespace discord{
 
 TrackedDeleteConfirmation::TrackedDeleteConfirmation(QString type, QString identifier, QSharedPointer<User> user):TrackedMessageBase(user)
 {
-    otherUserBehaviour = TrackedMessageBase::noub_legal;
+    otherUserBehaviour = TrackedMessageBase::noub_error;
     actionableEmoji = {"✅"};
     entityType = type;
     entityId = identifier;
@@ -20,6 +20,7 @@ TrackedDeleteConfirmation::TrackedDeleteConfirmation(QString type, QString ident
 CommandChain TrackedDeleteConfirmation::ProcessReactionImpl(Client* client, QSharedPointer<User> user, SleepyDiscord::Emoji)
 {
     CommandChain commands;
+
     auto token = this->token;
     token.authorID = user->UserID().toStdString();
     auto server = client->GetServerInstanceForChannel(token.channelID,token.serverID);
@@ -42,7 +43,7 @@ QStringList TrackedDeleteConfirmation::GetEmojiSet()
 
 std::string TrackedDeleteConfirmation::GetOtherUserErrorMessage(Client*)
 {
-    return "Only the intended user can use this command";
+    return " Only the intended user can use this command";
 }
 
 CommandChain TrackedDeleteConfirmation::CloneForOtherUser()

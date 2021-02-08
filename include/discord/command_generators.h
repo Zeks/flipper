@@ -346,6 +346,5 @@ CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<S
 CommandChain CreateRemoveReactionCommand(QSharedPointer<User> , QSharedPointer<Server> server, const MessageIdToken &message, const std::string &reaction);
 Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::Message& message, ECommandType type);
 Command NewCommand(QSharedPointer<discord::Server> server, const MessageIdToken& message, ECommandType type);
-bool CheckAdminRole(Client* client, QSharedPointer<Server> server, const SleepyDiscord::Snowflake<SleepyDiscord::User> &authorID);
 }
 
