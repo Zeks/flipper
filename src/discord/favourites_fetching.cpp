@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QFile>
 namespace discord {
 
-FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cacheMode, bool isId)
+FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, fetching::CacheStrategy cacheStrategy, bool isId)
 {
     FavouritesFetchResult resultingData;
     resultingData.ffnId = ffnId;
@@ -31,7 +31,7 @@ FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cac
 
     TimedAction linkGet(QStringLiteral("Link fetch"), [&](){
         parsers::ffn::UserFavouritesParser parser;
-        auto result = parser.FetchDesktopUserPage(ffnId, dbToken->db, cacheMode,isId);
+        auto result = parser.FetchDesktopUserPage(ffnId, dbToken->db, cacheStrategy,isId);
         parsers::ffn::QuickParseResult quickResult;
 
         if(!result)
@@ -64,13 +64,13 @@ FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cac
     return resultingData;
 }
 
-FavouritesFetchResult FetchMobileFavourites(QString ffnId, ECacheMode cacheMode)
+FavouritesFetchResult FetchMobileFavourites(QString ffnId, fetching::CacheStrategy cacheStrategy)
 {
     FavouritesFetchResult data;
     TimedAction linkGet(QStringLiteral("Link fetch"), [&](){
         parsers::ffn::discord::DiscordMobileFavouritesFetcher parser;
         parser.userId = ffnId;
-        auto result = parser.Execute(cacheMode);
+        auto result = parser.Execute(cacheStrategy);
         if(result.size() == 0)
             data.errors.push_back(QStringLiteral("Could not load favourites from provided user profile."));
         data.links += result;

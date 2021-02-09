@@ -14,7 +14,7 @@ DiscordMobileFavouritesFetcher::DiscordMobileFavouritesFetcher(QObject *parent):
 
 
 
-QSet<int> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECacheMode::dont_use_cache)
+QSet<int> DiscordMobileFavouritesFetcher::Execute(fetching::CacheStrategy cacheStrategy)
 {
     // first we need to create an m. link
     QString url = QString("https://m.fanfiction.net/u/%1//?a=fs").arg(userId);
@@ -26,7 +26,7 @@ QSet<int> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECacheM
     pageManager.SetDatabaseGetter(dbFetcher);
     WebPage mobilePage;
     TimedAction fetchAction("Author initial mobile page fetch", [&](){
-        mobilePage = pageManager.GetPage(prototype.trimmed(),  cacheMode);
+        mobilePage = pageManager.GetPage(prototype.trimmed(),  cacheStrategy);
 
     });
     fetchAction.run(false);
@@ -42,7 +42,7 @@ QSet<int> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECacheM
     url = "https://www.fanfiction.net/u/" + userId;
     WebPage desktopPage;
     TimedAction fetchDesktopAction("Fetching desktop page", [&](){
-        desktopPage = pageManager.GetPage(url.trimmed(),  cacheMode);
+        desktopPage = pageManager.GetPage(url.trimmed(),  cacheStrategy);
     });
     fetchDesktopAction.run(false);
 
@@ -70,7 +70,7 @@ QSet<int> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECacheM
     for(const auto& mobileUrl : mobileUrls)
     {
         TimedAction fetchAction("Author mobile page fetch", [&](){
-            mobilePage = pageManager.GetPage(mobileUrl.trimmed(),  cacheMode);
+            mobilePage = pageManager.GetPage(mobileUrl.trimmed(),  cacheStrategy);
             //page = env::RequestPage(mobileUrl.trimmed(),  cacheMode);
         });
         fetchAction.run(false);

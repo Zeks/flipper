@@ -431,7 +431,7 @@ void CoreEnvironment::UseAuthorTask(PageTaskPtr task)
     authorLoader.Run(task);
 }
 
-void CoreEnvironment::LoadMoreAuthors(QString listName, ECacheMode cacheMode)
+void CoreEnvironment::LoadMoreAuthors(QString listName, fetching::CacheStrategy cacheStrategy)
 {
     filter.mode = core::StoryFilter::filtering_in_recommendations;
     interfaces.recs->SetCurrentRecommendationList(interfaces.recs->GetListIdForName(listName));
@@ -445,13 +445,13 @@ void CoreEnvironment::LoadMoreAuthors(QString listName, ECacheMode cacheMode)
                                                        comment,
                                                        500,
                                                        3,
-                                                       cacheMode,
+                                                       cacheStrategy,
                                                        true);
 
     UseAuthorTask(pageTask);
 }
 
-void CoreEnvironment::LoadAllLinkedAuthors(ECacheMode cacheMode)
+void CoreEnvironment::LoadAllLinkedAuthors(fetching::CacheStrategy cacheStrategy)
 {
     filter.mode = core::StoryFilter::filtering_in_recommendations;
     QStringList authorUrls;
@@ -476,7 +476,7 @@ void CoreEnvironment::LoadAllLinkedAuthors(ECacheMode cacheMode)
                                                        comment,
                                                        500,
                                                        3,
-                                                       cacheMode,
+                                                       cacheStrategy,
                                                        true);
 
     UseAuthorTask(pageTask);
@@ -505,7 +505,7 @@ void CoreEnvironment::UpdateAllAuthorsWith(std::function<void(QSharedPointer<cor
     int counter = 0;
     for(const auto& author: authors)
     {
-        auto webPage = pager->GetPage(author->url("ffn"), ECacheMode::use_only_cache);
+        auto webPage = pager->GetPage(author->url("ffn"), fetching::CacheStrategy::CacheOnly());
         //qDebug() << "Page loaded in: " << webPage.LoadedIn();
         emit updateCounter(counter);
         updater(author, webPage);
@@ -947,7 +947,7 @@ core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, sql::Database db)
 {
     WebPage page;
     TimedAction fetchAction("Author page fetch", [&](){
-        page = env::RequestPage(url.trimmed(),  ECacheMode::dont_use_cache);
+        page = env::RequestPage(url.trimmed(),  fetching::CacheStrategy::NetworkOnly());
     });
     fetchAction.run(false);
     emit resetEditorText();
@@ -1019,7 +1019,7 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
 
     WebPage page;
     TimedAction fetchAction("Author initial mobile page fetch", [&](){
-        page = env::RequestPage(prototype.trimmed(),  ECacheMode::dont_use_cache);
+        page = env::RequestPage(prototype.trimmed(),  fetching::CacheStrategy::NetworkOnly());
     });
     fetchAction.run(false);
 
@@ -1057,7 +1057,7 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
     {
         WebPage page;
         TimedAction fetchAction("Author mobile page fetch", [&](){
-            page = env::RequestPage(mobileUrl.trimmed(),  ECacheMode::dont_use_cache);
+            page = env::RequestPage(mobileUrl.trimmed(),  fetching::CacheStrategy::NetworkOnly());
         });
         fetchAction.run(false);
         // need to fetch only story ids for now
@@ -1083,7 +1083,7 @@ bool CoreEnvironment::TestAuthorID(QString id)
     QString url = "https://www.fanfiction.net/u/" + id;
     WebPage page;
     TimedAction fetchAction("Author page fetch", [&](){
-        page = env::RequestPage(url.trimmed(),  ECacheMode::use_cache);
+        page = env::RequestPage(url.trimmed(),  fetching::CacheStrategy::CacheThenFetchIfNA());
     });
     fetchAction.run(false);
     if(!page.content.contains("Anime"))
@@ -1127,7 +1127,7 @@ QList<QSharedPointer<core::Fanfic> > CoreEnvironment::LoadAuthorFics(QString url
     QStringList result;
     WebPage page;
     TimedAction fetchAction("Author page fetch", [&](){
-        page = env::RequestPage(url.trimmed(),  ECacheMode::dont_use_cache);
+        page = env::RequestPage(url.trimmed(),  fetching::CacheStrategy::NetworkOnly());
     });
     fetchAction.run(false);
     emit resetEditorText();
@@ -1141,7 +1141,7 @@ QList<QSharedPointer<core::Fanfic> > CoreEnvironment::LoadAuthorFics(QString url
 }
 
 PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate,
-                                                ECacheMode cacheMode,
+                                                fetching::CacheStrategy cacheStrategy,
                                                 QString wordCutoff)
 {
     interfaces.fanfics->ClearProcessedHash();
@@ -1161,7 +1161,7 @@ PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDat
     auto result = ProcessFandomsAsTask(fandoms,
                                        "",
                                        true,
-                                       cacheMode,
+                                       cacheStrategy,
                                        wordCutoff,
                                        forcedDate);
     return result;
@@ -1344,7 +1344,7 @@ static QString CreatePrototypeWithSearchParams(QString cutoffText)
 PageTaskPtr CoreEnvironment::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms,
                                                   QString taskComment,
                                                   bool allowCacheRefresh,
-                                                  ECacheMode cacheMode,
+                                                  fetching::CacheStrategy cacheStrategy,
                                                   QString cutoffText,
                                                   ForcedFandomUpdateDate forcedDate)
 {
@@ -1359,7 +1359,7 @@ PageTaskPtr CoreEnvironment::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms
     auto result = proc.CreatePageTaskFromFandoms(fandoms,
                                                  CreatePrototypeWithSearchParams(cutoffText),
                                                  taskComment,
-                                                 cacheMode,
+                                                 cacheStrategy,
                                                  allowCacheRefresh,
                                                  forcedDate);
 
@@ -1375,7 +1375,7 @@ void CoreEnvironment::Log(QString value)
 
 
 namespace env {
-WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
+WebPage RequestPage(QString pageUrl, fetching::CacheStrategy cacheStrategy, bool autoSaveToDB)
 {
     WebPage result;
 #ifdef USE_WEBVIEW
@@ -1385,13 +1385,13 @@ WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
     An<PageManager> pager;
 #endif
     pager->SetDatabase(sql::Database::database("PageCache"));
-    result = pager->GetPage(pageUrl, cacheMode);
+    result = pager->GetPage(pageUrl, cacheStrategy);
     if(autoSaveToDB)
         pager->SavePageToDB(result);
     return result;
 }
 
-WebPage RequestPage(QString pageUrl, sql::Database db, ECacheMode cacheMode,  bool autoSaveToDB)
+WebPage RequestPage(QString pageUrl, sql::Database db, fetching::CacheStrategy cacheStrategy,  bool autoSaveToDB)
 {
     WebPage result;
 #ifdef USE_WEBVIEW
@@ -1401,7 +1401,7 @@ WebPage RequestPage(QString pageUrl, sql::Database db, ECacheMode cacheMode,  bo
     An<PageManager> pager;
 #endif
     pager->SetDatabase(db);
-    result = pager->GetPage(pageUrl, cacheMode);
+    result = pager->GetPage(pageUrl, cacheStrategy);
     if(autoSaveToDB)
         pager->SavePageToDB(result);
     return result;

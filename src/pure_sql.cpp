@@ -2997,7 +2997,12 @@ void FillPageTaskFromQuery(PageTaskPtr task, const sql::Query& q){
     task->taskComment= QString::fromStdString(q.value("task_comment").toString());
     task->size = q.value("task_size").toInt();
     task->allowedRetries = q.value("allowed_retry_count").toInt();
-    task->cacheMode = static_cast<ECacheMode>(q.value("cache_mode").toInt());
+    if(q.value("cache_mode").toInt() == 0)
+        task->cacheStrategy = fetching::CacheStrategy::NetworkOnly();
+    else if(q.value("cache_mode").toInt() == 1)
+        task->cacheStrategy = fetching::CacheStrategy::CacheThenFetchIfNA();
+    else
+        task->cacheStrategy = fetching::CacheStrategy::CacheOnly();
     task->refreshIfNeeded= q.value("refresh_if_needed").toBool();
 }
 
@@ -3140,7 +3145,12 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, sql::Database db)
     ctx.bindValue("scheduled_to", task->scheduledTo);
     ctx.bindValue("allowed_retry_count", task->allowedRetries);
     ctx.bindValue("allowed_subtask_retry_count", task->allowedSubtaskRetries);
-    ctx.bindValue("cache_mode", static_cast<int>(task->cacheMode));
+    if(task->cacheStrategy.useCache == false)
+        ctx.bindValue("cache_mode", 0);
+    else if(task->cacheStrategy.fetchIfCacheUnavailable == false)
+        ctx.bindValue("cache_mode", 2);
+    else
+        ctx.bindValue("cache_mode", 1);
     ctx.bindValue("refresh_if_needed", task->refreshIfNeeded);
     ctx.bindValue("task_comment", task->taskComment);
     ctx.bindValue("task_size", task->size);

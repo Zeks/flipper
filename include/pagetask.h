@@ -116,7 +116,7 @@ public:
 class PageTask : public BasePageTask{
 public:
     static PageTaskPtr CreateNewTask();
-    ECacheMode cacheMode = ECacheMode::use_cache; // if only data from the internet is to be used
+    fetching::CacheStrategy cacheStrategy = fetching::CacheStrategy::CacheThenFetchIfNA();
     bool refreshIfNeeded = false; // ties in with page expiration mechanism. Passed to pagegetter to let it know if the page needs to be fetched ifit has expired
 
     int parts = 0; // amount of subtasks the task is split into

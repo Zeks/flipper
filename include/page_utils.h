@@ -46,6 +46,6 @@ PageTaskPtr CreatePageTaskFromUrls(QSharedPointer<interfaces::PageTask>,
                                    QString taskComment,
                                    int subTaskSize,
                                    int subTaskRetries,
-                                   ECacheMode cacheMode,
+                                   fetching::CacheStrategy cacheStrategy,
                                    bool allowCacheRefresh);
 }

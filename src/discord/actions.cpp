@@ -305,10 +305,10 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
 
 
     auto ffnId = QString::number(command.ids.at(0));
-    bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
+    bool isRefreshing = command.variantHash.contains(QStringLiteral("refresh"));
     auto largeListToken =  command.user->GetLargeListToken();
     An<interfaces::Users> usersDbInterface;
-    if(!refreshing){
+    if(!isRefreshing){
         qDebug() << "asking user = " + command.user->UserID();
         if(largeListToken.date == QDate::currentDate() && largeListToken.counter == 1 && command.user->UserID() != "102212539609280512")
         {
@@ -329,7 +329,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
         usersDbInterface->WriteLargeListReparseToken(command.user->UserID(), largeListToken);
     }
     An<FfnPages> pages;
-    if(!refreshing)
+    if(!isRefreshing)
     {
         pages->LoadPage(ffnId.toStdString());
         auto page = pages->GetPage(ffnId.toStdString());
@@ -346,7 +346,8 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
 
-    FavouritesFetchResult userFavourites = FetchMobileFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache);
+    fetching::CacheStrategy cacheStrategy = isRefreshing ? fetching::CacheStrategy::CacheThenFetchIfNA() : fetching::CacheStrategy::NetworkOnly();
+    FavouritesFetchResult userFavourites = FetchMobileFavourites(ffnId, cacheStrategy);
     // here, we check that we were able to fetch favourites at all
     if(!userFavourites.hasFavourites || userFavourites.errors.size() > 0)
     {
@@ -357,11 +358,11 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     // here, we check that we were able to fetch all favourites with desktop link and reschedule the task otherwise
     if(userFavourites.requiresFullParse)
     {
-        if(!refreshing)
+        if(!isRefreshing)
             action->text = QStringLiteral("Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.\nNote that if size of your favourites is significanly bigger than 500 you will have to wait for a couple minutes.");
         return action;
     }
-    if(!refreshing)
+    if(!isRefreshing)
         pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
     auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command.user->GetRecommendationsCutoff(), command);
@@ -383,7 +384,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
         return action;
     }
 
-    if(!refreshing)
+    if(!isRefreshing)
         action->text = QStringLiteral("Recommendation list has been created for FFN ID: ") + QString::number(command.ids.at(0));
     environment->ficSource->ClearUserData();
     command.user->SetRngBustScheduled(true);
@@ -402,7 +403,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
 
     QString ffnId;
     bool isId = false;
-    bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
+    bool isRefreshing = command.variantHash.contains(QStringLiteral("refresh"));
     bool keepPage = command.variantHash.contains(QStringLiteral("keep_page"));
 
     if(command.variantHash.contains(QStringLiteral("url"))){
@@ -434,7 +435,8 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
 
-    FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing && knowsPage ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
+    fetching::CacheStrategy cacheStrategy = isRefreshing && knowsPage ? fetching::CacheStrategy::CacheThenFetchIfNA() : fetching::CacheStrategy::NetworkOnly();
+    FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId,cacheStrategy,isId);
     bool fetchedValidFFNId = !userFavourites.ffnId.isEmpty();
 
     if(ffnId != command.user->FfnID())
@@ -460,7 +462,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     if(userFavourites.requiresFullParse)
     {
         action->stopChain = true;
-        if(!refreshing)
+        if(!isRefreshing)
             action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.");
         Command newRecsCommand = NewCommand(command.server, command.originalMessageToken, ct_create_recs_from_mobile_page);
         newRecsCommand.variantHash = command.variantHash;
@@ -482,7 +484,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         return action;
     }
 
-    if(!refreshing)
+    if(!isRefreshing)
         pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
     auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command.user->GetRecommendationsCutoff(), command);
@@ -505,7 +507,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         return action;
     }
 
-    if(!refreshing)
+    if(!isRefreshing)
         action->text = QStringLiteral("Recommendation list has been created for FFN ID: ") + QString::number(command.ids.at(0));
     command.user->SetRngBustScheduled(true);
     environment->ficSource->ClearUserData();

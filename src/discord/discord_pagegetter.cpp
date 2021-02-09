@@ -51,7 +51,7 @@ public:
     WebPage result;
     int timeout = 500;
     QNetworkReply::NetworkError error = QNetworkReply::NoError;
-    WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::use_cache);
+    WebPage GetPage(QString url, fetching::CacheStrategy cacheStrategy);
     WebPage GetPageFromDB(QString url);
     WebPage GetPageFromNetwork(QString url);
     void SavePageToDB(const WebPage&);
@@ -63,7 +63,7 @@ PageGetterPrivate::PageGetterPrivate()
 {
 }
 
-WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
+WebPage PageGetterPrivate::GetPage(QString url, fetching::CacheStrategy cacheStrategy)
 {
     WebPage result;
 
@@ -73,7 +73,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
         if(result.isValid)
             SavePageToDB(result);
     };
-    if(useCache != ECacheMode::dont_use_cache)
+    if(cacheStrategy.useCache)
     {
         result = GetPageFromDB(url);
         QLOG_INFO() << "Version from cache was generated: " << result.generated;
@@ -243,9 +243,9 @@ void PageManager::SetDatabaseGetter(DBGetterFunc _db)
 }
 
 
-WebPage PageManager::GetPage(QString url, ECacheMode useCache)
+WebPage PageManager::GetPage(QString url, fetching::CacheStrategy cacheStrategy)
 {
-    return d->GetPage(url, useCache);
+    return d->GetPage(url, cacheStrategy);
 }
 
 void PageManager::SavePageToDB(const WebPage & page)

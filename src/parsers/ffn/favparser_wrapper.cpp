@@ -25,7 +25,7 @@ bool UserFavouritesParser::FetchDesktopUserPage(QString userId)
     WebPage page;
     QString pageUrl = QString("https://www.fanfiction.net/u/%1").arg(userId);
     TimedAction fetchAction("Author page fetch", [&](){
-        page = env::RequestPage(pageUrl,  ECacheMode::dont_use_cache);
+        page = env::RequestPage(pageUrl,  fetching::CacheStrategy::NetworkOnly());
     });
     fetchAction.run(false);
     dektopPage = page;
@@ -34,7 +34,7 @@ bool UserFavouritesParser::FetchDesktopUserPage(QString userId)
     return false;
 }
 
-bool UserFavouritesParser::FetchDesktopUserPage(QString userId, sql::Database db, ECacheMode cacheMode, bool isId)
+bool UserFavouritesParser::FetchDesktopUserPage(QString userId, sql::Database db, fetching::CacheStrategy cacheStrategy, bool isId)
 {
     this->userId = userId;
     QStringList result;
@@ -45,7 +45,7 @@ bool UserFavouritesParser::FetchDesktopUserPage(QString userId, sql::Database db
     else
         pageUrl = userId.trimmed();
     TimedAction fetchAction("Author page fetch", [&](){
-        page = env::RequestPage(pageUrl, db, cacheMode);
+        page = env::RequestPage(pageUrl, db, cacheStrategy);
     });
     fetchAction.run(false);
     dektopPage = page;
@@ -98,7 +98,7 @@ void UserFavouritesParser::FetchFavouritesFromMobilePage(int startBoundary)
 
     connection = connect(&parser, &MobileFavouritesFetcher::progress, this, &UserFavouritesParser::progress);
     if(cacheDbToUse.isOpen())
-        result+=parser.Execute(cacheDbToUse, cacheMode);
+        result+=parser.Execute(cacheDbToUse, cacheStrategy);
     else
         result+=parser.Execute();
 }

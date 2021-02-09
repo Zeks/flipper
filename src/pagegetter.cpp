@@ -58,7 +58,7 @@ public:
     WebPage result;
     bool cachedMode = false;
     QNetworkReply::NetworkError error = QNetworkReply::NoError;
-    WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::use_cache);
+    WebPage GetPage(QString url, fetching::CacheStrategy cacheStrategy);
     WebPage GetPageFromDB(QString url);
     WebPage GetPageFromNetwork(QString url);
     void SavePageToDB(const WebPage&);
@@ -79,7 +79,7 @@ PageGetterPrivate::PageGetterPrivate(QObject *parent): QObject(parent)
 //            this, SLOT (OnNetworkReply(QNetworkReply*)));
 }
 
-WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
+WebPage PageGetterPrivate::GetPage(QString url, fetching::CacheStrategy cacheStrategy)
 {
     WebPage result;
     // first, we get the page from cache anyway
@@ -92,31 +92,27 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
             SavePageToDB(result);
         result.isFromCache = false;
     };
-    if(temp.isValid)
+    if(temp.isValid){
         QLOG_INFO() << "Version from cache was generated: " << temp.generated;
-    bool freshlyFetchedAlready = autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1);
-    if(useCache != ECacheMode::dont_use_cache && freshlyFetchedAlready)
-    {
-        result = temp;
-        qDebug() << "pickign cache version";
-        result.isFromCache = true;
-        return result;
-    }
-    else if(useCache == ECacheMode::use_cache || useCache == ECacheMode::use_only_cache)
-    {
-        result = GetPageFromDB(url);
-        if(useCache == ECacheMode::use_only_cache && !result.isValid)
-            return result;
-
-        bool pageIsOldEnoughToregen = result.generated <= QDateTime::currentDateTime().addDays(-7);
-        if(!result.isValid || pageIsOldEnoughToregen)
-            pickNetworkVersion();
-        else
+        if(cacheStrategy.CacheIsExpired(temp.generated.date())){
+            if(cacheStrategy.abortIfCacheUnavailable)
+                return {};
+            else{
+                qDebug() << "cache has expired - regenerating";
+                pickNetworkVersion();
+            }
+        }else{
+            qDebug() << "pickign valid cache version to return";
+            result = temp;
             result.isFromCache = true;
+        }
     }
-    else
+    else{
+        qDebug() << "valid cache not found";
+        if(cacheStrategy.abortIfCacheUnavailable)
+            return {};
         pickNetworkVersion();
-
+    }
     return result;
 }
 
@@ -309,9 +305,9 @@ bool PageManager::GetCachedMode() const
     return d->cachedMode;
 }
 
-WebPage PageManager::GetPage(QString url, ECacheMode useCache)
+WebPage PageManager::GetPage(QString url, fetching::CacheStrategy cacheStrategy)
 {
-    return d->GetPage(url, useCache);
+    return d->GetPage(url, cacheStrategy);
 }
 
 void PageManager::SavePageToDB(const WebPage & page)
@@ -360,7 +356,7 @@ void PageThreadWorker::timerEvent(QTimerEvent *)
 void PageThreadWorker::Task(QString url,
                             QString lastUrl,
                             QDate updateLimit,
-                            ECacheMode cacheMode,
+                            fetching::CacheStrategy cacheStrategy,
                             bool ignoreUpdateDate,
                             int delay)
 {
@@ -380,7 +376,7 @@ void PageThreadWorker::Task(QString url,
         url = nextUrl;
         qDebug() << "loading page: " << url;
         auto startPageLoad = std::chrono::high_resolution_clock::now();
-        result = pager->GetPage(url, cacheMode);
+        result = pager->GetPage(url, cacheStrategy);
         result.pageIndex = counter+1;
         auto minUpdate = GrabMinUpdate(result.content);
 
@@ -414,7 +410,7 @@ void PageThreadWorker::Task(QString url,
 
 void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
                                                 QDate stopAt,
-                                                ECacheMode cacheMode,
+                                                fetching::CacheStrategy cacheStrategy,
                                                 QStringList& failedPages,
                                                 int delay)
 {
@@ -427,7 +423,7 @@ void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
     {
         qDebug() << QStringLiteral("loading page: ") << url;
         auto startPageLoad = std::chrono::high_resolution_clock::now();
-        result = pager->GetPage(url, cacheMode);
+        result = pager->GetPage(url, cacheStrategy);
         result.pageIndex = counter+1;
         auto minUpdate = GrabMinUpdate(result.content);
 
@@ -468,10 +464,10 @@ void PageThreadWorker::FandomTask(const FandomParseTask& task)
     pager->WipeOldCache();
     WebPage result;
     QStringList failedPages;
-    ProcessBunchOfFandomUrls(task.parts,task.stopAt, task.cacheMode, failedPages, task.delay);
+    ProcessBunchOfFandomUrls(task.parts,task.stopAt, task.cacheStrategy, failedPages, task.delay);
     QStringList voidPages;
     qDebug() << QStringLiteral("reacquiring urls: ") << failedPages;
-    ProcessBunchOfFandomUrls(failedPages,task.stopAt, task.cacheMode, voidPages, task.delay);
+    ProcessBunchOfFandomUrls(failedPages,task.stopAt, task.cacheStrategy, voidPages, task.delay);
     for(const auto& page : std::as_const(voidPages))
     {
         WebPage failedPage;
@@ -485,7 +481,7 @@ void PageThreadWorker::FandomTask(const FandomParseTask& task)
     qDebug() << "leaving fandom task";
 }
 
-void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode,  int delay)
+void PageThreadWorker::TaskList(QStringList urls, fetching::CacheStrategy cacheStrategy,  int delay)
 {
     FuncCleanup f([&](){working = false;});
     // kinda have to split pagecache db from service db I guess
@@ -502,7 +498,7 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode,  int del
     for(int i=0; i< urls.size();  i++)
     {
         auto startPageLoad = std::chrono::high_resolution_clock::now();
-        result = pager->GetPage(urls[i], cacheMode);
+        result = pager->GetPage(urls[i], cacheStrategy);
         if(!result.isValid)
             continue;
         if(!result.isFromCache)

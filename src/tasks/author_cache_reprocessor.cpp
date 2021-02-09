@@ -89,7 +89,7 @@ void AuthorCacheReprocessor::ReprocessAllAuthorsStats()
             if(!author)
                 continue;
 
-            auto page = env::RequestPage("https://www.fanfiction.net/u/" + QString::number(author), ECacheMode::use_only_cache);
+            auto page = env::RequestPage("https://www.fanfiction.net/u/" + QString::number(author), fetching::CacheStrategy::CacheOnly());
             if(!page.isValid)
             {
                 //qDebug() << page.url << " is invalid";

@@ -25,11 +25,11 @@ struct FandomParseTask{
     FandomParseTask() = default;
     FandomParseTask(const QStringList& parts,
                     QDate stopAt,
-                    ECacheMode cacheMode,
+                    fetching::CacheStrategy cacheStrategy,
                     int delay,
                     int pageRetries = 3){
         this->stopAt = stopAt;
-        this->cacheMode = cacheMode;
+        this->cacheStrategy = cacheStrategy;
         this->pageRetries = pageRetries;
         this->delay = delay;
         this->parts = parts;
@@ -39,7 +39,7 @@ struct FandomParseTask{
     int pageRetries = 3;
     int delay = 500;
     QDate stopAt;
-    ECacheMode cacheMode = ECacheMode::dont_use_cache;
+    fetching::CacheStrategy cacheStrategy;
 
 };
 
@@ -88,7 +88,7 @@ public:
     PageTaskPtr CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms,
                                           QString prototype,
                                                       QString taskComment,
-                                                      ECacheMode cacheMode,
+                                                      fetching::CacheStrategy cacheStrategy,
                                                       bool allowCacheRefresh,
                                                       ForcedFandomUpdateDate forcedDate = ForcedFandomUpdateDate());
 

@@ -19,7 +19,7 @@ QSet<QString> MobileFavouritesFetcher::Execute()
 
     WebPage page;
     TimedAction fetchAction("Author initial mobile page fetch", [&](){
-        page = env::RequestPage(prototype.trimmed(),  ECacheMode::dont_use_cache);
+        page = env::RequestPage(prototype.trimmed(),  fetching::CacheStrategy::NetworkOnly());
     });
     fetchAction.run(false);
 
@@ -49,7 +49,7 @@ QSet<QString> MobileFavouritesFetcher::Execute()
     {
         WebPage page;
         TimedAction fetchAction("Author mobile page fetch", [&](){
-            page = env::RequestPage(mobileUrl.trimmed(),  ECacheMode::dont_use_cache);
+            page = env::RequestPage(mobileUrl.trimmed(),  fetching::CacheStrategy::NetworkOnly());
         });
         fetchAction.run(false);
         // need to fetch only story ids for now
@@ -70,7 +70,7 @@ QSet<QString> MobileFavouritesFetcher::Execute()
     return urlResult;
 }
 
-QSet<QString> MobileFavouritesFetcher::Execute(sql::Database db, ECacheMode cacheMode)
+QSet<QString> MobileFavouritesFetcher::Execute(sql::Database db, fetching::CacheStrategy cacheStrategy)
 {
     // first we need to create an m. link
     QString url = QString("https://m.fanfiction.net/u/%1//?a=fs").arg(userId);
@@ -79,7 +79,7 @@ QSet<QString> MobileFavouritesFetcher::Execute(sql::Database db, ECacheMode cach
 
     WebPage page;
     TimedAction fetchAction("Author initial mobile page fetch", [&](){
-        page = env::RequestPage(prototype.trimmed(), db, cacheMode);
+        page = env::RequestPage(prototype.trimmed(), db, cacheStrategy);
     });
     fetchAction.run(false);
 
@@ -109,7 +109,7 @@ QSet<QString> MobileFavouritesFetcher::Execute(sql::Database db, ECacheMode cach
     {
         WebPage page;
         TimedAction fetchAction("Author mobile page fetch", [&](){
-            page = env::RequestPage(mobileUrl.trimmed(),  db, cacheMode);
+            page = env::RequestPage(mobileUrl.trimmed(),  db, cacheStrategy);
         });
         fetchAction.run(false);
         // need to fetch only story ids for now

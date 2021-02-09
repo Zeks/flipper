@@ -11,7 +11,7 @@ class MobileFavouritesFetcher : public QObject{
 public:
     MobileFavouritesFetcher(QObject* parent = nullptr);
     QSet<QString> Execute();
-    QSet<QString> Execute(sql::Database, ECacheMode cacheMode = ECacheMode::dont_use_cache);
+    QSet<QString> Execute(sql::Database, fetching::CacheStrategy cacheStrategy);
     QString userId;
     int pageToStartFrom = 0;
     int timeout = 500;

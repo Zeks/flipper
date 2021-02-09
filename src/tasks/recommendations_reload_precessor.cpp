@@ -62,7 +62,7 @@ RecommendationsProcessor::~RecommendationsProcessor()
 }
 
 
-void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
+void RecommendationsProcessor::ReloadRecommendationsList(fetching::CacheStrategy cacheStrategy)
 {
     //database::Transaction transaction(db);
     sql::Transaction transaction(db);
@@ -105,7 +105,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
 //        if(author->id == 6)
 //            std::chrono::high_resolution_clock::now();
         auto startPageRequest = std::chrono::high_resolution_clock::now();
-        auto page = env::RequestPage(author->url("ffn"), cacheMode);
+        auto page = env::RequestPage(author->url("ffn"), cacheStrategy);
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
         qDebug() <<  "Loading author: " << author->GetWebID("ffn");
         //qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();

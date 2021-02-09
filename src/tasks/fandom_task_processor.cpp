@@ -159,7 +159,7 @@ void FandomLoadProcessor::Run(PageTaskPtr task)
         auto urlList= subtask->content->ToDB().split("\n",Qt::SkipEmptyParts);
 
         FandomParseTask fpt;
-        fpt.cacheMode = task->cacheMode;
+        fpt.cacheStrategy = task->cacheStrategy;
         fpt.pageRetries = subtask->allowedRetries;
         fpt.parts = urlList;
         fpt.stopAt = subtask->updateLimit.date();
@@ -221,7 +221,7 @@ static QString FixCrossoverUrl(QString url){
 PageTaskPtr FandomLoadProcessor::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms,
                                                            QString prototype,
                                                            QString taskComment,
-                                                           ECacheMode cacheMode,
+                                                           fetching::CacheStrategy cacheStrategy,
                                                            bool allowCacheRefresh,
                                                            ForcedFandomUpdateDate forcedDate)
 {
@@ -232,7 +232,7 @@ PageTaskPtr FandomLoadProcessor::CreatePageTaskFromFandoms(QList<core::FandomPtr
     auto task = PageTask::CreateNewTask();
     task->allowedRetries = 3;
     task->allowedSubtaskRetries = 3;
-    task->cacheMode = cacheMode;
+    task->cacheStrategy = cacheStrategy;
     task->parts = 0;
     for(const auto& fandom : fandoms)
         task->parts += fandom->GetUrls().size();
@@ -246,7 +246,7 @@ PageTaskPtr FandomLoadProcessor::CreatePageTaskFromFandoms(QList<core::FandomPtr
     pageInterface->WriteTaskIntoDB(task);
     int counter = 0;
     An<PageManager> pager;
-    pager->GetPage("", cacheMode);
+    pager->GetPage("", cacheStrategy);
     for(const auto& fandom : fandoms)
     {
         auto lastUpdated = fandom->lastUpdateDate;
@@ -263,7 +263,7 @@ PageTaskPtr FandomLoadProcessor::CreatePageTaskFromFandoms(QList<core::FandomPtr
             emit updateInfo("Scheduling section:" + url.GetUrl() + "<br>");
 
             auto urlString = prototype.arg(FixCrossoverUrl(url.GetUrl()));
-            WebPage currentPage = pager->GetPage(urlString, cacheMode);
+            WebPage currentPage = pager->GetPage(urlString, cacheStrategy);
             FandomParser parser;
             QString lastUrl = parser.GetLast(currentPage.content, urlString);
 

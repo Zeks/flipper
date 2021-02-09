@@ -79,7 +79,7 @@ PageTaskPtr CreatePageTaskFromUrls(QSharedPointer<interfaces::PageTask>pageTask,
                                    QString taskComment,
                                    int subTaskSize,
                                    int subTaskRetries,
-                                   ECacheMode cacheMode,
+                                   fetching::CacheStrategy cacheStrategy,
                                    bool allowCacheRefresh)
 {
     database::Transaction transaction(pageTask->db);
@@ -88,7 +88,7 @@ PageTaskPtr CreatePageTaskFromUrls(QSharedPointer<interfaces::PageTask>pageTask,
     qDebug() << "Task timestamp" << timestamp;
     auto task = PageTask::CreateNewTask();
     task->allowedSubtaskRetries = subTaskRetries;
-    task->cacheMode = cacheMode;
+    task->cacheStrategy = cacheStrategy;
     task->parts = urls.size() / subTaskSize;
     task->refreshIfNeeded = allowCacheRefresh;
     task->taskComment = taskComment;

@@ -168,8 +168,8 @@ public:
     void LoadHistoryFrame(FilterFrame);
     int GetResultCount();
 
-    void LoadMoreAuthors(QString listname, ECacheMode cacheMode);
-    void LoadAllLinkedAuthors(ECacheMode cacheMode);
+    void LoadMoreAuthors(QString listname, fetching::CacheStrategy cacheStrategy);
+    void LoadAllLinkedAuthors(fetching::CacheStrategy cacheStrategy);
     void LoadAllLinkedAuthorsMultiFromCache();
 
 
@@ -178,7 +178,7 @@ public:
     PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandoms,
                                      QString taskComment,
                                      bool allowCacheRefresh,
-                                     ECacheMode cacheMode,
+                                     fetching::CacheStrategy cacheStrategy,
                                      QString cutoffText,
                                      ForcedFandomUpdateDate forcedDate = ForcedFandomUpdateDate());
 
@@ -218,7 +218,7 @@ public:
 
     QList<QSharedPointer<core::Fanfic>>  LoadAuthorFics(QString url);
 
-    PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, ECacheMode cacheMode, QString wordCutoff);
+    PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, fetching::CacheStrategy cacheStrategy, QString wordCutoff);
     void FillDBIDsForTags();
     QList<int> GetDBIDsForFics(QVector<int>);
     QSet<int> GetAuthorsContainingFicFromRecList(int fic, QString recList);
@@ -260,7 +260,7 @@ signals:
     void updateInfo(QString);
 };
 namespace env {
-    WebPage RequestPage(QString pageUrl, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
-    WebPage RequestPage(QString pageUrl, sql::Database, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
+    WebPage RequestPage(QString pageUrl, fetching::CacheStrategy cacheStrategy, bool autoSaveToDB = false);
+    WebPage RequestPage(QString pageUrl, sql::Database, fetching::CacheStrategy cacheStrategy, bool autoSaveToDB = false);
 }
 

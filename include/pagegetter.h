@@ -47,7 +47,7 @@ class PageManager
     void SetDatabase(sql::Database _db);
     void SetCachedMode(bool value);
     bool GetCachedMode() const;
-    WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::dont_use_cache);
+    WebPage GetPage(QString url, fetching::CacheStrategy cacheStrategy);
     void SavePageToDB(const WebPage & page);
     void SetAutomaticCacheLimit(QDate);
     void SetAutomaticCacheForCurrentDate(bool);
@@ -73,14 +73,14 @@ public:
     QDate automaticCache;
     bool automaticCacheForCurrentDate = true;
 public slots:
-    void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate, int delay);
+    void Task(QString url, QString lastUrl, QDate updateLimit, fetching::CacheStrategy cacheStrategy, bool ignoreUpdateDate, int delay);
     void FandomTask(const FandomParseTask &);
     void ProcessBunchOfFandomUrls(QStringList urls,
                                   QDate stopAt,
-                                  ECacheMode cacheMode,
+                                  fetching::CacheStrategy cacheStrategy,
                                   QStringList& failedPages,
                                   int delay);
-    void TaskList(QStringList urls, ECacheMode cacheMode, int delay);
+    void TaskList(QStringList urls, fetching::CacheStrategy cacheStrategy, int delay);
 signals:
     void pageResult(PageResult);
 };

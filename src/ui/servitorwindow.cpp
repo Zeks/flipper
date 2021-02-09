@@ -1024,7 +1024,7 @@ void ServitorWindow::on_pushButton_2_clicked()
 void ServitorWindow::on_pbGetData_clicked()
 {
     An<PageManager> pager;
-    auto data = pager->GetPage(ui->leGetCachedData->text(), ECacheMode::use_only_cache);
+    auto data = pager->GetPage(ui->leGetCachedData->text(), fetching::CacheStrategy::CacheOnly());
     ui->edtLog->clear();
     ui->edtLog->insertPlainText(data.content);
 
@@ -1074,7 +1074,7 @@ void ServitorWindow::on_pushButton_3_clicked()
         parser.authorName = author->name;
 
         //TimedAction pageAction("Page loaded in: ",[&](){
-        data = pager->GetPage(author->url("ffn"), ECacheMode::use_only_cache);
+        data = pager->GetPage(author->url("ffn"), fetching::CacheStrategy::CacheOnly());
         //});
         //pageAction.run();
 
@@ -1145,7 +1145,12 @@ void ServitorWindow::on_pbUpdateFreshAuthors_clicked()
 
 
     reloader.SetStagedAuthors(authors);
-    reloader.ReloadRecommendationsList(ECacheMode::use_cache);
+    fetching::CacheStrategy cacheStrategy;
+    cacheStrategy.useCache = true;
+    cacheStrategy.cacheExpirationDays = 7;
+    cacheStrategy.fetchIfCacheIsOld = true;
+    cacheStrategy.fetchIfCacheUnavailable = true;
+    reloader.ReloadRecommendationsList(cacheStrategy);
 
 }
 
@@ -1213,7 +1218,22 @@ void ServitorWindow::on_pbUpdateInterval_clicked()
 
 
     reloader.SetStagedAuthors(authors);
-    reloader.ReloadRecommendationsList(static_cast<ECacheMode>(ui->cbCacheMode->currentIndex()));
+
+    fetching::CacheStrategy customCacheStrategy;
+    if(ui->cbCacheMode->currentIndex() == 0){
+        customCacheStrategy = fetching::CacheStrategy::NetworkOnly();
+    }
+    else if(ui->cbCacheMode->currentIndex() == 0){
+        customCacheStrategy.useCache = true;
+        customCacheStrategy.cacheExpirationDays = 7;
+        customCacheStrategy.fetchIfCacheIsOld = true;
+        customCacheStrategy.fetchIfCacheUnavailable = true;
+        }
+    else{
+        customCacheStrategy = fetching::CacheStrategy::CacheOnly();
+    }
+
+    reloader.ReloadRecommendationsList(customCacheStrategy);
     QLOG_INFO() << "FINISHED";
 }
 
@@ -1259,14 +1279,20 @@ void ServitorWindow::on_pbReprocessAllFavPages_clicked()
 
 
     reloader.SetStagedAuthors(authors);
-    reloader.ReloadRecommendationsList(ECacheMode::use_only_cache);
+    reloader.ReloadRecommendationsList(fetching::CacheStrategy::CacheOnly());
     authorInterface->AssignAuthorNamesForWebIDsInFanficTable();
 }
 
 void ServitorWindow::on_pbGetNewFavourites_clicked()
 {
-    if(!env.ResumeUnfinishedTasks())
-        env.LoadAllLinkedAuthors(ECacheMode::use_cache);
+    if(!env.ResumeUnfinishedTasks()){
+        fetching::CacheStrategy customCacheStrategy;
+        customCacheStrategy.useCache = true;
+        customCacheStrategy.cacheExpirationDays = 7;
+        customCacheStrategy.fetchIfCacheIsOld = true;
+        customCacheStrategy.fetchIfCacheUnavailable = true;
+        env.LoadAllLinkedAuthors(customCacheStrategy);
+    }
 }
 
 void ServitorWindow::on_pbReprocessCacheLinked_clicked()

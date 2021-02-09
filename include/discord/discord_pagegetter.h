@@ -34,7 +34,7 @@ class PageManager
     void SetDatabaseGetter(DBGetterFunc dbGetter);
     void SetCachedMode(bool value);
     bool GetCachedMode() const;
-    WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::dont_use_cache);
+    WebPage GetPage(QString url, fetching::CacheStrategy cacheStrategy);
     void SavePageToDB(const WebPage & page);
     void SetAutomaticCacheLimit(QDate);
 
