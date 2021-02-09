@@ -435,18 +435,19 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     //QString error;
 
     FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing && knowsPage ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
-    ffnId = userFavourites.ffnId;
-
+    bool fetchedValidFFNId = !userFavourites.ffnId.isEmpty();
 
     if(ffnId != command.user->FfnID())
         command.user->ScheduleForceNewRecsPage();
-    command.user->SetFfnID(ffnId);
     command.ids.clear();
-    command.ids.push_back(userFavourites.ffnId.toUInt());
-    An<interfaces::Users> usersDbInterface;
-    if(ffnId.toInt() > 0)
-        usersDbInterface->WriteUserFFNId(command.user->UserID(), ffnId.toInt());
 
+    An<interfaces::Users> usersDbInterface;
+    if(fetchedValidFFNId){
+        ffnId = userFavourites.ffnId;
+        command.user->SetFfnID(ffnId);
+        usersDbInterface->WriteUserFFNId(command.user->UserID(), ffnId.toInt());
+        command.ids.push_back(userFavourites.ffnId.toUInt());
+    }
 
     // here, we check that we were able to fetch favourites at all
     if(!userFavourites.hasFavourites || userFavourites.errors.size() > 0)

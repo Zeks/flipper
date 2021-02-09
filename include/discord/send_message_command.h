@@ -6,7 +6,7 @@
 
 namespace discord{
 class Client;
-class User;
+struct User;
 class TrackedMessageBase;
 class SendMessageCommand{
 public:

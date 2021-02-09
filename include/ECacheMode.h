@@ -1,5 +1,5 @@
 #pragma once
-
+#include "include/cache_strategy.h"
 enum class ECacheMode
 {
     dont_use_cache = 0,

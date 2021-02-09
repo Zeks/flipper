@@ -210,20 +210,21 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 
     stdoutResult = process.readAllStandardOutput();
     stderrResult = process.readAllStandardError();
-    qDebug() << stdoutResult;
-    qDebug() << stderrResult;
+    //qDebug() << stdoutResult;
+    //qDebug() << stderrResult;
 
     QThread::msleep(1000);
     QFile favouritesfile(filename);
     if (favouritesfile.open(QFile::ReadOnly))
     {
-        QTextStream in(&favouritesfile);
-        result.content = in.readAll();
+
         result.isValid = true;
         result.url = url;
         result.source = EPageSource::network;
     }
     else{
+
+
         result.isValid = false;
         result.url = url;
         result.source = EPageSource::network;

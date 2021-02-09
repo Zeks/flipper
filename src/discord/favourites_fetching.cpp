@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "parsers/ffn/favparser_wrapper.h"
 #include "parsers/ffn/discord/discord_mobile_favparser.h"
 #include "timeutils.h"
+#include <QFile>
 namespace discord {
 
 FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cacheMode, bool isId)
@@ -44,6 +45,9 @@ FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cac
             if(!quickResult.validFavouritesCount){
                 resultingData.hasFavourites = false;
                 resultingData.errors.push_back(QStringLiteral("Could not load favourites from provided user profile."));
+                QFile favouritesfile(QString("tmpfaves/favourites_%1.html").arg(ffnId));
+                favouritesfile.rename(QString("tmpfaves/0_err_favourites_%1.html").arg(ffnId));
+                favouritesfile.close();
             }
             else {
                 // we will fetch first 500 regardless to avoid excessive querying later
