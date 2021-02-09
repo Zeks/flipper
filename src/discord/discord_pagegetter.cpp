@@ -70,7 +70,10 @@ WebPage PageGetterPrivate::GetPage(QString url, fetching::CacheStrategy cacheStr
     auto fetchPageFromNetwork = [&](){
         result = GetPageFromNetwork(url);
         qDebug() << "From network";
-        if(result.isValid)
+        bool pageCorrect = true;
+        if(cacheStrategy.pageChecker)
+            pageCorrect = cacheStrategy.pageChecker(result.content);
+        if(result.isValid && pageCorrect)
             SavePageToDB(result);
     };
     if(cacheStrategy.useCache)
@@ -121,6 +124,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
         result.content = QString::fromUtf8(qUncompress(q.value("CONTENT").toByteArray()));
     else
         result.content = q.value("CONTENT").toByteArray();
+    result.isValid = !result.content.isEmpty();
     //result.crossover= q.value("CROSSOVER").toInt();
     //result.fandom= q.value("FANDOM").toString();
     result.generated= q.value("GENERATION_DATE").toDateTime();

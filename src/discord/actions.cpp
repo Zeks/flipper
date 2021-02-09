@@ -49,6 +49,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QSettings>
 namespace discord {
 
+static std::function<bool(QString)> pageVerifier = [](QString page)->bool{
+    return page.contains("Favs:", Qt::CaseInsensitive);
+};
+
 QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
 {
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
@@ -347,6 +351,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     //QString error;
 
     fetching::CacheStrategy cacheStrategy = isRefreshing ? fetching::CacheStrategy::CacheThenFetchIfNA() : fetching::CacheStrategy::NetworkOnly();
+    cacheStrategy.pageChecker = pageVerifier;
     FavouritesFetchResult userFavourites = FetchMobileFavourites(ffnId, cacheStrategy);
     // here, we check that we were able to fetch favourites at all
     if(!userFavourites.hasFavourites || userFavourites.errors.size() > 0)
@@ -436,6 +441,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     //QString error;
 
     fetching::CacheStrategy cacheStrategy = isRefreshing && knowsPage ? fetching::CacheStrategy::CacheThenFetchIfNA() : fetching::CacheStrategy::NetworkOnly();
+    cacheStrategy.pageChecker = pageVerifier;
     FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId,cacheStrategy,isId);
     bool fetchedValidFFNId = !userFavourites.ffnId.isEmpty();
 

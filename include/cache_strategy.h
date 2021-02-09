@@ -1,6 +1,7 @@
 #pragma once
 #include "include/ECacheMode.h"
 #include <QDateTime>
+#include <functional>
 namespace fetching{
 
 struct CacheStrategy{
@@ -10,6 +11,8 @@ struct CacheStrategy{
     bool fetchIfCacheIsOld = false;
     bool saveResults = true;
     int cacheExpirationDays = 0;
+    std::function<bool(QString)> pageChecker;
+
     bool CacheIsExpired(QDate generationDate){
         if(cacheExpirationDays != 0)
             return generationDate >= QDate::currentDate().addDays(-1*cacheExpirationDays);

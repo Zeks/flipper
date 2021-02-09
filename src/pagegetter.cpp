@@ -85,14 +85,25 @@ WebPage PageGetterPrivate::GetPage(QString url, fetching::CacheStrategy cacheStr
     // first, we get the page from cache anyway
     // not much point doing otherwise if the page is super fresh
     auto temp = GetPageFromDB(url);
+    bool pageCorrect = true;
+    if(cacheStrategy.pageChecker)
+        pageCorrect = cacheStrategy.pageChecker(temp.content);
+    if(!pageCorrect)
+        QLOG_INFO() << temp.content;
+
     auto pickNetworkVersion = [&](){
         result = GetPageFromNetwork(url);
         qDebug() << "From network";
-        if(result.isValid)
+        bool pageCorrect = true;
+        if(cacheStrategy.pageChecker)
+            pageCorrect = cacheStrategy.pageChecker(result.content);
+        if(!pageCorrect)
+            QLOG_INFO() << result.content;
+        if(result.isValid && pageCorrect)
             SavePageToDB(result);
         result.isFromCache = false;
     };
-    if(temp.isValid){
+    if(cacheStrategy.useCache && temp.isValid && pageCorrect){
         QLOG_INFO() << "Version from cache was generated: " << temp.generated;
         if(cacheStrategy.CacheIsExpired(temp.generated.date())){
             if(cacheStrategy.abortIfCacheUnavailable)
@@ -108,7 +119,7 @@ WebPage PageGetterPrivate::GetPage(QString url, fetching::CacheStrategy cacheStr
         }
     }
     else{
-        qDebug() << "valid cache not found";
+        qDebug() << "valid cache not found or refresh is forced";
         if(cacheStrategy.abortIfCacheUnavailable)
             return {};
         pickNetworkVersion();
@@ -147,6 +158,8 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
             result.content = QString::fromUtf8(qUncompress(q.value("CONTENT").toByteArray()));
         else
             result.content = q.value("CONTENT").toByteArray();
+        result.isValid = !result.content.isEmpty();
+        //qDebug() << "content: " << q.value("CONTENT").toByteArray();
         //result.crossover= q.value("CROSSOVER").toInt();
         //result.fandom= q.value("FANDOM").toString();
         result.generated= q.value("GENERATION_DATE").toDateTime();
@@ -213,7 +226,8 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     QFile favouritesfile(filename);
     if (favouritesfile.open(QFile::ReadOnly))
     {
-
+        QTextStream in(&favouritesfile);
+        result.content = in.readAll();
         result.isValid = true;
         result.url = url;
         result.source = EPageSource::network;
