@@ -442,6 +442,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
 
     fetching::CacheStrategy cacheStrategy = isRefreshing && knowsPage ? fetching::CacheStrategy::CacheThenFetchIfNA() : fetching::CacheStrategy::NetworkOnly();
     cacheStrategy.pageChecker = pageVerifier;
+    QString triedFFNId = ffnId;
     FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId,cacheStrategy,isId);
     bool fetchedValidFFNId = !userFavourites.ffnId.isEmpty();
 
@@ -461,6 +462,8 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     if(!userFavourites.hasFavourites || userFavourites.errors.size() > 0)
     {
         action->text = userFavourites.errors.join(QStringLiteral("\n"));
+        action->text += QString("\nThis might be cloudflare acting up on FFN side.\nIf you are sure you are supplying a correct id, please try doing `%1recs >refresh %2` in a minute or two..")
+                .arg(QSV(command.server->GetCommandPrefix()),triedFFNId);
         action->stopChain = true;
         return action;
     }
