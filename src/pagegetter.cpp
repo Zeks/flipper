@@ -201,43 +201,50 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
            << "-H" << "'Content-Type: application/json'"
            << "--data-raw" << curlQuery.arg(url);
     //process.setWorkingDirectory("/home/zeks/curltest/tmpfaves");
-    process.start("curl" , params);
-    process.waitForFinished(-1); // will wait forever until finished
-    QString stdoutResult = process.readAllStandardOutput();
-    QString stderrResult = process.readAllStandardError();
-
-//    QFile tempFIle(filename);
-//    if(tempFIle.open(QFile::WriteOnly | QFile::Truncate))
-//    {
-//        QTextStream out(&tempFIle);
-//        out << stdoutResult;
-//    }
-//    file.close();
-
-    process.start("bash", QStringList() << "-c" << "scripts/page_fixer.sh " + QString("%1").arg(filename));
-    process.waitForFinished(-1); // will wait forever until finished
-
-    stdoutResult = process.readAllStandardOutput();
-    stderrResult = process.readAllStandardError();
-    //qDebug() << stdoutResult;
-    //qDebug() << stderrResult;
-
-    QThread::msleep(1000);
-    QFile favouritesfile(filename);
-    if (favouritesfile.open(QFile::ReadOnly))
+    for(auto i = 0; i < 4; i++)
     {
-        QTextStream in(&favouritesfile);
-        result.content = in.readAll();
-        result.isValid = true;
-        result.url = url;
-        result.source = EPageSource::network;
-    }
-    else{
+        process.start("curl" , params);
+        process.waitForFinished(-1); // will wait forever until finished
+        QString stdoutResult = process.readAllStandardOutput();
+        QString stderrResult = process.readAllStandardError();
 
+        //    QFile tempFIle(filename);
+        //    if(tempFIle.open(QFile::WriteOnly | QFile::Truncate))
+        //    {
+        //        QTextStream out(&tempFIle);
+        //        out << stdoutResult;
+        //    }
+        //    file.close();
 
-        result.isValid = false;
-        result.url = url;
-        result.source = EPageSource::network;
+        process.start("bash", QStringList() << "-c" << "scripts/page_fixer.sh " + QString("%1").arg(filename));
+        process.waitForFinished(-1); // will wait forever until finished
+
+        stdoutResult = process.readAllStandardOutput();
+        stderrResult = process.readAllStandardError();
+        //qDebug() << stdoutResult;
+        //qDebug() << stderrResult;
+
+        QThread::msleep(1000);
+        QFile favouritesfile(filename);
+        if (favouritesfile.open(QFile::ReadOnly))
+        {
+            QTextStream in(&favouritesfile);
+            result.content = in.readAll();
+            if(result.content.contains("oops: file not found")){
+                QLOG_INFO() << "Received bad page, retrying";
+                QThread::msleep(1000);
+                continue;
+            }
+            result.isValid = true;
+            result.url = url;
+            result.source = EPageSource::network;
+            break;
+        }
+        else{
+            result.isValid = false;
+            result.url = url;
+            result.source = EPageSource::network;
+        }
     }
     return result;
 }
