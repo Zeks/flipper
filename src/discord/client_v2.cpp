@@ -335,7 +335,7 @@ void Client::Log(const SleepyDiscord::Message& message)
 
     try{
     if(message.channelID.number() == mirrorSourceChannel)
-        sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel>(mirrorTargetChannel), message.author.username + "#" + message.author.discriminator + " says: " + message.content);
+        sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel>(mirrorTargetChannel), "channel: " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " says: " + message.content);
 
     //qDebug()  << "mention: " << QString::fromStdString(CreateMention(getID().string()));
     thread_local std::string botMention = getID().string();
