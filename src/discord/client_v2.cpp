@@ -340,7 +340,7 @@ void Client::Log(const SleepyDiscord::Message& message)
     //qDebug()  << "mention: " << QString::fromStdString(CreateMention(getID().string()));
     thread_local std::string botMention = getID().string();
     if(message.author.ID != getID() && !message.author.bot && (message.content.find(botMention) != std::string::npos || message.content.find("ocrates") != std::string::npos))
-        sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel>(botPmChannel), message.author.username + "#" + message.author.discriminator + " says: " + message.content);
+        sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel>(botPmChannel), "channel: " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " says: " + message.content);
     }
     catch (const SleepyDiscord::ErrorCode& error){
         QLOG_INFO() << "Discord error:" << error;
