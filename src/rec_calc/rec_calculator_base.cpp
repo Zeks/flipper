@@ -579,6 +579,7 @@ Roaring RecCalculatorImplBase::BuildIgnoreList()
 struct AuthorRelationsResult{
     uint maximumMatches = 0;
     uint matchSum = 0;
+    std::vector<int> matchCounts;
     QMap<uint32_t, RatioInfo> ratioInfo;
     QMap<uint32_t, RatioSumInfo> ratioSumInfo;
 };
@@ -683,6 +684,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                         tempResult.maximumMatches = author.matches;
                     }
                     tempResult.matchSum+=author.matches;
+                    tempResult.matchCounts.push_back(author.matches);
                 }
                 itCurrent++;
             }
@@ -694,6 +696,12 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             if(funcResult.maximumMatches < data.maximumMatches)
                 funcResult.maximumMatches = data.maximumMatches;
             funcResult.matchSum+=data.matchSum;
+            if(funcResult.matchCounts.size()>data.matchCounts.size()) {
+                funcResult.matchCounts.insert(funcResult.matchCounts.end(),data.matchCounts.begin(),data.matchCounts.end());
+            } else {
+                data.matchCounts.insert(data.matchCounts.end(),funcResult.matchCounts.begin(),funcResult.matchCounts.end());
+                funcResult.matchCounts = data.matchCounts;
+            }
 
             for(auto i = data.ratioInfo.cbegin(); i != data.ratioInfo.cend(); i++){
                 funcResult.ratioInfo[i.key()]+=i.value();
@@ -701,6 +709,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         });
     });
     action.run();
+
     for(auto&& author: tempAuthors){
         auto id = author.id;
         allAuthors.emplace(std::move(id),std::move(author));
@@ -708,6 +717,14 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     matchSum = funcResult.matchSum;
     maximumMatches = funcResult.maximumMatches;
     RatioSumInfo tempSummary;
+
+    auto result = std::accumulate(funcResult.matchCounts.begin(),funcResult.matchCounts.end(), 0);
+    int average = result/funcResult.matchCounts.size();
+    QLOG_INFO() << "average ratio is: " << average;
+    if(average == 0)
+        average = 1;
+
+    minimumRatio = (average+1)/2 > 1 ? (average+1)/2 : 1;
 
     for(auto i = funcResult.ratioInfo.cbegin(); i != funcResult.ratioInfo.cend(); i++) {
         int tempCardinality = tempSummary.fics.cardinality();
@@ -866,7 +883,7 @@ void RecCalculatorImplBase::Filter(QSharedPointer<RecommendationList> params,
             author.ratio = 99999;
             author.similarityPercentage = 0;
         };
-        if(author.matches == 0 || author.sizeAfterIgnore < 10){
+        if(author.matches == 0 || author.sizeAfterIgnore < 10 || author.matches < minimumRatio){
             setInvalid(author);
         }
         else{

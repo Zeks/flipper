@@ -169,6 +169,7 @@ public:
 
     int ownProfileId = -1;
     uint16_t ratioCutoff = std::numeric_limits<uint16_t>::max();
+    uint16_t minimumRatio = 1;
     uint32_t matchSum = 0;
     uint32_t negativeAverage = 0;
     RecInputVectors inputs;
