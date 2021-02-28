@@ -182,7 +182,7 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
 
     Command createRecs = NewCommand(server, message,ct_fill_recommendations);
     if(id.length() == 0){
-        if(!user->FfnID().isEmpty()){
+        if(!user->FfnID().isEmpty() && user->FfnID() != "-1"){
             if(message.content.find("FFN_ID") != std::string::npos){
                 Command nullCommand = NewCommand(server, message,ct_null_command);
                 nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("You need to replace FFN_ID with your own ID on fanfiction.net.");
@@ -207,7 +207,7 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
         else
         {
             Command nullCommand = NewCommand(server, message,ct_null_command);
-            nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("Not a valid ID or user url.");
+            nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("Not a valid ID or user url. For a first use of the bot you must use full command and provide your ffn profile ID after it.");
             nullCommand.originalMessageToken = message;
             nullCommand.server = this->server;
             result.Push(std::move(nullCommand));
