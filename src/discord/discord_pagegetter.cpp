@@ -53,7 +53,7 @@ public:
     QNetworkReply::NetworkError error = QNetworkReply::NoError;
     WebPage GetPage(QString url, fetching::CacheStrategy cacheStrategy);
     WebPage GetPageFromDB(QString url);
-    WebPage GetPageFromNetwork(QString url);
+    WebPage GetPageFromNetwork(QString url, fetching::CacheStrategy);
     void SavePageToDB(const WebPage&);
     void SetDatabaseGetter(PageManager::DBGetterFunc _dbGetter);
     PageManager::DBGetterFunc dbGetter;
@@ -67,20 +67,20 @@ WebPage PageGetterPrivate::GetPage(QString url, fetching::CacheStrategy cacheStr
 {
     WebPage result;
 
+    bool pageCorrect = true;
     auto fetchPageFromNetwork = [&](){
-        result = GetPageFromNetwork(url);
+        result = GetPageFromNetwork(url, cacheStrategy);
         qDebug() << "From network";
-        bool pageCorrect = true;
-        if(cacheStrategy.pageChecker)
-            pageCorrect = cacheStrategy.pageChecker(result.content);
-        if(result.isValid && pageCorrect)
+        if(result.isValid)
             SavePageToDB(result);
     };
     if(cacheStrategy.useCache)
     {
         result = GetPageFromDB(url);
+        if(cacheStrategy.pageChecker)
+            pageCorrect = cacheStrategy.pageChecker(result.content);
         QLOG_INFO() << "Version from cache was generated: " << result.generated;
-        if(result.isValid)
+        if(result.isValid && pageCorrect)
              result.isFromCache = true;
         else
             fetchPageFromNetwork();
@@ -134,7 +134,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
     return result;
 }
 
-WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
+WebPage PageGetterPrivate::GetPageFromNetwork(QString url, fetching::CacheStrategy  cacheStrategy)
 {
     result = WebPage();
     result.url = url;
@@ -190,8 +190,8 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     {
         QTextStream in(&favouritesfile);
         result.content = in.readAll();
-        if(result.content.contains("favstories"))
-            result.isValid = true;
+        if(cacheStrategy.pageChecker)
+            result.isValid = cacheStrategy.pageChecker(result.content);
         result.url = url;
         result.source = EPageSource::network;
     }
