@@ -1,7 +1,7 @@
 {
   "cmd": "request.get",
   "url":"%1",
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleW...",
+  "userAgent": "fanfiction recommendation engine(flipper) crawler",
   "maxTimeout": 60000,
   "headers": {
     "X-Test": "fanfiction recommendation engine(flipper) crawler"
