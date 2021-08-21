@@ -72,7 +72,9 @@ FavouritesFetchResult FetchMobileFavourites(QString ffnId, fetching::CacheStrate
         parser.userId = ffnId;
         auto result = parser.Execute(cacheStrategy);
         if(result.size() == 0)
+        {
             data.errors.push_back(QStringLiteral("Could not load favourites from provided user profile."));
+        }
         data.links += result;
     });
     linkGet.run();

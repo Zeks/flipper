@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "include/pageconsumer.h"
 #include "include/environment.h"
 #include "include/core/section.h"
+#include "include/cache_strategy.h"
 
 namespace interfaces{
 class Fanfics;
@@ -44,7 +45,7 @@ public:
                         QSharedPointer<interfaces::Authors> authorsInterface,
                         QObject* obj = nullptr);
 
-    void ReprocessAllAuthorsStats(ECacheMode cacheMode);
+    void ReprocessAllAuthorsStats(fetching::CacheStrategy cacheStrategy = {});
 
 
 private:

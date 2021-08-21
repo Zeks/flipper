@@ -180,10 +180,6 @@ private:
 
     FandomParseTaskResult ProcessFandomSubTask(FandomParseTask);
 
-    // a wrapper over pagegetter to request pages
-    // todo probably could be dropped, will need to check
-    WebPage RequestPage(QString,  ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
-
 
     void SaveCurrentQuery();
     // use to actually query the search results from the database into fanfic list
@@ -198,8 +194,8 @@ private:
 
 
 
-    // used to fill fandom database with new data from web
-    void UpdateFandomList(UpdateFandomTask);
+//    // used to fill fandom database with new data from web
+//    void UpdateFandomList(UpdateFandomTask);
 
     // used to fill tagwidget
     void ProcessTagsIntoGui();

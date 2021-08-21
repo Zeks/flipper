@@ -90,6 +90,9 @@ void RecommendationsProcessor::ReloadRecommendationsList(fetching::CacheStrategy
     QLOG_INFO() << " Scheduled authors size: " << authors.size();
     for(auto author: authors)
     {
+        //auto webIds = author->webIds;
+//        if(webIds["ffn"] != 1591981)
+//            continue;
 //        if(counter > 0)
 //            break;
         if(counter%50 == 0)

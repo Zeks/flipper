@@ -14,8 +14,9 @@ struct CacheStrategy{
     std::function<bool(QString)> pageChecker;
 
     bool CacheIsExpired(QDate generationDate){
-        if(cacheExpirationDays != 0)
-            return generationDate >= QDate::currentDate().addDays(-1*cacheExpirationDays);
+        if(cacheExpirationDays != 0){
+            return QDate::currentDate().addDays(-1*cacheExpirationDays) > generationDate;
+        }
         return false;
     };
 

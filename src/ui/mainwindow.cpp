@@ -855,19 +855,6 @@ void MainWindow::InitInterfaces()
     env->InitInterfaces();
 }
 
-WebPage MainWindow::RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
-{
-    QString toInsert = "<a href=\"" + pageUrl + "\"> %1 </a>";
-    toInsert= toInsert.arg(pageUrl);
-    ui->edtResults->append("<span>Processing url: </span>");
-    ui->edtResults->insertHtml(toInsert);
-
-    pbMain->setTextVisible(false);
-    pbMain->show();
-
-    return env::RequestPage(pageUrl, cacheMode, autoSaveToDB);
-}
-
 void MainWindow::SaveCurrentQuery()
 {
     FilterFrame frame;
@@ -2731,20 +2718,20 @@ void MainWindow::OnWipeCache()
 }
 
 
-void MainWindow::UpdateFandomList(UpdateFandomTask )
-{
-    TaskProgressGuard guard(this);
+//void MainWindow::UpdateFandomList(UpdateFandomTask )
+//{
+//    TaskProgressGuard guard(this);
 
-    ui->edtResults->clear();
+//    ui->edtResults->clear();
 
-    sql::Database db = sql::Database::database();
-    FandomListReloadProcessor proc(db, env->interfaces.fanfics, env->interfaces.fandoms, env->interfaces.pageTask, env->interfaces.db);
-    connect(&proc, &FandomListReloadProcessor::displayWarning, this, &MainWindow::OnWarningRequested);
-    connect(&proc, &FandomListReloadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
-    connect(&proc, &FandomListReloadProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
-    connect(&proc, &FandomListReloadProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
-    proc.UpdateFandomList();
-}
+//    sql::Database db = sql::Database::database();
+//    FandomListReloadProcessor proc(db, env->interfaces.fanfics, env->interfaces.fandoms, env->interfaces.pageTask, env->interfaces.db);
+//    connect(&proc, &FandomListReloadProcessor::displayWarning, this, &MainWindow::OnWarningRequested);
+//    connect(&proc, &FandomListReloadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
+//    connect(&proc, &FandomListReloadProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
+//    connect(&proc, &FandomListReloadProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
+//    proc.UpdateFandomList();
+//}
 
 
 

@@ -27,6 +27,7 @@ QSet<int> DiscordMobileFavouritesFetcher::Execute(fetching::CacheStrategy cacheS
     WebPage mobilePage;
     TimedAction fetchAction("Author initial mobile page fetch", [&](){
         mobilePage = pageManager.GetPage(prototype.trimmed(),  cacheStrategy);
+        //qDebug() << mobilePage.content;
 
     });
     fetchAction.run(false);

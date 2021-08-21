@@ -48,7 +48,7 @@ AuthorStatsProcessor::AuthorStatsProcessor(sql::Database db,
     //connect(this, &AuthorStatsProcessor::pageTaskList, worker.data(), &PageThreadWorker::TaskList);
 }
 
-void AuthorStatsProcessor::ReprocessAllAuthorsStats(ECacheMode cacheMode)
+void AuthorStatsProcessor::ReprocessAllAuthorsStats(fetching::CacheStrategy cacheStrategy)
 {
         database::Transaction transaction(db);
         auto authors = this->authorsInterface->GetAllAuthors("ffn", true);
@@ -69,7 +69,7 @@ void AuthorStatsProcessor::ReprocessAllAuthorsStats(ECacheMode cacheMode)
             if(!author)
                 continue;
 
-            auto page = env::RequestPage(author->url("ffn"), cacheMode);
+            auto page = env::RequestPage(author->url("ffn"), cacheStrategy);
             page.id = author->id;
             if(!page.isValid)
                 qDebug() << page.url << " is invalid";

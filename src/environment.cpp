@@ -489,6 +489,7 @@ void CoreEnvironment::LoadAllLinkedAuthorsMultiFromCache()
                                        interfaces.fanfics,
                                        interfaces.fandoms,
                                        interfaces.authors);
+
     reprocessor.ReprocessAllAuthorsStats();
 }
 
@@ -1386,7 +1387,7 @@ WebPage RequestPage(QString pageUrl, fetching::CacheStrategy cacheStrategy, bool
 #endif
     pager->SetDatabase(sql::Database::database("PageCache"));
     result = pager->GetPage(pageUrl, cacheStrategy);
-    if(autoSaveToDB)
+    if(autoSaveToDB && !result.isFromCache)
         pager->SavePageToDB(result);
     return result;
 }

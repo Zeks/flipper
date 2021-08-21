@@ -1223,7 +1223,7 @@ void ServitorWindow::on_pbUpdateInterval_clicked()
     if(ui->cbCacheMode->currentIndex() == 0){
         customCacheStrategy = fetching::CacheStrategy::NetworkOnly();
     }
-    else if(ui->cbCacheMode->currentIndex() == 0){
+    else if(ui->cbCacheMode->currentIndex() == 1){
         customCacheStrategy.useCache = true;
         customCacheStrategy.cacheExpirationDays = 7;
         customCacheStrategy.fetchIfCacheIsOld = true;
@@ -1411,6 +1411,7 @@ void ServitorWindow::on_pbSlashCalc_clicked()
     SlashProcessor slash(db,fanficsInterface, fandomInterface, authorInterface, recsInterface, dbInterface);
     slash.DoFullCycle(db, 2);
     transaction.finalize();
+    QLOG_INFO() << "finished";
 
 }
 
