@@ -49,7 +49,7 @@ App{
 
     Precompiled{condition:Environment.usePrecompiledHeader}
 
-    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "CLIENT_VERSION=1.4.2", "FMT_HEADER_ONLY", project.useWebview ? "USE_WEBVIEW" : "NO_WEBVIEW"])
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "CLIENT_VERSION=1.4.5", "FMT_HEADER_ONLY", project.useWebview ? "USE_WEBVIEW" : "NO_WEBVIEW"])
     cpp.includePaths: [
         sourceDirectory,
         sourceDirectory + "/../",
