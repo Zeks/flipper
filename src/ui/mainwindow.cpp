@@ -2922,8 +2922,11 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
         params->ignoredFandoms.insert(i.key());
     if(ui->chkIgnoreMarkedDeadFics->isChecked())
         params->ignoredDeadFics = env->GetIgnoredDeadFics();
-    if(ui->chkUseDislikes->isChecked())
+    if(ui->chkUseDislikes->isChecked()){
         params->majorNegativeVotes = env->GetFicsForNegativeTags();
+        params->useDislikes = true;
+    }
+
 
     return params;
 }

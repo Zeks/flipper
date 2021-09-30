@@ -613,7 +613,8 @@ QVector<int> CoreEnvironment::GetSourceFicsFromFile(QString filename)
     return sourceList;
 }
 
-int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params,QVector<int> sourceFics)
+int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params,
+                                                     QVector<int> sourceFics)
 {
 
     qDebug() << "At start list id is: " << params->id;
@@ -621,8 +622,6 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 
 
     params->ficData->fics = sourceFics;
-
-
 
     database::Transaction transaction(interfaces.recs->db);
     params->id = interfaces.recs->GetListIdForName(params->name);
@@ -639,6 +638,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     grpcSource->GetInternalIDsForFics(&pack);
 
     params->likedAuthors = likedAuthors;
+    params->ficData->taggedFics = interfaces.tags->GetAllTaggedFics();
     //QLOG_INFO() << "Logging list params: ";
     params->Log();
     bool result = grpcSource->GetRecommendationListFromServer(params);
@@ -648,7 +648,6 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     //    sourceSet.reserve(sourceFics.size());
     for(const auto& identity: std::as_const(pack))
         params->ficData->sourceFics.insert(identity.id);
-
 
 
     if(!result)

@@ -84,20 +84,20 @@ RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(const RecInputVecto
                 touchyDifference += std::max(userValue, authorValue) - std::min(userValue, authorValue);
             neutralDifference += std::max(userValue, authorValue) - std::min(userValue, authorValue);
         }
-        if(i.key() == 77257)
-        {
-            qDebug() << "Logging user mood list";
-            moodData.listMoodData.Log();
-            qDebug() << "Logging author mood list";
-            authorData.Log();
-            qDebug() << "between author: " << i.key() << " and user, neutral: " << neutralDifference;
-            qDebug() << "between author: " << i.key() << " and user, touchy: " << touchyDifference;
-        }
+//        if(i.key() == 77257)
+//        {
+//            qDebug() << "Logging user mood list";
+//            moodData.listMoodData.Log();
+//            qDebug() << "Logging author mood list";
+//            authorData.Log();
+//            qDebug() << "between author: " << i.key() << " and user, neutral: " << neutralDifference;
+//            qDebug() << "between author: " << i.key() << " and user, touchy: " << touchyDifference;
+//        }
         auto& diff = moodDiffs[i.key()];
         diff.neutralDifference =  neutralDifference;
         diff.touchyDifference =  touchyDifference;
     }
-    votesBase = 100;
+    votesBase = 20;
 }
 
 std::optional<double> RecCalculatorImplMoodAdjusted::GetNeutralDiffForLists(uint32_t author)
