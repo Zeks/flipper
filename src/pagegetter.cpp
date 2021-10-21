@@ -196,17 +196,23 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 
 
     QString filename = QString("tmpfaves/favourites_%1.html").arg(userPart);
-    params << "-o" << filename //<< "-c" << "curl"
+    params << " -o" << filename //<< "-c" << "curl"
            << "-L" << "-X" << "POST" << QString("http://%1/v1").arg(servitorPort)
            << "-H" << "'Content-Type: application/json'"
            << "--data-raw" << curlQuery.arg(url);
+           //<< "--data-raw" << "'{ \"cmd\": \"request.get\",  \"url\":\"https://www.fanfiction.net/u/7451371\",  \"maxTimeout\": 80000 }'";
+    //qDebug().noquote() << params.join(" ");
+
     //process.setWorkingDirectory("/home/zeks/curltest/tmpfaves");
     for(auto i = 0; i < 4; i++)
     {
-        process.start("curl" , params);
+        //process.start("curl" , params);
+        process.start("bash", {"-c", "curl" + params.join(" ")});
         process.waitForFinished(-1); // will wait forever until finished
         QString stdoutResult = process.readAllStandardOutput();
         QString stderrResult = process.readAllStandardError();
+        //qDebug().noquote() << stdoutResult;
+        //qDebug().noquote() << stderrResult;
 
         //    QFile tempFIle(filename);
         //    if(tempFIle.open(QFile::WriteOnly | QFile::Truncate))
