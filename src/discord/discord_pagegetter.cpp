@@ -162,7 +162,8 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url, fetching::CacheStrate
     params << "-c" << "curl" << "-L" << "-X" << "POST" << QString("http://%1/v1").arg(servitorPort)
            << "-H" << "'Content-Type: application/json'"
            << "--data-raw" << curlQuery.arg(url) << ">" << filename;
-    process.start("curl" , params);
+    //process.start("curl" , params);
+    process.start("bash", {"-c", "curl" + params.join(" ")});
     process.waitForFinished(-1); // will wait forever until finished
     QString stdoutResult = process.readAllStandardOutput();
     QString stderrResult = process.readAllStandardError();
