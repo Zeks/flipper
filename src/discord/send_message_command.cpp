@@ -90,6 +90,7 @@ void SendMessageCommand::Invoke(Client * client)
                     if(messageData){
                         An<ClientStorage> storage;
                         messageData->token = newToken;
+                        //QLOG_INFO() <<  "pushing message: " << newToken.messageID.number();
                         storage->messageData.push(newToken.messageID.number(),messageData);
                         storage->timedMessageData.push(newToken.messageID.number(),messageData);
                     }
@@ -117,6 +118,7 @@ void SendMessageCommand::Invoke(Client * client)
                             if(messageData){
                                 An<ClientStorage> storage;
                                 messageData->token = newToken;
+                                //QLOG_INFO() <<  "pushing message: " << newToken.messageID.number();
                                 storage->messageData.push(newToken.messageID.number(),messageData);
                                 storage->timedMessageData.push(newToken.messageID.number(),messageData);
                             }

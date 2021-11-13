@@ -93,6 +93,13 @@ Client::Client(QObject *obj):QObject(obj), SleepyDiscord::DiscordClient()
 void Client::InitClient()
 {
     startTimer(1000);
+
+    setIntents(SleepyDiscord::Intent::SERVER_MESSAGES,
+               SleepyDiscord::Intent::SERVER_MESSAGE_REACTIONS,
+               SleepyDiscord::Intent::DIRECT_MESSAGES,
+               SleepyDiscord::Intent::DIRECT_MESSAGE_REACTIONS,
+               SleepyDiscord::Intent::SERVERS);
+
     storage->fictionalDMServer.reset(new discord::Server());
     discord::InitDefaultCommandSet(this->parser);
 
@@ -291,22 +298,30 @@ QSharedPointer<User> Client::GetOrCreateUser(SleepyDiscord::Snowflake<SleepyDisc
 
 void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel>, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
     try{
+        //QLOG_INFO() << "entered the onReaction core body with reaction: " << QString::fromStdString(emoji.name);
         if(userID == getID())
             return;
+
         if(!actionableEmoji.contains(emoji.name))
             return;
+        //QLOG_INFO() <<  "emoji is valid, testing message: " << messageID.number();
+
         if(!storage->messageData.contains(messageID.number()))
             return;
+        //QLOG_INFO() <<  "messageid is valid:" << messageID.number();
         auto user = GetOrCreateUser(userID);
         if(!user)
             return;
 
-        QLOG_INFO() << "entered the onReaction core body with reaction: " << QString::fromStdString(emoji.name);
+        //QLOG_INFO() <<  "user is valid";
+        QLOG_INFO() << "in reaction body" << QString::fromStdString(emoji.name);
         auto message = storage->messageData.value(messageID.number());
         auto result = message->ProcessReaction(this,user,emoji);
         executor->Push(std::move(result));
+        //QLOG_INFO() << "leaving reaction body";
     }
     catch(const rapidjson_exception& e){
+        QLOG_INFO() <<  "error in onreaction" << e.what();
         qDebug() << e.what();
     }
 }

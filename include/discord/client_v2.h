@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "sleepy_discord/websocketpp_websocket.h"
 #include "sleepy_discord/sleepy_discord.h"
 #include "sleepy_discord/message.h"
+#include "sleepy_discord/client.h"
 #pragma GCC diagnostic pop
 
 #include "discord/limits.h"
