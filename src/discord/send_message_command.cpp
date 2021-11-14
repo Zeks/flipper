@@ -16,8 +16,10 @@ void SendMessageCommand::Invoke(Client * client)
             try{
                 if(!server || server->GetAllowedToAddReactions()){
                     SleepyDiscord::Snowflake<SleepyDiscord::Channel> channel = targetChannel.length() > 0 ? targetChannel : originalMessageToken.channelID.string();
-                    for(const auto& reaction: std::as_const(reactionsToAdd))
+                    for(const auto& reaction: std::as_const(reactionsToAdd)){
+                        QLOG_INFO() << "adding reaction: " << QString::fromStdString(reaction.toStdString());
                         client->addReaction(channel, newMessage.ID, reaction.toStdString());
+                    }
                 }
             }
             catch (const SleepyDiscord::ErrorCode& error){
