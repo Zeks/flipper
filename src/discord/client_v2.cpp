@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <string_view>
 #include <QSharedPointer>
 #include <QSettings>
+#include <QTextCodec>
 //#include "third_party/str_concat.h"
 #include "third_party/ctre.hpp"
 
@@ -229,6 +230,14 @@ void Client::onMessage(SleepyDiscord::Message message) {
                 }
                 message.content = command;
             }
+        }
+
+        if(message.author.username == "Varno" && message.author.discriminator == "9176" && (message.content.find("http") != -1 || message.content.find("www") != -1 ))
+        {
+            QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
+            settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+            auto varno = settings.value(QStringLiteral("Varno/description")).toString();
+            sendMessageWrapper(message.channelID, message.serverID, varno.toStdString());
         }
 
         if(sv.substr(0, commandPrefix.length()) != commandPrefix)
@@ -446,6 +455,7 @@ MessageResponseWrapper Client::sendMessageWrapper(SleepyDiscord::Snowflake<Sleep
     return {false};
 }
 }
+
 
 
 
