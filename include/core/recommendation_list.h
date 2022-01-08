@@ -83,7 +83,7 @@ public:
     int maxUnmatchedPerMatch = 5000;
     int userFFNId = -1;
     int sigma2Distance = -1;
-    int listSizeMultiplier = 200;
+    int listSizeMultiplier = 600;
     int ficFavouritesCutoff = 0;
     int resultLimit = 0;
     uint16_t ratioCutoff = std::numeric_limits<uint16_t>::max();
