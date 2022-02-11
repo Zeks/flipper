@@ -867,7 +867,8 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
     auto editPreviousPageIfPossible = command.variantHash.value(QStringLiteral("refresh_previous")).toBool() && !command.user->NeedsNewRecsPage();
-    if(editPreviousPageIfPossible && !command.user->GetLastRecsPageMessage().message.string().empty()){
+    if(editPreviousPageIfPossible && !command.user->GetLastRecsPageMessage().message.string().empty()
+            && command.user->GetLastRecsPageMessage().channel == command.originalMessageToken.channelID){
         command.targetMessage = command.user->GetLastRecsPageMessage().message;
     }
 

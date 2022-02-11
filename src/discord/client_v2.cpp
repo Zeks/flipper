@@ -217,7 +217,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(sv == botPrefixRequest)
             sendMessageWrapper(message.channelID, message.serverID, "Prefix for this server is: " + std::string(commandPrefix));
 
-        if(message.author.ID.string() == "643561873626628249 " && (message.content.find("http") != -1 || message.content.find("www") != -1 ))
+        if(message.author.ID.string() == "643561873626628249" && (message.content.find("http") != -1 || message.content.find("www") != -1 ))
         {
             QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
             settings.setIniCodec(QTextCodec::codecForName("UTF-8"));

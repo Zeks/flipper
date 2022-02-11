@@ -46,7 +46,7 @@ RUN --mount=type=ssh \
     cd $PACKAGE_DIR  \ 
     && git clone https://github.com/Zeks/flipper.git   \ 
     && cd flipper \
-    && git checkout discord_new \
+    && git checkout master \
     && git submodule update --init \
     && cd third_party/sleepy-discord \
     && mkdir build \
