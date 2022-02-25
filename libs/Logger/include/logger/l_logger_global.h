@@ -1,15 +1,42 @@
-#ifndef L_LOGGER_GLOBAL_H
-#define L_LOGGER_GLOBAL_H
 
-#include <QtCore/qglobal.h>
+#ifndef L_LOGGERSHARED_EXPORT_H
+#define L_LOGGERSHARED_EXPORT_H
 
-#ifndef STATIC_PROJECT
-#if defined(L_LOGGER_LIBRARY)
-#  define L_LOGGERSHARED_EXPORT Q_DECL_EXPORT
+#ifdef LOGGER_STATIC_DEFINE
+#  define L_LOGGERSHARED_EXPORT
+#  define LOGGER_NO_EXPORT
 #else
-#  define L_LOGGERSHARED_EXPORT Q_DECL_IMPORT
+#  ifndef L_LOGGERSHARED_EXPORT
+#    ifdef Logger_EXPORTS
+        /* We are building this library */
+#      define L_LOGGERSHARED_EXPORT 
+#    else
+        /* We are using this library */
+#      define L_LOGGERSHARED_EXPORT 
+#    endif
+#  endif
+
+#  ifndef LOGGER_NO_EXPORT
+#    define LOGGER_NO_EXPORT 
+#  endif
 #endif
-#else
-#define L_LOGGERSHARED_EXPORT
+
+#ifndef LOGGER_DEPRECATED
+#  define LOGGER_DEPRECATED __attribute__ ((__deprecated__))
 #endif
-#endif // L_LOGGER_GLOBAL_H
+
+#ifndef LOGGER_DEPRECATED_EXPORT
+#  define LOGGER_DEPRECATED_EXPORT L_LOGGERSHARED_EXPORT LOGGER_DEPRECATED
+#endif
+
+#ifndef LOGGER_DEPRECATED_NO_EXPORT
+#  define LOGGER_DEPRECATED_NO_EXPORT LOGGER_NO_EXPORT LOGGER_DEPRECATED
+#endif
+
+#if 0 /* DEFINE_NO_DEPRECATED */
+#  ifndef LOGGER_NO_DEPRECATED
+#    define LOGGER_NO_DEPRECATED
+#  endif
+#endif
+
+#endif /* L_LOGGERSHARED_EXPORT_H */
