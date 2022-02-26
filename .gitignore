@@ -56,6 +56,8 @@ Run/tmp/*
 Run/curl
 Run/tmpfaves/*
 Run/scripts/*
+cmake/build/*
+cmake/build-*/*
 xcf/*
 *.qbs.user.*
 *.qbs.user
