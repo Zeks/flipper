@@ -308,7 +308,6 @@ void PageManager::WipeAllCache()
 {
     d->WipeAllCache();
 }
-#include "pagegetter.moc"
 
 PageThreadWorker::PageThreadWorker(QObject*)
 {
@@ -576,3 +575,4 @@ void PageThreadWorker::SetAutomaticCacheForCurrentDate(bool value)
 }
 
 }
+#include "pagegetter_w.moc"
