@@ -3,7 +3,7 @@ Due to my country's invasion of Ukraine both my future and stability of the serv
 I've made some inroads about people maybe keeping my work alive so, if the worst comes to pass, ask the maintainer of https://www.ficlab.com/ whether the backup can be put up and how soon. 
 
 P.S. It's been a fun run, but I feel like I am just going to vanish soon, First from the internet and from this world soon after. 
-If there is a god, I pray some people get what they deserve. (this is not a suicide notice, the timeframe covered msotly means Russia's likely disconnection from the internet)
+If there is a god, I pray some people get what they deserve. (this is not a suicide notice, the timeframe covered mostly means Russia's likely disconnection from the internet)
 
 
 # Flipper
