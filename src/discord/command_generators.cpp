@@ -196,13 +196,13 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
             createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(user->FfnID());
             if(refresh.length() == 0)
                 createRecs.variantHash[QStringLiteral("refresh")] = true;
-
+            Command plea = NewCommand(server, message,ct_plea);
+            result.Push(std::move(plea));
             result.Push(std::move(createRecs));
             Command command = NewCommand(server, message,ct_display_page);
             command.ids.push_back(user->CurrentRecommendationsPage());
             result.Push(std::move(command));
-            Command plea = NewCommand(server, message,ct_plea);
-            result.Push(std::move(plea));
+
             user->SetSimilarFicsId(0);
             return std::move(result);
         }
@@ -263,9 +263,10 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
     Command displayRecs = NewCommand(server, message,ct_display_page);
     Command plea = NewCommand(server, message,ct_plea);
     displayRecs.ids.push_back(0);
+    result.Push(std::move(plea));
     result.Push(std::move(createRecs));
     result.Push(std::move(displayRecs));
-    result.Push(std::move(plea));
+
     result.hasParseCommand = true;
     return std::move(result);
 }

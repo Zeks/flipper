@@ -488,10 +488,11 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
             displayRecs.ids.push_back(command.user->CurrentRecommendationsPage());
         CommandChain chain;
         chain.user = command.user;
+
+//        Command plea = NewCommand(command.server, command.originalMessageToken,ct_plea);
+//        plea.user = command.user;
+//        chain.Push(std::move(plea));
         chain.Push(std::move(newRecsCommand));
-        Command plea = NewCommand(command.server, command.originalMessageToken,ct_plea);
-        plea.user = command.user;
-        chain.Push(std::move(plea));
         chain.Push(std::move(displayRecs));
         chain.hasFullParseCommand = true;
         action->commandsToReemit.push_back(std::move(chain));
