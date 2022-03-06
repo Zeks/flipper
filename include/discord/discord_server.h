@@ -94,6 +94,9 @@ struct Server{
     bool GetReviewsAllowed() const;
     void SetReviewsAllowed(bool value);
 
+    const QDateTime &GetLastPleaPostTimestamp() const;
+    void SetLastPleaPostTimestamp(const QDateTime &newLastPleaPost);
+
 private:
     std::string serverId;
     QString serverName;
@@ -118,6 +121,7 @@ private:
 
     QDateTime firstActive;
     QDateTime lastActive;
+    QDateTime lastPleaPost;
     std::set<std::string> forbiddenChannels;
 
     mutable QReadWriteLock lock = QReadWriteLock(QReadWriteLock::Recursive);

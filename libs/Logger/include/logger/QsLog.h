@@ -92,7 +92,7 @@ protected:
 };
 } // end namespace
 BIND_TO_SELF_SINGLE(QsLogging::Logger)
-
+LOGGER_NO_EXPORT int TestVisibility(int);
 
 
 //(std::ostringstream() << std::this_thread::get_id()).str();

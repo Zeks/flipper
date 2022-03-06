@@ -92,6 +92,7 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+
 class PageChangeCommand : public RecommendationsCommand{
 public:
     PageChangeCommand() = default;

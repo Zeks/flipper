@@ -54,6 +54,7 @@ ACTION(GeneralHelpAction);
 //ACTION(HelpAction);
 ACTION(DesktopRecsCreationAction);
 ACTION(MobileRecsCreationAction);
+ACTION(DisplayPleaAction);
 ACTION(DisplayPageAction);
 ACTION(DisplayRngAction);
 ACTION(SetFandomAction);

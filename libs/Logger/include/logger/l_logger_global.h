@@ -9,15 +9,15 @@
 #  ifndef L_LOGGERSHARED_EXPORT
 #    ifdef Logger_EXPORTS
         /* We are building this library */
-#      define L_LOGGERSHARED_EXPORT 
+#      define L_LOGGERSHARED_EXPORT __attribute__((visibility("default")))
 #    else
         /* We are using this library */
-#      define L_LOGGERSHARED_EXPORT 
+#      define L_LOGGERSHARED_EXPORT __attribute__((visibility("default")))
 #    endif
 #  endif
 
 #  ifndef LOGGER_NO_EXPORT
-#    define LOGGER_NO_EXPORT 
+#    define LOGGER_NO_EXPORT __attribute__((visibility("hidden")))
 #  endif
 #endif
 

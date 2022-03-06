@@ -489,6 +489,9 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         CommandChain chain;
         chain.user = command.user;
         chain.Push(std::move(newRecsCommand));
+        Command plea = NewCommand(command.server, command.originalMessageToken,ct_plea);
+        plea.user = command.user;
+        chain.Push(std::move(plea));
         chain.Push(std::move(displayRecs));
         chain.hasFullParseCommand = true;
         action->commandsToReemit.push_back(std::move(chain));
@@ -801,6 +804,46 @@ void FillPageDisplayMemo(T* fetcher,
         storage->timedMessageData.push(reclistData->token.messageID.number(),messageData);
     }
 }
+
+QSharedPointer<SendMessageCommand> DisplayPleaAction::ExecuteImpl(QSharedPointer<TaskEnvironment> , Command&& command){
+    SleepyDiscord::Embed embed;
+    embed.description = "IMPORTANT, PLEASE READ.\n";
+    embed.description += "Due to rash actions of my country my future and sources of income are very uncertain."
+                        "If you have a position for an experienced c++ programmer in your company in Europe/US "
+                        "or know someone who does and is willing to employ me please contact me(zekses#3495) ASAP."
+                        "I do not know how long it is until they cut us off of the discord."
+                        "\n\n"
+                        "I apologize for the inconvenience of this message but my situation is rather dire."
+                        "\n\n"
+                        "The bot will continue to work for however long I can access discord ports with it."
+                        "After that, I've made some enquiries, but no one knows if people revive it. It's been fun.";
+
+    auto lastPlea = command.server->GetLastPleaPostTimestamp();
+    if(!lastPlea.isValid()){
+        auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+        auto result = database::discord_queries::FetchServerPleaPostTimestamp(dbToken->db, command.server->GetServerId()).data;
+        lastPlea = result;
+    }
+    bool postPleaTimestamp = true;
+//    if(!lastPlea.isValid())
+//        postPleaTimestamp = true;
+//    else
+//        postPleaTimestamp = lastPlea.secsTo(QDateTime::currentDateTimeUtc()) > 21600;
+    if(!postPleaTimestamp)
+    {
+        action->emptyAction = true;
+        return action;
+    }
+
+    command.server->SetLastPleaPostTimestamp(QDateTime::currentDateTimeUtc());
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    database::discord_queries::WriteServerPleaPostTimestamp(dbToken->db, command.server->GetServerId(), QDateTime::currentDateTimeUtc());
+
+    action->embed = embed;
+    QLOG_INFO() << QStringLiteral("Created plea");
+    return action;
+}
+
 
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
@@ -2143,6 +2186,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SpawnRemoveConfirmationAction());
     case ECommandType::ct_remove_message_text:
         return QSharedPointer<ActionBase>(new RemoveMessageTextAction());
+    case ECommandType::ct_plea:
+        return QSharedPointer<ActionBase>(new DisplayPleaAction());
     case ECommandType::ct_toggle_functionality_for_server:
         return QSharedPointer<ActionBase>(new ToggleFunctionalityForServerAction());
 

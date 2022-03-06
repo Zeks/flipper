@@ -719,6 +719,24 @@ DiagnosticSQLResult<discord::FicReview> GetReview(Database db, std::string revie
     return std::move(ctx.result);
 }
 
+DiagnosticSQLResult<bool> WriteServerPleaPostTimestamp(Database db, const std::string & server_id, QDateTime timestamp)
+{
+    std::string qs = "update discord_servers set last_plea = :last_plea where server_id = :server_id";
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.bindValue("last_plea", timestamp);
+    ctx.bindValue("server_id", server_id);
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<QDateTime> FetchServerPleaPostTimestamp(sql::Database db, const std::string& server_id){
+    std::string qs = "select last_plea from discord_servers where server_id = :server_id";
+    SqlContext<QDateTime> ctx(db, std::move(qs));
+    ctx.bindValue("server_id", server_id);
+    ctx.FetchSingleValue<QDateTime>("last_plea", QDateTime());
+    return std::move(ctx.result);
+}
+
 
 }
 }

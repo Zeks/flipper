@@ -55,6 +55,8 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> WriteServerPrefix(sql::Database db, const std::string&, QString);
     DiagnosticSQLResult<bool> WriteServerReviewsAllowed(sql::Database db, const std::string&, bool);
     DiagnosticSQLResult<bool> WriteServerExplainAllowed(sql::Database db, const std::string&, bool);
+    DiagnosticSQLResult<bool> WriteServerPleaPostTimestamp(sql::Database db, const std::string&,  QDateTime);
+    DiagnosticSQLResult<QDateTime> FetchServerPleaPostTimestamp(sql::Database db, const std::string&);
 
     DiagnosticSQLResult<bool> WriteServerDedicatedChannel(sql::Database db, const std::string&, const std::string&);
     DiagnosticSQLResult<bool> WriteUserFFNId(sql::Database db, QString user_id, int ffn_id);

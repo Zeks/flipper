@@ -271,6 +271,16 @@ namespace discord {
         QWriteLocker locker(&lock);
         reviewsAllowed = value;
     }
+
+    const QDateTime &Server::GetLastPleaPostTimestamp() const
+    {
+        return lastPleaPost;
+    }
+
+    void Server::SetLastPleaPostTimestamp(const QDateTime &newLastPleaPost)
+    {
+        lastPleaPost = newLastPleaPost;
+    }
     
     void Servers::AddServer(QSharedPointer<Server> server)
     {
