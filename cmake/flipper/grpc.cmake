@@ -1,6 +1,5 @@
-#set(REPOSITORY_ROOT ${CMAKE_CURRENT_LIST_DIR}/../..)
-set(REPOSITORY_ROOT /home/zeks/flipper)
-set(HOME /home/zeks)
+set(REPOSITORY_ROOT ${CMAKE_CURRENT_LIST_DIR}/../..)
+get_filename_component(REPOSITORY_ROOT_ABSOLUTE ${REPOSITORY_ROOT} ABSOLUTE DIRECTORY)
 
 set(PROTOBUF_FILES
 ${REPOSITORY_ROOT}/proto/search/filter
@@ -13,14 +12,10 @@ ${REPOSITORY_ROOT}/proto/server_base_structs
 ${REPOSITORY_ROOT}/proto/feeder_service
 )
 
-
-set(GRPC_FILES ${REPOSITORY_ROOT}/proto/feeder_service)
-set(PROTOBUF_OUTPUT)
+set(GRPC_FILES ${REPOSITORY_ROOT_ABSOLUTE}/proto/feeder_service)
 
 find_package(Protobuf CONFIG REQUIRED)
 message(STATUS "Using protobuf ${Protobuf_VERSION}")
-find_package(gRPC CONFIG REQUIRED)
-message(STATUS "Using gRPC ${gRPC_VERSION}")
 
 if(MSVC AND protobuf_MSVC_STATIC_RUNTIME)
   foreach(flag_var
@@ -32,30 +27,36 @@ if(MSVC AND protobuf_MSVC_STATIC_RUNTIME)
   endforeach()
 endif()
 
-#include_directories(${Protobuf_INCLUDE_DIRS})
-#include_directories(/home/zeks/flipper/proto/search)
+function(generate_cpp)
+    include(CMakeParseArguments)
+    set(_options)
+    set(_singleargs MODE PLUGIN)
+    set(_multiargs FILES)
+    cmake_parse_arguments(GENERATE_CPP "${_options}" "${_singleargs}" "${_multiargs}" "${ARGN}")
 
-foreach(processed_file ${PROTOBUF_FILES})
-    set(${fiddle}_PROTOS ${processed_file}.proto)
-    set(_protobuf_include_path -I ${REPOSITORY_ROOT}/proto )
-    #set(protobuf_generate_PROTOC_OUT_DIR ${REPOSITORY_ROOT})
+    #message("passed files " ${GENERATE_CPP_FILES})
+    #message("passed language " ${GENERATE_CPP_MODE})
+    #message("passed plugin " ${GENERATE_CPP_PLUGIN})
+    foreach(processed_file ${GENERATE_CPP_FILES})
+        get_filename_component(_abs_file ${processed_file}.proto ABSOLUTE)
+        set(${actual}_PROTOS ${_abs_file})
+        set(_protobuf_include_path -I ${REPOSITORY_ROOT_ABSOLUTE}/proto )
 
-    protobuf_generate(TARGET flipper
-        PROTOS  ${${fiddle}_PROTOS}
-        PROTOC_OUT_DIR ${REPOSITORY_ROOT}/proto
-        )
-endforeach()
+        protobuf_generate(TARGET flipper
+            LANGUAGE ${GENERATE_CPP_MODE}
+            PLUGIN ${GENERATE_CPP_PLUGIN}
+            PROTOS  ${${actual}_PROTOS}
+            PROTOC_OUT_DIR ${REPOSITORY_ROOT_ABSOLUTE}/proto
+            )
+    endforeach()
+endfunction()
 
-foreach(processed_file ${GRPC_FILES})
-    set(${fiddle}_PROTOS ${processed_file}.proto)
-    set(_protobuf_include_path -I ${REPOSITORY_ROOT}/proto )
+generate_cpp(FILES ${PROTOBUF_FILES}
+             MODE CPP
+             PLUGIN "")
 
-    protobuf_generate(TARGET flipper
-        LANGUAGE GRPC
-        PLUGIN "protoc-gen-grpc=/usr/local/bin/grpc_cpp_plugin"
-        PROTOS  ${${fiddle}_PROTOS}
-        PROTOC_OUT_DIR ${REPOSITORY_ROOT}/proto
-        )
-endforeach()
+generate_cpp(FILES ${GRPC_FILES}
+          MODE GRPC
+          PLUGIN "protoc-gen-grpc=/usr/local/bin/grpc_cpp_plugin")
 
-target_include_directories(flipper PUBLIC ${REPOSITORY_ROOT})
+

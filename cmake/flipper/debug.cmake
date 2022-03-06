@@ -25,3 +25,15 @@ function(get_link_dependencies _target _listvar)
         set(${_listvar} "${_worklist}" PARENT_SCOPE)
     endif()
 endfunction()
+
+
+#example
+#set(_deps)
+#get_link_dependencies(flipper _deps)
+#foreach(_dep IN LISTS _deps)
+#    get_target_property(_srcs ${_dep} SOURCES)
+#    get_target_property(_src_dir ${_dep} SOURCE_DIR)
+#    foreach(_src IN LISTS _srcs)
+#        message("${_src_dir}/${_src}")
+#    endforeach()
+#endforeach()

@@ -3,7 +3,7 @@ project(Logger)
 
 find_package(Qt5 REQUIRED COMPONENTS Core Sql Concurrent)
 
-add_library(Logger STATIC
+add_library(Logger SHARED
     "src/QsLog.cpp"
     "src/QsLogDest.cpp"
     "src/QsLogDestConsole.cpp"
@@ -33,6 +33,8 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 generate_export_header(Logger
     EXPORT_FILE_NAME "${CMAKE_CURRENT_LIST_DIR}/include/logger/l_logger_global.h"
     EXPORT_MACRO_NAME "L_LOGGERSHARED_EXPORT")
+#target_compile_options(Logger PRIVATE "-fvisibility=hidden")
+
 
 if(NOT BUILD_SHARED_LIBS)
   target_compile_definitions(Logger PUBLIC LOGGER_STATIC_DEFINE)

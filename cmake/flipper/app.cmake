@@ -1,10 +1,3 @@
-
-
-target_include_directories(flipper PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/../../
-)
-#message(WARNING "For headers" ${CMAKE_CURRENT_LIST_DIR})
-
 set(FLIPPER_SOURCES
     "include/core/db_entity.h"
     "include/core/experimental/fic_relations.h"
@@ -174,8 +167,6 @@ if(NOT EXISTS $ENV{SQLITE_FOLDER}/sqlite3.c)
 endif()
 
 target_include_directories(flipper PUBLIC
-    #${CMAKE_CURRENT_LIST_DIR}
-    #${CMAKE_CURRENT_LIST_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party
     ${CMAKE_CURRENT_SOURCE_DIR}/../../libs
