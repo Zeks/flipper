@@ -45,7 +45,16 @@ rapidjson_exception() : std::runtime_error("json schema invalid") {}
 
 namespace discord {
 
-
+std::size_t replace_all(std::string* inout, std::string_view what, std::string_view with)
+{
+    std::size_t count{};
+    for (std::string::size_type pos{};
+         inout->npos != (pos = inout->find(what.data(), pos, what.length()));
+         pos += with.length(), ++count) {
+        inout->replace(pos, what.length(), with.data(), with.length());
+    }
+    return count;
+}
 
 std::atomic<bool> Client::allowMessages = true;
 
@@ -211,6 +220,9 @@ void Client::onMessage(SleepyDiscord::Message message) {
             return logRest();
         }
 
+        replace_all(&message.content, "<@742050608235937916>", "");
+        replace_all(&message.content, "<@528328968089108510>", "");
+
         std::string_view sv (message.content);
 
         const auto commandPrefix = server->GetCommandPrefix();
@@ -336,6 +348,8 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
     }
 }
 
+
+
 void Client::Log(const SleepyDiscord::Message& message)
 {
     // I really don't need mudae anywhere in my logs
@@ -349,6 +363,8 @@ void Client::Log(const SleepyDiscord::Message& message)
 
     if(message.author.bot && message.author.ID != getID())
         return;
+
+    //replace_all(&message.content, "<@742050608235937916>", "");
 
     if(message.content.length() > 100)
     {
