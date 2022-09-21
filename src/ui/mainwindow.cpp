@@ -2333,6 +2333,9 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.displaySnoozedFics = ui->chkDisplaySnoozed->isChecked();
     filter.fandomStates = ui->wdgFandomListPlaceholder->GetStateForSearches();
 
+    filter.excludeDeletedFics = tags.isEmpty() && filter.exactFicIds.isEmpty();
+    filter.excludeDeletedAuthors = tags.isEmpty() && filter.exactFicIds.isEmpty();
+
     QObject* windowObject= qwFics->rootObject();
     windowObject->setProperty("displaySnoozed", ui->chkDisplaySnoozed->isChecked());
 

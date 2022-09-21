@@ -84,6 +84,7 @@ protected:
                         bool usePageLimiter = false);
 
     QString ProcessBias(StoryFilter);
+    QString ProcessExpiration(StoryFilter);
     QString ProcessSumFaves(StoryFilter);
     QString ProcessFandoms(StoryFilter);
     //QString ProcessAuthor(StoryFilter);
