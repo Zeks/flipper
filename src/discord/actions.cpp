@@ -2188,8 +2188,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SpawnRemoveConfirmationAction());
     case ECommandType::ct_remove_message_text:
         return QSharedPointer<ActionBase>(new RemoveMessageTextAction());
-    case ECommandType::ct_plea:
-        return QSharedPointer<ActionBase>(new DisplayPleaAction());
+//    case ECommandType::ct_plea:
+//        return QSharedPointer<ActionBase>(new DisplayPleaAction());
     case ECommandType::ct_toggle_functionality_for_server:
         return QSharedPointer<ActionBase>(new ToggleFunctionalityForServerAction());
 
