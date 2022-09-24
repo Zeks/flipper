@@ -809,18 +809,16 @@ void FillPageDisplayMemo(T* fetcher,
 QSharedPointer<SendMessageCommand> DisplayPleaAction::ExecuteImpl(QSharedPointer<TaskEnvironment> , Command&& command){
     SleepyDiscord::Embed embed;
     embed.description = "IMPORTANT, PLEASE READ.\n";
-    embed.description += "Due to rash actions of my country my future and sources of income are very uncertain.\n\n"
-                        "If you have a position for an experienced c++ programmer in your company in Europe/US "
-                        "or know someone who does and is willing to employ me please contact me(zekses#3495) ASAP."
-                        "I do not know how long it is until they cut us off of the discord.\n\n"
-                        "it is possible that my desktop application will continue to work as it is not dependant on a chat service.\n"
-                        "see https://github.com/Zeks/flipper/releases but I cannot guarantee anything at this point."
-                        "\n\n"
-                        "I apologize for the inconvenience of this message but my situation is rather dire."
-                        "\n\n"
-                        "The bot will continue to work for however long I can access discord ports with it."
-                        "After that, I've made some enquiries, but no one knows if people revive it. It's been fun making it for you all."
-                         "\n\n";
+    embed.description += "Due to escalating situation in my country the service may be stopped any moment now if I am drafted.\n"
+                         "\n\n"
+                         "If you still want to use the recommendation service over a static snapshot of FFN "
+                         "up to this date please download the standalone version of the server I have released on my support discord."
+                         "\n\n"
+                         "https://discord.gg/zFyX8Khes2"
+                         "\n\n"
+                         "See it in #announcements channel there. It requires the desktop windows client you can see in #versions but this will work regardless of whether I am still alive or not."
+                         "\n\n"
+                         "So long and thanks for all the fish, I guess. I just hope someone remembers me";
 
 
     auto lastPlea = command.server->GetLastPleaPostTimestamp();
@@ -2188,8 +2186,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SpawnRemoveConfirmationAction());
     case ECommandType::ct_remove_message_text:
         return QSharedPointer<ActionBase>(new RemoveMessageTextAction());
-//    case ECommandType::ct_plea:
-//        return QSharedPointer<ActionBase>(new DisplayPleaAction());
+    case ECommandType::ct_plea:
+        return QSharedPointer<ActionBase>(new DisplayPleaAction());
     case ECommandType::ct_toggle_functionality_for_server:
         return QSharedPointer<ActionBase>(new ToggleFunctionalityForServerAction());
 
