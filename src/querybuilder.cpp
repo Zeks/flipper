@@ -205,6 +205,11 @@ QString DefaultQueryBuilder::ProcessBias(StoryFilter filter)
     return result;
 }
 
+QString DefaultQueryBuilder::ProcessExpiration(StoryFilter)
+{
+    return "";
+}
+
 QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter)
 {
     QString sumOfAuthorFavourites = " (SELECT sumfaves FROM recommenders where name = f.author) as sumfaves, \n";
