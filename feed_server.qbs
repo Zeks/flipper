@@ -162,8 +162,11 @@ App{
     ]
     cpp.cFlags: {
         var flags = []
-        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        if(!qbs.toolchain.contains("msvc")){
+            flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        }
         return flags
+
     }
     }
     cpp.systemIncludePaths: [
@@ -186,7 +189,7 @@ App{
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
         if(qbs.toolchain.contains("msvc"))
-            libs = libs.concat(["grpc", "grpc++", "gpr"])
+            libs = libs.concat(["grpc", "grpc++", "gpr", "zlib", "cares", "crypto", "ssl", "libprotobufd"])
         else
             libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
@@ -231,7 +234,9 @@ App{
     ]
     cpp.cFlags: {
         var flags = []
-        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        if(!qbs.toolchain.contains("msvc")){
+           flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        }
         return flags
     }
     }

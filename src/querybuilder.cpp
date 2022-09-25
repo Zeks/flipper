@@ -207,7 +207,7 @@ QString DefaultQueryBuilder::ProcessBias(StoryFilter filter)
 
 QString DefaultQueryBuilder::ProcessExpiration(StoryFilter)
 {
-
+    return "";
 }
 
 QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter)

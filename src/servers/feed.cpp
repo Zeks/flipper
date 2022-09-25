@@ -76,29 +76,33 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
     dbInterface->SetDatabase(database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","CrawlerDB","dbcode/dbinit.sql", GetDbNameFromCurrentThread(), true));
     auto mainDb = dbInterface->GetDatabase();
+    QLOG_TRACE() << 1;
 
     An<core::RecCalculator> calculator;
     auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authors->db = mainDb;
+    QLOG_TRACE() << 2;
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     fanfics->db = mainDb;
+    QLOG_TRACE() << 3;
     auto genres = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     genres->db = mainDb;
+    QLOG_TRACE() << 4;
     fanfics->authorInterface = authors;
     calculator->holder.authorsInterface = authors;
     calculator->holder.fanficsInterface = fanfics;
     calculator->holder.genresInterface = genres;
     calculator->holder.settingsFile = "settings/settings_server.ini";
-
-    qDebug() << "loading fics";
+    QLOG_TRACE() << 5;
+    QLOG_TRACE() << "loading fics";
     calculator->holder.LoadData<core::rdt_fics>("ServerData");
-    qDebug() << "loading favourites";
+    QLOG_TRACE() << "loading favourites";
     calculator->holder.LoadData<core::rdt_favourites>("ServerData");
-    qDebug() << "loading genres composite";
+    QLOG_TRACE() << "loading genres composite";
     //genres->loadOriginalGenresOnly = true;
     calculator->holder.LoadData<core::rdt_fic_genres_composite>("ServerData");
     //genres->loadOriginalGenresOnly = false;
-    qDebug() << "loading moods";
+    QLOG_TRACE() << "loading moods";
     calculator->holder.LoadData<core::rdt_author_mood_distribution>("ServerData");
 
     if(calculator->holder.authorMoodDistributions.size() == 0)
@@ -742,7 +746,14 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
 //    });
 //    dataPassAction.run();
-    QLOG_INFO() << "Byte size will be: " << response->ByteSizeLong();
+    // this is because linux has much fresher version of grpc
+    // and I don't want to touch what's working on windows
+    #ifdef Q_OS_WINDOWS
+    QLOG_INFO() << "Byte size will be: " << response->ByteSize();
+    #endif
+    #ifdef Q_OS_LINUX
+    QLOG_INFO() << "Byte size will be: " << response->ByteSize();
+    #endif
     return Status::OK;
 }
 
