@@ -56,7 +56,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
         if(idList.size() == 0)
             idList.push_back("-1");
         RNGData::ListPtr usedList;
-        if(!containsList)
+        if(!containsList || listIsOutdated)
         {
             RNGData::ListPtr newList(new RNGData::ListPtr::Type);
             rngData->randomIdLists[where] = newList;
