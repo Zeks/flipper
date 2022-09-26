@@ -135,19 +135,7 @@ void Client::InitClient()
 
 void Client::onInteraction(SleepyDiscord::Interaction interaction)
 {
-    if (interaction.data.name != "add")
-         return; //not found
-
-     for (auto& option : interaction.data.options) {
-         if (option.name == "left" || option.name == "right") {
-             double num;
-             if (option.get(num)) {
-                 //answer += num;
-             } else {
-                 return; //fail
-             }
-         }
-     }
+    slashCommandDispatcher->ProcessAnySlashCommand(std::move(interaction));
 }
 
 QSharedPointer<discord::Server> Client::InitDiscordServerIfNecessary(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverId)
@@ -435,26 +423,9 @@ void Client::timerEvent(QTimerEvent *)
 void discord::Client::onReady(SleepyDiscord::Ready )
 {
     botPrefixRequest = "<@!" + getID().string() + "> prefix";
-//    slashCommandDispatcher.reset(new slash_commands::CommandDispatcher(this, getID()));
-//    slashCommandDispatcher->InitAllSlashCommands();
+    slashCommandDispatcher.reset(new slash_commands::CommandDispatcher(this, getID()));
+    slashCommandDispatcher->InitAllSlashCommands();
 
-    const std::string name = "Recs";
-    const std::string description = "Creates recommendation list";
-    std::vector<SleepyDiscord::AppCommand::Option> options;
-    SleepyDiscord::AppCommand::Option left;
-    left.name = "left";
-    left.isRequired = true;
-    left.description = "The number to the left of the + sign";
-    left.type = SleepyDiscord::AppCommand::Option::TypeHelper<double>::getType();
-    options.push_back(std::move(left));
-
-
-    try{
-        createGlobalAppCommand(getID(), name, description, std::move(options));
-    }
-    catch (const SleepyDiscord::ErrorCode& error){
-        QLOG_INFO() << "Discord error:" << error;
-    }
 }
 
 MessageResponseWrapper Client::sendMessageWrapper(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID,

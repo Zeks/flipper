@@ -2,9 +2,6 @@ import qbs
 import qbs.Environment
 import "BuildHelpers.js" as Funcs
 Product{
-    files: [
-        "include/discord/client_v3.h",
-    ]
     name: "Environment"
     Export {
         Depends { name: "cpp" }

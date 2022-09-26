@@ -46,6 +46,9 @@ struct OptionalWithTemp{
 
 void CommandDispatcher::ProcessRecsSlashCommand(SleepyDiscord::Interaction && interaction) const
 {
+    SleepyDiscord::Interaction::Response<> response;
+    response.type = SleepyDiscord::InteractionCallbackType::ChannelMessageWithSource;
+
     OptionalWithTemp<std::string> id;
     OptionalWithTemp<std::string> refresh;
     for (auto& option : interaction.data.options) {
@@ -57,41 +60,47 @@ void CommandDispatcher::ProcessRecsSlashCommand(SleepyDiscord::Interaction && in
             }
         }
     if(id.has_value()){
-        auto message = CreateMessageTemplateFromInteraction(interaction);
+        auto message  = CreateMessageTemplateFromInteraction(interaction);
         message.content = "!recs ";
         if(refresh.value_or("") == "Y")
             message.content += ">refresh ";
         message.content += *id.optionalValue;;
+        response.data.content = "executing";
+        client->createInteractionResponse(interaction.ID, interaction.token, response);
         client->onMessage(message);
+    }
+    else{
+        response.data.content = "incorrect paramateres to the command";
+        client->createInteractionResponse(interaction.ID, interaction.token, response);
     }
 }
 
 ECommandTypes CommandDispatcher::StringToCommandType(std::string value) const
 {
-    if(value == "Recs")
+    if(value == "recs")
         return ECommandTypes::ct_recs_creation;
     return ECommandTypes::ct_invalid_command;
 }
 
 void discord::slash_commands::CommandDispatcher::InitRecsSlashCommand() const
 {
-    const std::string name = "Recs";
+    const std::string name = "recs";
     const std::string description = "Creates recommendation list";
     std::vector<SleepyDiscord::AppCommand::Option> options;
 
-//    SleepyDiscord::AppCommand::Option id;
-//    id.name = "id";
-//    id.isRequired = true;
-//    id.description = "Id of your ffn profile or url";
-//    id.type = SleepyDiscord::AppCommand::Option::TypeHelper<std::string>::getType();
-//    options.push_back(std::move(id));
+    SleepyDiscord::AppCommand::Option id;
+    id.name = "id";
+    id.isRequired = true;
+    id.description = "Id of your ffn profile or url";
+    id.type = SleepyDiscord::AppCommand::Option::TypeHelper<std::string>::getType();
+    options.push_back(std::move(id));
 
-//    SleepyDiscord::AppCommand::Option refresh;
-//    refresh.name = "refresh";
-//    refresh.isRequired = false;
-//    refresh.description = "Do you need to refresh recommendations? Y/N (don't use this often)";
-//    refresh.type = SleepyDiscord::AppCommand::Option::TypeHelper<std::string>::getType();
-//    options.push_back(std::move(refresh));
+    SleepyDiscord::AppCommand::Option refresh;
+    refresh.name = "refresh";
+    refresh.isRequired = false;
+    refresh.description = "Do you need to refresh recommendations? Y/N (don't use this often)";
+    refresh.type = SleepyDiscord::AppCommand::Option::TypeHelper<std::string>::getType();
+    options.push_back(std::move(refresh));
 
     try{
         client->createGlobalAppCommand(botUser, name, description, std::move(options));
@@ -104,7 +113,7 @@ void discord::slash_commands::CommandDispatcher::InitRecsSlashCommand() const
 SleepyDiscord::Message CommandDispatcher::CreateMessageTemplateFromInteraction(const SleepyDiscord::Interaction & interaction)const
 {
     SleepyDiscord::Message message;
-    message.author = interaction.user;
+    message.author = interaction.member.user;
     message.ID = interaction.message.ID;
     message.channelID = interaction.channelID;
     message.serverID = interaction.serverID;
