@@ -33,7 +33,7 @@ App{
         "include/discord/command.h",
         "include/discord/command_chain.h",
         "include/discord/command_controller.h",
-        "include/discord/command_generators.h",
+        "include/discord/command_generatzors.h",
         "include/discord/command_parser.h",
         "include/discord/db_vendor.h",
         "include/discord/discord_ffn_page.h",
@@ -176,6 +176,8 @@ App{
         "src/core/author.cpp",
         "include/core/recommendation_list.h",
         "src/core/recommendation_list.cpp",
+        "include/discord/slashcommands.h",
+        "src/discord/slashcommands.cpp",
     ]
     cpp.defines: base.concat(["FMT_HEADER_ONLY", project.usePostgres ? "USE_POSTGRES" : "", project.useWebview ? "USE_WEBVIEW" : "NO_WEBVIEW"])
     Group{

@@ -31,6 +31,7 @@ Project {
         return rootFolder.toString()
     }
     property bool useWebview: false
+    property bool usePostgres: false
     references: [
         "feed_server.qbs",
         "core_condition.qbs",

@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/identity_hash.h"
 #include "discord/cached_message_source.h"
 #include "discord/tracked-messages/tracked_message_base.h"
+#include "discord/slashcommands.h"
 #include "core/section.h"
 #include <QString>
 #include <QRegularExpression>
@@ -65,6 +66,7 @@ public:
     Client(const std::string token, const char numOfThreads = SleepyDiscord::USER_CONTROLED_THREADS, QObject* obj = nullptr);
     Client(QObject* obj = nullptr);
     void InitClient();
+    void onInteraction(SleepyDiscord::Interaction interaction) override;
     QSharedPointer<discord::Server> InitDiscordServerIfNecessary(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverId);
     void InitCommandExecutor();
     QSharedPointer<discord::Server> GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel>, SleepyDiscord::Snowflake<SleepyDiscord::Server>);
@@ -82,6 +84,7 @@ public:
     std::regex rxCommandIdentifier;
     QSharedPointer<CommandController> executor;
     QSet<std::string> actionableEmoji;
+    std::unique_ptr<slash_commands::CommandDispatcher> slashCommandDispatcher;
 
     An<ClientStorage> storage;
 
@@ -90,6 +93,8 @@ public:
     static std::atomic<int64_t> mirrorTargetChannel;
     static std::atomic<int64_t> mirrorSourceChannel;
     static std::atomic<int64_t> botPmChannel;
+
+
 
 protected:
     virtual void timerEvent(QTimerEvent *) override;
