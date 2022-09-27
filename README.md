@@ -1,6 +1,5 @@
 # Important Notice
-If you are reading this and are willing to offer relocation to european country to a developer of this application I would be very interested. 
-You will get an extremely grateful and dedicated c++ developer working for you.
+
 
 Update: draft is official now. I may be gone any day. Repo has dockerfile to build server version for linux but anyone interested in hosting a local server instance on windows can download this: https://drive.google.com/file/d/1nSEtLEh-2yOiB0Bj8nagLaVlRWySBF1t/view?usp=sharing
 
