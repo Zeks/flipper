@@ -33,7 +33,7 @@ App{
         "include/discord/command.h",
         "include/discord/command_chain.h",
         "include/discord/command_controller.h",
-        "include/discord/command_generatzors.h",
+        "include/discord/command_generators.h",
         "include/discord/command_parser.h",
         "include/discord/db_vendor.h",
         "include/discord/discord_ffn_page.h",

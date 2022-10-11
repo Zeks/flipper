@@ -11,7 +11,7 @@ Product{
     // and not a shitton of deprecations warnings I can do nothing about
     cpp.cxxFlags:{
         if(!qbs.toolchain.contains("msvc"))
-            return ["-Wno-unused-function", "-Wno-deprecated-copy"]
+            return ["-Wno-unused-function", "-Wno-deprecated-copy", "-Wno-deprecated-declarations", "-Wno-deprecated"]
         return []
     }
 
@@ -30,5 +30,5 @@ Product{
             return ["ccache"]
         return []
     }
-    cpp.defines: ["MAJOR_PROTOCOL_VERSION=2", "MINOR_PROTOCOL_VERSION=0","NONEXISTENT_OPUS"]
+    cpp.defines: ["MAJOR_PROTOCOL_VERSION=2", "MINOR_PROTOCOL_VERSION=0","NONEXISTENT_OPUS", "QT_NO_DEPRECATED_WARNINGS"]
 }
