@@ -57,7 +57,7 @@ struct RecommendationListFicData
 
 
 
-class RecommendationList : public DBEntity{
+class RecommendationList {
 public:
     RecommendationList(){
         ficData.reset(new RecommendationListFicData());

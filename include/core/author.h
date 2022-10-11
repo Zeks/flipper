@@ -29,7 +29,7 @@ public:
     void Deserialize(QDataStream &in);
 };
 
-class Author : public DBEntity{
+class Author {
 public:
     static AuthorPtr NewAuthor() { return AuthorPtr(new Author);}
     //FicSectionStats MergeStats(QList<AuthorPtr>);
@@ -88,7 +88,7 @@ public:
 class AuthorRecommendationStats;
 typedef QSharedPointer<AuthorRecommendationStats> AuhtorStatsPtr;
 
-class AuthorRecommendationStats : public DBEntity
+class AuthorRecommendationStats 
 {
 public:
     static AuhtorStatsPtr NewAuthorStats() { return QSharedPointer<AuthorRecommendationStats>(new AuthorRecommendationStats);}

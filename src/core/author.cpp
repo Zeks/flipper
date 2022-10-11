@@ -47,7 +47,6 @@ QStringList core::Author::GetWebsites() const
 
 void core::Author::Serialize(QDataStream &out)
 {
-    out << hasChanges;
     out << id;
     out << static_cast<int>(idStatus);
     out << name;
@@ -65,7 +64,6 @@ void core::Author::Serialize(QDataStream &out)
 
 void core::Author::Deserialize(QDataStream &in)
 {
-    in >> hasChanges;
     in >> id;
     int temp;
     in >> temp;

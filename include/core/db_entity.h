@@ -1,14 +1,6 @@
 #pragma once
 
 namespace core {
-
-class DBEntity{
-public:
-    bool HasChanges() const {return hasChanges;}
-    virtual ~DBEntity(){}
-    bool hasChanges = false;
-};
-
 enum class UpdateMode
 {
     none = -1,

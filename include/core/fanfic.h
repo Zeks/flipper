@@ -13,7 +13,7 @@ class Author;
 class Fanfic;
 typedef QSharedPointer<Fanfic> FicPtr;
 
-class Fanfic : public DBEntity{
+class Fanfic {
 public:
     enum EFicSource{
         efs_search = 0,

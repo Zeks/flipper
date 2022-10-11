@@ -293,19 +293,6 @@ QList<core::FandomPtr> Fandoms::FilterFandoms(const std::function<bool (core::Fa
     return result;
 }
 
-// do I really need that?
-//bool Fandoms::Sync(bool forcedSync)
-//{
-//    bool ok = true;
-//    for(auto fandom: fandoms)
-//    {
-//        if(forcedSync || fandom->hasChanges)
-//        {
-//            ok = ok && sql::WriteMaxUpdateDateForFandom(fandom, db);
-//        }
-//    }
-//    return ok;
-//}
 
 bool Fandoms::Load()
 {
@@ -556,35 +543,6 @@ QString Fandoms::GetNameForID(int id)
     return result;
 }
 
-void Fandoms::SetTracked(QString fandom, bool value, bool immediate)
-{
-    fandom = core::Fandom::ConvertName(fandom.trimmed());
-    if(!EnsureFandom(fandom))
-        return;
-
-    if(immediate)
-    {
-        auto id = nameIndex[fandom.toLower()]->id;
-        sql::SetFandomTracked(id, value, db);
-    }
-    else
-        nameIndex[fandom.toLower()]->hasChanges = nameIndex[fandom.toLower()]->tracked == false;
-
-    nameIndex[fandom.toLower()]->tracked = value;
-    if(value == true)
-        trackedFandoms.push_back(nameIndex[fandom.toLower()]);
-    else
-    {
-        int id = nameIndex[fandom.toLower()]->id;
-        auto it = std::find_if(std::begin(trackedFandoms), std::end(trackedFandoms), [id](core::FandomPtr ptr){
-                if(ptr && ptr->id == id)
-                return true;
-                return false;
-    });
-        if(it != std::end(trackedFandoms))
-          trackedFandoms.erase(it);
-    }
-}
 
 QStringList Fandoms::ListOfTrackedNames()
 {

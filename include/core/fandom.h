@@ -11,7 +11,7 @@ typedef  QSharedPointer<Fandom> FandomPtr;
 
 
 
-class Fandom : public DBEntity
+class Fandom
 {
 public:
     Fandom(){}

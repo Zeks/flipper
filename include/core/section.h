@@ -36,7 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "core/recommendation_list.h"
 namespace core {
 
-class FanficSectionInFFNFavourites : public DBEntity
+class FanficSectionInFFNFavourites 
 {
 public:
     FanficSectionInFFNFavourites();
