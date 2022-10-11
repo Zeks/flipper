@@ -19,6 +19,7 @@ Makefile
 Makefile.*
 ui_*
 third_party/sqlite3/*
+third_party/deps-rangev3/*
 fpmtmp/*
 deployment/*
 shell/deployment/*
