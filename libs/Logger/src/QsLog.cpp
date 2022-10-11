@@ -43,7 +43,6 @@
 
 namespace QsLogging
 {
-int TestVisibility(int a){return 0;}
 // not using Qt::ISODate because we need the milliseconds too
 //static const QString fmtDateTime("dd hh:mm:ss.zzz");
 

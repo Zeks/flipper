@@ -796,8 +796,8 @@ CommandChain CreateChangeReviewPageCommand(QSharedPointer<User> user, QSharedPoi
 
     Command command = NewCommand(server, message,ct_display_review);
     int currentPosition = listData->currentPosition;
-    if(shiftRight && currentPosition == listData->reviews.size() - 1)
-        currentPosition =  0;
+    if(shiftRight && currentPosition == static_cast<int>(listData->reviews.size()) - 1)
+        currentPosition = 0;
     else if(!shiftRight && currentPosition == 0)
         currentPosition = listData->reviews.size() -1;
     else

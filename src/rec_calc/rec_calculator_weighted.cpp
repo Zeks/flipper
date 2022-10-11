@@ -206,6 +206,8 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
 AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorResult& author, int authorSize, int maximumMatches){
     AuthorWeightingResult result;
     result.isValid = true;
+    Q_UNUSED(authorSize);
+    Q_UNUSED(maximumMatches);
 
     bool uncommon = uncommonRange <= (ratioMedian - author.ratio);
     bool rare = rareRange <= (ratioMedian - author.ratio);

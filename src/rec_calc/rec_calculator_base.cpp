@@ -633,7 +633,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             {
                 auto& author = tempAuthors[itCurrent-rangeBegin];
                 author.id = *itCurrent;
-                if(ownProfileId == author.id)
+                if(ownProfileId >= 0 && static_cast<size_t>(ownProfileId) == author.id)
                 {
                     itCurrent++;
                     continue;

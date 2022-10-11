@@ -52,7 +52,7 @@ struct AuthorWeightingResult
 struct AuthorResult{
     uint32_t sizeAfterIgnore = 0;
 
-    uint32_t id;
+    uint32_t id = 0;
     uint32_t matches = 0;
     uint32_t negativeMatches = 0;
     uint32_t fullListSize;

@@ -109,6 +109,7 @@ public:
    QWidget* main = nullptr;
 };
 
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT

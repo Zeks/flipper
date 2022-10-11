@@ -566,35 +566,6 @@ void ServitorWindow::InitGrpcSource()
     }
 }
 
-static QHash<QString, int> CreateGenreRedirects(){
-    QHash<QString, int> result;
-    result["General"] = 0;
-    result["Humor"] = 1;
-    result["Poetry"] = 2;
-    result["Adventure"] = 3;
-    result["Mystery"] = 4;
-    result["Horror"] = 5;
-    result["Parody"] = 6;
-    result["Angst"] = 7;
-    result["Supernatural"] = 8;
-    result["Suspense"] = 9;
-    result["Romance"] = 10;
-    result["not found"] = 11;
-    result["Sci-Fi"] = 13;
-    result["Fantasy"] = 14;
-    result["Spiritual"] = 15;
-    result["Tragedy"] = 16;
-    result["Western"] = 17;
-    result["Crime"] = 18;
-    result["Family"] = 19;
-    result["Hurt/Comfort"] = 20;
-    result["Friendship"] = 21;
-    result["Drama"] = 22;
-    return result;
-}
-
-
-
 QVector<genre_stats::FicGenreData> ServitorWindow::CreateGenreDataForFics(GenreDetectionSources input,
                                                                           CutoffControls cutoff,
                                                                           bool userIterationForGenreProcessing, bool displayLog){
@@ -692,7 +663,7 @@ QVector<genre_stats::FicGenreData> ServitorWindow::CreateGenreDataForFics(GenreD
 }
 
 
-void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
+void ServitorWindow::DetectGenres(size_t minAuthorRecs, size_t minFoundLists)
 {
     interfaces::GenreConverter converter;
 
@@ -733,7 +704,7 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     QList<int> result;
     for(auto i = ficsToUse.begin(); i != ficsToUse.end(); i++)
     {
-        if(i.value().size() >= minFoundLists)
+        if(i.value().size() >= static_cast<int>(minFoundLists))
             result.push_back(i.key());
 
     }
@@ -742,7 +713,7 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
 
     for(auto i = ficsToUse.begin(); i != ficsToUse.end(); i++)
     {
-        if(i.value().size() >= minFoundLists)
+        if(i.value().size() >= static_cast<int>(minFoundLists))
             filteredFicsToUse[i.key()] = i.value();
 
     }
@@ -854,7 +825,7 @@ void ServitorWindow::CreateAdjustedGenresForAuthors()
 
     qDebug() << "Finished queue set";
 }
-void ServitorWindow::CreateSecondIterationOfGenresForFics(int minAuthorRecs, int minFoundLists)
+void ServitorWindow::CreateSecondIterationOfGenresForFics(size_t minAuthorRecs, size_t minFoundLists)
 {
     InputForGenresIteration2 inputs;
     //QVector<int> ficIds;
@@ -894,7 +865,7 @@ void ServitorWindow::CreateSecondIterationOfGenresForFics(int minAuthorRecs, int
     QHash<int, QSet<int>> filteredFicsToUse;
     for(auto i = ficsToUse.begin(); i != ficsToUse.end(); i++)
     {
-        if(i.value().size() >= minFoundLists)
+        if(i.value().size() >= static_cast<int>(minFoundLists))
         {
             const auto key = i.key();
             filteredFicsToUse[key] = i.value();
@@ -1178,6 +1149,7 @@ void ServitorWindow::on_pbUpdateInterval_clicked()
 {
     auto db = sql::Database::database();
     auto isOpen = db.isOpen();
+    Q_UNUSED(isOpen);
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
     dbInterface->SetDatabase(db);
@@ -1425,6 +1397,7 @@ void ServitorWindow::on_pbFindSlashSummary_clicked()
                                    " whatever he must, he will either ascended to the top, or die trying.",
                                    "[Ichigo K., Yoruichi S.] Rukia K., T. Harribel",
                                    "Detective Conan/Case Closed");
+    Q_UNUSED(result);
 }
 
 void ServitorWindow::LoadDataForCalculation(CalcDataHolder& cdh)
@@ -1543,111 +1516,9 @@ void ServitorWindow::ProcessCDHData(CalcDataHolder& cdh){
     qDebug() << 2;
 }
 
-struct Sink{
-    Sink(){}
-    template <typename T>
-    void SaveIntersection(uint32_t fic1,uint32_t fic2, const T& intersection){
-        //        QVector<uint32_t> vec;
-        //        for(auto item : intersection)
-        //            vec.push_back(item);
-        //        std::sort(vec.begin(), vec.end());
-        //        qDebug() << fic1 << "  " << fic2;
-        //        qDebug() << vec;
-        //QWriteLocker locker(&lock);
-        counter++;
-    }
-    std::atomic<int> counter = 0;
-    QHash<QPair<uint32_t,uint32_t>, QVector<int>> intersections;
-    QReadWriteLock lock;
-};
-
-void ServitorWindow::CalcConstantMemory()
-{
-    CalcDataHolder cdh;
-    LoadDataForCalculation(cdh);
-    ProcessCDHData(cdh);
-    Sink sink;
-    keys = ficData.keys();
-    auto rng = std::default_random_engine {};
-    std::shuffle(std::begin(keys), std::end(keys), rng);
-    auto worker = [&](int start, int end, int otherEnd, auto* saver)->void
-    {
-
-        for(int i = start; i < end; i++)
-        {
-            //            if(i > start)
-            //                break;
-            if(i%100 == 0)
-                qDebug() << "working from: " << start << " at: " << i;
-            auto fic1 = keys[i];
-            for(int j = i+1; j < otherEnd; j++)
-            {
-                //                if(j > i+1)
-                //                    break;
-                auto fic2 = keys[j];
-                const auto& set1 = ficsToFavLists[fic1];
-                const auto& set2 = ficsToFavLists[fic2];
-                auto temp = set1;
-                temp = temp & set2;
-
-                ///
-                //                QVector<uint32_t> vec;
-                //                for(auto item : set1)
-                //                    vec.push_back(item);
-                //                std::sort(vec.begin(), vec.end());
-                //                qDebug() << vec;
-
-                //                vec.clear();
-                //                for(auto item : set2)
-                //                    vec.push_back(item);
-                //                std::sort(vec.begin(), vec.end());
-                //                qDebug() << vec;
-
-                //                vec.clear();
-                //                for(auto item : temp)
-                //                    vec.push_back(item);
-                //                std::sort(vec.begin(), vec.end());
-                //                qDebug() << vec;
-                ///
-
-                if(!temp.isEmpty())
-                    saver->SaveIntersection(fic1, fic2, temp);
-            }
-        }
-    };
-
-    QList<QFuture<void>> futures;
-    //int threads = 1;//QThread::idealThreadCount()-1;
-    int threads = QThread::idealThreadCount()-1;
-    for(int i = 0; i < threads; i++)
-    {
-        int partSize = keys.size() / threads;
-        int start = i*partSize;
-        int end = i == (threads - 1) ? keys.size() : (i+1)*partSize;
-        futures.push_back(QtConcurrent::run(worker,
-                                            start,
-                                            end,
-                                            keys.size(),
-                                            &sink));
-    }
-    TimedAction action("processing data",[&](){
-        for(auto future: std::as_const(futures))
-        {
-            future.waitForFinished();
-        }
-    });
-    action.run();
-    qDebug() << "Final count:" << sink.counter;
-}
-
-
 
 void ServitorWindow::on_pbCalcWeights_clicked()
 {
-
-
-    //    CalcConstantMemory();
-    //    return;
     CalcDataHolder cdh;
     LoadDataForCalculation(cdh);
     ProcessCDHData(cdh);
@@ -2049,12 +1920,12 @@ QHash<int, int> ServitorWindow::CreateSummaryMatches()
     }
     return result;
 }
-void ServitorWindow::on_cbMoodSource_currentIndexChanged(const QString &arg1)
+void ServitorWindow::on_cbMoodSource_currentIndexChanged(const QString &)
 {
     on_pbCompareGenres_clicked();
 }
 
-void ServitorWindow::on_cbUserIDs_currentIndexChanged(const QString &arg1)
+void ServitorWindow::on_cbUserIDs_currentIndexChanged(const QString &)
 {
     FillFicsForUser(ui->cbUserIDs->currentText());
 }
@@ -2163,7 +2034,9 @@ void ServitorWindow::on_pbExtractDiscords_clicked()
             //qDebug() << bio;
             auto matchCapital = rxCapital.match(bio);
             auto indexSmol = rxSmol.indexIn(bio);
+            Q_UNUSED(indexSmol);
             auto hasPony= temp.contains("My Little Pony");
+            Q_UNUSED(hasPony);
             if(matchCapital.hasMatch() /*&& indexSmol == -1 && !hasPony*/)
             {
                     const auto list = matchCapital.capturedTexts();

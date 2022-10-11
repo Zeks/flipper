@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #pragma GCC diagnostic ignored "-Wdeprecated-copy"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "sleepy_discord/embed.h"
 #include "sleepy_discord/message.h"
 #pragma GCC diagnostic pop

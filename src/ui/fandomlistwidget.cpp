@@ -689,7 +689,7 @@ void FandomListWidget::AddFandomToList(std::shared_ptr<TreeItemInterface> node, 
     node->AddChildren(children);
     env->interfaces.fandomLists->AddFandomToList(basePtr->id, fandomId, name);
     env->interfaces.fandomLists->EditFandomStateForList(newFandomState);
-    node->SetChildrenExclusive(Qt::Checked);
+    node->SetChildrenExclusive(true);
     lastAdded = {basePtr->id, fandomId};
     lastAdditionTime = std::chrono::high_resolution_clock::now();
     ReloadModel();

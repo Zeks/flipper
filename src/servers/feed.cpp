@@ -239,6 +239,7 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
 
 grpc::Status FeederService::SearchByIdList(grpc::ServerContext *context, const ProtoSpace::SearchByIdListTask *task, ProtoSpace::SearchByIdListResponse *response)
 {
+    Q_UNUSED(context)
     RequestContext reqContext("Search by id list", task->controls(), this);
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;

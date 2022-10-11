@@ -2,6 +2,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #pragma GCC diagnostic ignored "-Wdeprecated-copy"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic push
 #include "sleepy_discord/user.h"
 #include "sleepy_discord/slash_commands.h"

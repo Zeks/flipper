@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
-#include "Interfaces/base.h"
+
 #include "core/section.h"
 #include "QScopedPointer"
 #include "QSharedPointer"
@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 
 namespace interfaces {
+class Fandoms;
 struct TagIDFetcherSettings{
     QStringList tags;
     bool useAND = false;

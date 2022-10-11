@@ -197,6 +197,7 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     bool success = false;
     if(result.content.contains("| FanFiction"))
         success =true;
+    Q_UNUSED(success);
     return result;
 }
 

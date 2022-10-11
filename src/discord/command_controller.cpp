@@ -128,7 +128,7 @@ void CommandController::timerEvent(QTimerEvent *)
         if(queue.size() == 0)
             break;
 
-        for(auto  i = 0; i < queue.size(); i++){
+        for(size_t i = 0; i < queue.size(); i++){
             auto command = std::move(queue.front());
             queue.pop_front();
             if(activeUsers.contains(command.user->GetUuid()))

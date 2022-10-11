@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
-#include "Interfaces/base.h"
+
 #include "core/section.h"
 #include "core/experimental/fic_relations.h"
 #include "regex_utils.h"
@@ -29,8 +29,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 
 namespace interfaces {
+class Fandoms;
+class Authors;
 
-class Fanfics : public IDBWebIDIndex {
+class Fanfics {
     public:
     virtual ~Fanfics() = default;
     void ClearQueues() {

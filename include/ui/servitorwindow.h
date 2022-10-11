@@ -95,15 +95,14 @@ public:
     void InitMatchingListChartView(genre_stats::ListMoodData data, genre_stats::ListMoodData combinedData);
     void InitGrpcSource();
 
-    void DetectGenres(int minAuthorRecs, int minFoundLists);
+    void DetectGenres(size_t minAuthorRecs, size_t minFoundLists);
     void CreateAdjustedGenresForAuthors();
-    void CreateSecondIterationOfGenresForFics(int minAuthorRecs, int minFoundLists);
+    void CreateSecondIterationOfGenresForFics(size_t minAuthorRecs, size_t minFoundLists);
     QVector<genre_stats::FicGenreData> CreateGenreDataForFics(GenreDetectionSources input,
                                                               CutoffControls cutoff,
                                                               bool userIterationForGenreProcessing = false, bool displayLog = false);
     void LoadDataForCalculation(CalcDataHolder& data);
     void ProcessCDHData(CalcDataHolder& data);
-    void CalcConstantMemory();
     void FillFicsForUser(QString);
     QHash<int, int> CreateSummaryMatches();
     QHash<uint32_t, core::FicWeightPtr> ficData;

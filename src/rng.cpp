@@ -104,9 +104,9 @@ void DefaultRNGgenerator::RemoveOutdatedRngSequences()
     }
 }
 
-void DefaultRNGgenerator::RemoveOlderRngSequencesPastTheLimit(uint32_t limit)
+void DefaultRNGgenerator::RemoveOlderRngSequencesPastTheLimit(size_t limit)
 {
-    if(rngData->randomIdLists.size() < static_cast<int>(limit))
+    if(rngData->randomIdLists.size() < limit)
         return;
     //rngData->Log("pre");
     // HACK this resorts the queue

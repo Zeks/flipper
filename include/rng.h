@@ -53,7 +53,7 @@ struct DefaultRNGgenerator : public IRNGGenerator{
                         sql::Database db, StoryFilter& filter);
 
     void RemoveOutdatedRngSequences();
-    void RemoveOlderRngSequencesPastTheLimit(uint32_t limit);
+    void RemoveOlderRngSequencesPastTheLimit(size_t limit);
 
     QSharedPointer<RNGData> rngData;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
