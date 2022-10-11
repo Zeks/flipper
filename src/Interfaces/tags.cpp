@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
 #include "pure_sql.h"
+#include "sqlitefunctions.h"
 #include <QFile>
 #include <QDebug>
 
@@ -92,10 +93,10 @@ bool Tags::ExportToFile(QString filename)
         closeDb.close();
     bool success = QFile::remove(exportFile);
     Q_UNUSED(success);
-    QSharedPointer<database::IDBWrapper> tagExportInterface (new database::SqliteInterface());
-    auto tagExportDb = tagExportInterface->InitDatabase("TagExport", false);
-    tagExportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagExport");
-    sql::ExportTagsToDatabase(db, tagExportDb);
+
+    auto exportDb = database::sqlite::InitSqliteDatabase("TagExport", false);
+    database::sqlite::ReadDbFile("dbcode/tagexportinit.sql", "TagExport");
+    sql::ExportTagsToDatabase(db, exportDb); // todo check in git
     return true;
 }
 
@@ -110,11 +111,10 @@ bool Tags::ImportFromFile(QString filename)
         qDebug() << "Could not find importfile";
         return false;
     }
-    QSharedPointer<database::IDBWrapper> tagImportInterface (new database::SqliteInterface());
-    auto tagImportDb = tagImportInterface->InitDatabase("TagExport", false);
-    tagImportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagImport");
+    auto otherDb = database::sqlite::InitSqliteDatabase("TagImport", false);
+    database::sqlite::ReadDbFile("dbcode/tagexportinit.sql", "TagImport");
     database::Transaction transaction(db);
-    sql::ImportTagsFromDatabase(db, tagImportInterface->GetDatabase());
+    sql::ImportTagsFromDatabase(db, otherDb);
     transaction.finalize();
     return true;
 }

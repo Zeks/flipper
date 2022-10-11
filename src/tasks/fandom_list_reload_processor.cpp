@@ -33,13 +33,11 @@ FandomListReloadProcessor::FandomListReloadProcessor(sql::Database db,
                                          QSharedPointer<interfaces::Fanfics> fanficInterface,
                                          QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                          QSharedPointer<interfaces::PageTask> pageInterface,
-                                         QSharedPointer<database::IDBWrapper> dbInterface,
                                          QObject *obj) : QObject(obj)
 {
     this->fanficsInterface = fanficInterface;
     this->fandomsInterface = fandomsInterface;
     this->pageInterface = pageInterface;
-    this->dbInterface = dbInterface;
     this->db = db;
 }
 

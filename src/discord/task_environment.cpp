@@ -24,7 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "Interfaces/ffn/ffn_authors.h"
 #include "Interfaces/fandoms.h"
 #include "Interfaces/authors.h"
+#include "include/sqlitefunctions.h"
 #include <QSettings>
+#include "sqlitefunctions.h"
 
 
 #include "GlobalHeaders/SingletonHolder.h"
@@ -39,33 +41,34 @@ static inline QString CreateConnectString(QString ip,QString port)
 
 void TaskEnvironment::Init()
 {
-    QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
-    userDbInterface->SetDatabase(database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","DiscordDB","dbcode/discord_init.sql", "DiscordDB", false));
-    userDbInterface->EnsureUUIDForUserDatabase();
+    // todo check if it's executing properly
+    // not sure why sqlite and plsql somehow coexist
+    this->db = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","DiscordDB","dbcode/discord_init.sql", "DiscordDB", false);
 
-    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-    auto pageCacheDb = pageCacheInterface->InitDatabase2("PageCache","pcInit");
-    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "pcInit");
+    //todo - why am I reading these two databases by differnt methods? check!
+    auto pageCacheDb = database::sqlite::InitSqliteDatabase2("PageCache","pcInit");
+    database::sqlite::ReadDbFile("dbcode/pagecacheinit.sql", "pcInit");
 
-    this->userDbInterface = userDbInterface;
     authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     fandoms = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
     fandoms->isClient = true;
     fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
-    authors->portableDBInterface = userDbInterface;
+    authors->db = this->db;
     fanfics->authorInterface = authors;
     fanfics->fandomInterface = fandoms;
-    fandoms->portableDBInterface = userDbInterface;
-    authors->db = userDbInterface->GetDatabase();
-    fanfics->db = userDbInterface->GetDatabase();
-    fandoms->db = userDbInterface->GetDatabase();
-    userDbInterface->userToken = userDbInterface->GetUserToken();
+    fandoms->db = this->db;
+    authors->db = this->db;
+    fanfics->db = this->db;
+    fandoms->db = this->db;
 
     QSettings settings("settings/settings_discord.ini", QSettings::IniFormat);
     auto ip = settings.value("Login/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Login/serverPort", "3055").toString();
     static const int defaultDeadline = 160;
-    ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userDbInterface->userToken,  defaultDeadline));
+    // todo I do need to store user token extrenally upon init, just not in such a bad calss it was in
+    ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port),
+                                      sql::GetUserToken(db).data,
+                                      defaultDeadline));
 }
 
 }

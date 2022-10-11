@@ -112,10 +112,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-
-    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-    pageCacheInterface->SetDatabase(database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","PageCache","dbcode/pagecacheinit.sql", "PageCache", false));
-    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
+    auto pageCache = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","PageCache","dbcode/pagecacheinit.sql", "PageCache", false);
 
     An<discord::DatabaseVendor> vendor;
     vendor->AddConnectionToken("users", pgConnectionToken);

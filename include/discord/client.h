@@ -20,9 +20,6 @@ class Fandoms;
 class Authors;
 class Fanfics;
 };
-namespace database{
-class IDBWrapper;
-};
 class FicSourceGRPC;
 
 struct ListData{
@@ -61,7 +58,6 @@ public:
     QRegularExpression recsExp;
     QRegularExpression pageExp;
     QSharedPointer<FicSourceGRPC> ficSource;
-    QSharedPointer<database::IDBWrapper> userDbInterface;
     QSharedPointer<interfaces::Fandoms> fandoms;
     QSharedPointer<interfaces::Fanfics> fanfics;
     QSharedPointer<interfaces::Authors> authors;

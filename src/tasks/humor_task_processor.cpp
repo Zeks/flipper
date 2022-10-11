@@ -39,13 +39,12 @@ HumorProcessor::HumorProcessor(sql::Database db,
                                QSharedPointer<interfaces::PageTask> pageInterface,
                                QSharedPointer<interfaces::Authors> authorsInterface,
                                QSharedPointer<interfaces::RecommendationLists> recsInterface,
-                               QSharedPointer<database::IDBWrapper> dbInterface, QObject *obj) : QObject(obj)
+                               QObject *obj) : QObject(obj)
 
 {
     this->fanficsInterface = fanficInterface;
     this->fandomsInterface = fandomsInterface;
     this->pageInterface = pageInterface;
-    this->dbInterface = dbInterface;
     this->authorsInterface = authorsInterface;
     this->recsInterface = recsInterface;
     this->db = db;

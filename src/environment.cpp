@@ -38,6 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/in_tag_accessor.h"
 #include "include/timeutils.h"
 #include "include/in_tag_accessor.h"
+#include "include/sqlitefunctions.h"
 
 #ifdef USE_WEBVIEW
 #include "include/webview/pagegetter_w.h"
@@ -216,10 +217,6 @@ CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj), searchHistory(250)
 {
     ReadSettings();
     rngGenerator.reset(new core::DefaultRNGgenerator);
-    interfaces.userDb.reset (new database::SqliteInterface());
-    interfaces.tasks.reset (new database::SqliteInterface());
-    interfaces.pageCache.reset (new database::SqliteInterface());
-    interfaces.db.reset (new database::SqliteInterface());
 }
 
 void CoreEnvironment::ReadSettings()
@@ -248,10 +245,7 @@ bool CoreEnvironment::Init()
     auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Settings/serverPort", "3055").toString();
 
-
-    //interfaces.db->userToken
-    interfaces.userDb->userToken = interfaces.userDb->GetUserToken();
-    ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), interfaces.userDb->userToken,  160));
+    ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), sql::GetUserToken(interfaces.userDb).data,  160));
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     status = grpcSource->GetStatus();
     if(!status.isValid)
@@ -326,8 +320,7 @@ bool CoreEnvironment::Init()
 void CoreEnvironment::InitInterfaces()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    QSharedPointer<database::IDBWrapper> userDBInterface;
-    userDBInterface = interfaces.userDb;
+    ;
 
 
     interfaces.authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
@@ -339,36 +332,29 @@ void CoreEnvironment::InitInterfaces()
     interfaces.genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     interfaces.pageTask= QSharedPointer<interfaces::PageTask> (new interfaces::PageTask());
 
-    // probably need to change this to db accessor
-    // to ensure db availability for later
-
-    interfaces.authors->portableDBInterface = userDBInterface;
     interfaces.fanfics->authorInterface = interfaces.authors;
     interfaces.fanfics->fandomInterface = interfaces.fandoms;
-    interfaces.recs->portableDBInterface = userDBInterface;
     interfaces.recs->authorInterface = interfaces.authors;
-    interfaces.fandoms->portableDBInterface = userDBInterface;
     interfaces.tags->fandomInterface = interfaces.fandoms;
 
-    //bool isOpen = interfaces.db.tags->GetDatabase().isOpen();
-    interfaces.authors->db = userDBInterface->GetDatabase();
-    interfaces.fanfics->db = userDBInterface->GetDatabase();
-    interfaces.recs->db    = userDBInterface->GetDatabase();
-    interfaces.fandoms->db = userDBInterface->GetDatabase();
-    interfaces.fandomLists->db = userDBInterface->GetDatabase();
+    interfaces.authors->db = interfaces.userDb;
+    interfaces.fanfics->db = interfaces.userDb;
+    interfaces.recs->db    = interfaces.userDb;
+    interfaces.fandoms->db = interfaces.userDb;
+    interfaces.fandomLists->db = interfaces.userDb;
     interfaces.fandoms->isClient = true;
-    interfaces.tags->db    = userDBInterface->GetDatabase();
-    interfaces.genres->db  = userDBInterface->GetDatabase();
-
-    interfaces.pageTask->db  = interfaces.tasks->GetDatabase();
+    interfaces.tags->db    = interfaces.userDb;
+    interfaces.genres->db  = interfaces.userDb;
+    interfaces.pageTask->db  = interfaces.tasks;
 
 }
 
 void CoreEnvironment::InstantiateClientDatabases(QString folder)
 {
-    interfaces.userDb->InitAndUpdateDatabaseForFile(folder, "UserDB", QDir::currentPath() + "/dbcode/user_db_init.sql", "", true);
-    interfaces.tasks->InitAndUpdateDatabaseForFile(folder, "Tasks", QDir::currentPath()  + "/dbcode/tasksinit.sql", "Tasks", false);
-    interfaces.pageCache->InitAndUpdateDatabaseForFile(folder, "PageCache", QDir::currentPath()  + "/dbcode/pagecacheinit.sql", "PageCache", false);
+    interfaces.userDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile(folder, "UserDB", QDir::currentPath() + "/dbcode/user_db_init.sql", "", true);
+    userToken = sql::GetUserToken(interfaces.userDb).data;
+    interfaces.tasks = database::sqlite::InitAndUpdateSqliteDatabaseForFile(folder, "Tasks", QDir::currentPath()  + "/dbcode/tasksinit.sql", "Tasks", false);
+    interfaces.pageCache = database::sqlite::InitAndUpdateSqliteDatabaseForFile(folder, "PageCache", QDir::currentPath()  + "/dbcode/pagecacheinit.sql", "PageCache", false);
 }
 
 int CoreEnvironment::GetResultCount()
@@ -427,7 +413,6 @@ void CoreEnvironment::UseAuthorTask(PageTaskPtr task)
     connect(&authorLoader, &AuthorLoadProcessor::updateCounter, this, &CoreEnvironment::updateCounter);
     connect(&authorLoader, &AuthorLoadProcessor::updateInfo, this, &CoreEnvironment::updateInfo);
     connect(&authorLoader, &AuthorLoadProcessor::resetEditorText, this, &CoreEnvironment::resetEditorText);
-    authorLoader.dbInterface = interfaces.db;
     authorLoader.Run(task);
 }
 
@@ -440,7 +425,7 @@ void CoreEnvironment::LoadMoreAuthors(QString listName, fetching::CacheStrategy 
     emit updateInfo("Authors: " + QString::number(authorUrls.size()));
     QString comment = "Loading more authors from list: " + QString::number(interfaces.recs->GetCurrentRecommendationList());
     auto pageTask = page_utils::CreatePageTaskFromUrls(interfaces.pageTask,
-                                                       interfaces.db->GetCurrentDateTime(),
+                                                       database::sqlite::GetCurrentDateTime(interfaces.userDb),
                                                        authorUrls,
                                                        comment,
                                                        500,
@@ -459,7 +444,6 @@ void CoreEnvironment::LoadAllLinkedAuthors(fetching::CacheStrategy cacheStrategy
     auto db = sql::Database::database();
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
-    authorInterface->portableDBInterface = interfaces.db;
 
     auto authors = authorInterface->GetAllUnprocessedLinkedAuthors();
     for(auto author : authors)
@@ -471,7 +455,7 @@ void CoreEnvironment::LoadAllLinkedAuthors(fetching::CacheStrategy cacheStrategy
     emit updateInfo("Authors: " + QString::number(authorUrls.size()));
     QString comment = "Loading all unprocessed authors";
     auto pageTask = page_utils::CreatePageTaskFromUrls(interfaces.pageTask,
-                                                       interfaces.db->GetCurrentDateTime(),
+                                                       database::sqlite::GetCurrentDateTime(db),
                                                        authorUrls,
                                                        comment,
                                                        500,
@@ -870,7 +854,7 @@ bool CoreEnvironment::ResumeUnfinishedTasks()
                     return false;
 
                 sql::Database db = sql::Database::database();
-                FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask, interfaces.db);
+                FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask);
 
                 proc.Run(fullTask);
 
@@ -1261,20 +1245,20 @@ void CoreEnvironment::BackupUserDatabase()
     if(QFileInfo::exists(backupFullFile))
         return;
 
-    interfaces.backupDb.reset (new database::SqliteInterface());
-    auto backupDb = interfaces.backupDb->InitAndUpdateDatabaseForFile(backupDir.path(), backupFileName, QDir::currentPath() + "/dbcode/user_db_init.sql", backupFileName, false);
+    auto backupDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile(backupDir.path(), backupFileName, QDir::currentPath() + "/dbcode/user_db_init.sql", backupFileName, false);
+
     database::Transaction transaction(backupDb);
-    interfaces.userDb->PassScoresToAnotherDatabase(backupDb);
-    interfaces.userDb->PassTagSetToAnotherDatabase(backupDb);
-    interfaces.userDb->PassFicTagsToAnotherDatabase(backupDb);
-    interfaces.userDb->PassSnoozesToAnotherDatabase(backupDb);
-    interfaces.userDb->PassFicNotesToAnotherDatabase(backupDb);
-    interfaces.userDb->PassClientDataToAnotherDatabase(backupDb);
-    interfaces.userDb->PassRecentFandomsToAnotherDatabase(backupDb);
-    interfaces.userDb->PassReadingDataToAnotherDatabase(backupDb);
-    interfaces.userDb->PassIgnoredFandomsToAnotherDatabase(backupDb);
-    interfaces.userDb->PassFandomListSetToAnotherDatabase(backupDb);
-    interfaces.userDb->PassFandomListDataToAnotherDatabase(backupDb);
+    sql::PassScoresToAnotherDatabase(interfaces.userDb, backupDb);
+    sql::PassTagSetToAnotherDatabase(interfaces.userDb, backupDb);
+    sql::PassFicTagsToAnotherDatabase(interfaces.userDb, backupDb);
+    sql::PassSnoozesToAnotherDatabase(interfaces.userDb, backupDb);
+    sql::PassFicNotesToAnotherDatabase(interfaces.userDb, backupDb);
+    sql::PassClientDataToAnotherDatabase(interfaces.userDb, backupDb);
+    sql::PassRecentFandomsToAnotherDatabase(interfaces.userDb, backupDb);
+    sql::PassReadingDataToAnotherDatabase(interfaces.userDb, backupDb);
+    sql::PassIgnoredFandomsToAnotherDatabase(interfaces.userDb, backupDb);
+    sql::PassFandomListSetToAnotherDatabase(interfaces.userDb, backupDb);
+    sql::PassFandomListDataToAnotherDatabase(interfaces.userDb, backupDb);
     transaction.finalize();
 }
 
@@ -1320,7 +1304,7 @@ void CoreEnvironment::RefreshSnoozes()
 void CoreEnvironment::UseFandomTask(PageTaskPtr task)
 {
     sql::Database db = sql::Database::database();
-    FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask, interfaces.db);
+    FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask);
 
     connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &CoreEnvironment::requestProgressbar);
     connect(&proc, &FandomLoadProcessor::updateCounter, this, &CoreEnvironment::updateCounter);
@@ -1350,7 +1334,7 @@ PageTaskPtr CoreEnvironment::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms
 {
     interfaces.fanfics->ClearProcessedHash();
     sql::Database db = sql::Database::database();
-    FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask, interfaces.db);
+    FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask);
 
     connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &CoreEnvironment::requestProgressbar);
     connect(&proc, &FandomLoadProcessor::updateCounter, this, &CoreEnvironment::updateCounter);

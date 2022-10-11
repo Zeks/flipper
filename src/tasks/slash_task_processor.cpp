@@ -35,12 +35,12 @@ SlashProcessor::SlashProcessor(sql::Database db,
                                QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                QSharedPointer<interfaces::Authors> authorsInterface,
                                QSharedPointer<interfaces::RecommendationLists> recsInterface,
-                               QSharedPointer<database::IDBWrapper> dbInterface, QObject *obj) : QObject(obj)
+                                QObject *obj) : QObject(obj)
 
 {
     this->fanficsInterface = fanficInterface;
     this->fandomsInterface = fandomsInterface;
-    this->dbInterface = dbInterface;
+
     this->authorsInterface = authorsInterface;
     this->recsInterface = recsInterface;
     this->db = db;

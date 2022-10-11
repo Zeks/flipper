@@ -31,9 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 namespace Ui {
 class servitorWindow;
 }
-namespace database {
-class IDBWrapper;
-}
+
 namespace QtCharts{
 class QChartView;
 class QChart;
@@ -110,7 +108,7 @@ public:
     QHash<uint32_t, Roaring> ficsToFavLists;
     QList<uint32_t> keys;
 
-    QSharedPointer<database::IDBWrapper> dbInterface;
+    //QSharedPointer<database::IDBWrapper> dbInterface;
     CoreEnvironment env;
     AuthorGenreIterationProcessor iteratorProcessor;
     QHash<int, std::array<double, 22>> authorGenreDataOriginal;

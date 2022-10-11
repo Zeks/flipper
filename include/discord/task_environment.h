@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma once
 #include <QSharedPointer>
+#include "sql_abstractions/sql_database.h"
 namespace interfaces{
 class Fandoms;
 class Authors;
@@ -22,9 +23,7 @@ class Fanfics;
 };
 class FicSourceGRPC;
 
-namespace database{
-class IDBWrapper;
-};
+
 namespace discord {
     class TaskEnvironment{
     public:
@@ -32,7 +31,7 @@ namespace discord {
 
 
         QSharedPointer<FicSourceGRPC> ficSource;
-        QSharedPointer<database::IDBWrapper> userDbInterface;
+        sql::Database  db;
         QSharedPointer<interfaces::Fandoms> fandoms;
         QSharedPointer<interfaces::Fanfics> fanfics;
         QSharedPointer<interfaces::Authors> authors;

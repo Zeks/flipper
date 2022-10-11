@@ -17,6 +17,7 @@
 #include "include/grpc/grpc_source.h"
 #include "include/url_utils.h"
 #include "include/timeutils.h"
+#include "include/sqlitefunctions.h"
 
 #include "GlobalHeaders/SingletonHolder.h"
 #include "logger/QsLog.h"
@@ -415,8 +416,8 @@ ListData CreateListData(RecRequest request, QString userToken){
 
     sql::Database pageCacheDb;
     //TimedAction dbInit("DB Init", [&](){
-        QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-        pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
+     pageCacheDb = database::sqlite::InitSqliteDatabase("PageCache");
+
     //});
     //dbInit.run();
 

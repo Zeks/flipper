@@ -73,9 +73,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     randomSearches = 0;
     rngData.reset(new core::RNGData);
 
-    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    dbInterface->SetDatabase(database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","CrawlerDB","dbcode/dbinit.sql", GetDbNameFromCurrentThread(), true));
-    auto mainDb = dbInterface->GetDatabase();
+    auto mainDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","CrawlerDB","dbcode/dbinit.sql", GetDbNameFromCurrentThread(), true);
     QLOG_TRACE() << 1;
 
     An<core::RecCalculator> calculator;
@@ -179,7 +177,7 @@ UsedInSearch FeederService::PrepareSearch(::ProtoSpace::ResponseInfo* response,
 
 
     core::StoryFilter filter = FilterFromTask(protoFilter, userData);
-    auto ficSource = InitFicSource(reqContext.userToken, reqContext.dbContext.dbInterface);
+    auto ficSource = InitFicSource(reqContext.userToken, reqContext.dbContext.db);
     reqContext.dbContext.InitAuthors();
 
     if(filter.tagsAreUsedForAuthors)
@@ -248,7 +246,7 @@ grpc::Status FeederService::SearchByIdList(grpc::ServerContext *context, const P
     if(task->task_list().size() == 0)
         return Status::OK;
 
-    auto ficSource = InitFicSource(reqContext.userToken, reqContext.dbContext.dbInterface);
+    auto ficSource = InitFicSource(reqContext.userToken, reqContext.dbContext.db);
     core::StoryFilter filter;
     filter.mode = core::StoryFilter::filtering_in_fics;
     filter.sortMode = core::StoryFilter::sm_wordcount;
@@ -287,7 +285,7 @@ grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpac
     if(task->id() < 1)
         return Status::OK;
 
-    auto ficSource = InitFicSource(reqContext.userToken, reqContext.dbContext.dbInterface);
+    auto ficSource = InitFicSource(reqContext.userToken, reqContext.dbContext.db);
     core::StoryFilter filter;
     filter.mode = core::StoryFilter::filtering_in_fics;
     filter.sortMode = core::StoryFilter::sm_wordcount;
@@ -397,7 +395,7 @@ Status FeederService::SyncFandomList(ServerContext* context, const ProtoSpace::S
 
     DatabaseContext dbContext;
     QSharedPointer<interfaces::Fandoms> fandomInterface (new interfaces::Fandoms());
-    fandomInterface->db = dbContext.dbInterface->GetDatabase();
+    fandomInterface->db = dbContext.db;
     auto lastServerFandomID = fandomInterface->GetLastFandomID();
     QLOG_INFO() << "Client last fandom ID: " << task->last_fandom_id();
     QLOG_INFO() << "Server last fandom ID: " << lastServerFandomID;
@@ -874,7 +872,7 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
 
     core::FicListDataAccumulator dataAccumulator;
     auto genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
-    genresInterface->db = reqContext.dbContext.dbInterface->GetDatabase();;
+    genresInterface->db = reqContext.dbContext.db;
     interfaces::GenreConverter conv;
     An<interfaces::GenreIndex> genreIndex;
     for(const auto& fic: std::as_const(fetchedFics))
@@ -1160,10 +1158,10 @@ core::StoryFilter FeederService::FilterFromTask(const ProtoSpace::Filter & grpcf
 }
 
 QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken,
-                                                       QSharedPointer<database::IDBWrapper> dbInterface)
+                                                       sql::Database db)
 {
     //DatabaseContext dbContext;
-    QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbInterface,rngData));
+    QSharedPointer<FicSource> ficSource(new FicSourceDirect(db,rngData));
     auto* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
     QLOG_TRACE() << "Initializing fic source mode";
     convertedFicSource->InitQueryType(true, userToken);

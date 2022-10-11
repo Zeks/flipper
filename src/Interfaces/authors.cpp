@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/fandoms.h"
 #include "Interfaces/db_interface.h"
 #include "include/pure_sql.h"
+#include "include/sqlitefunctions.h"
 #include "sql_abstractions/sql_query.h"
 #include <QDebug>
 
@@ -127,7 +128,8 @@ bool Authors::EnsureAuthorLoaded(int id)
 
 bool Authors::UpdateAuthorRecord(const core::AuthorPtr& author)
 {
-    auto result = sql::UpdateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
+    // todo unnecessary indirection to database tijme, can assign timestamp in the query
+    auto result = sql::UpdateAuthorRecord(author,database::sqlite::GetCurrentDateTime(db), db);
     sql::WipeAuthorStatistics(author,db);
     //ConvertFandomsToIds(author, fandomInterface);
     auto f1Result = sql::WriteAuthorFavouriteStatistics(author,db);
@@ -392,7 +394,8 @@ bool Authors::CreateAuthorRecord(core::AuthorPtr author)
 {
 
 
-    auto result = sql::CreateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
+    // todo unnecessary indirection to database tijme, can assign timestamp in the query
+    auto result = sql::CreateAuthorRecord(author,database::sqlite::GetCurrentDateTime(db), db);
     sql::WipeAuthorStatistics(author,db);
     //ConvertFandomsToIds(author, fandomInterface);
     auto f1Result = sql::WriteAuthorFavouriteStatistics(author,db);

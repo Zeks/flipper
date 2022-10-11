@@ -119,8 +119,6 @@ public:
     sql::Database db;
 
     QSharedPointer<Authors> authorInterface;
-    QSharedPointer<database::IDBWrapper> portableDBInterface;
-
     QHash<int, core::AuthorPtr> currentRecommenderSet;
 private:
     void DeleteLocalList(int listId);

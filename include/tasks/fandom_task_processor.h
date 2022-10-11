@@ -64,9 +64,7 @@ class Fanfics;
 class Fandoms;
 class PageTask;
 }
-namespace database{
-class IDBWrapper;
-}
+
 class PageTask;
 typedef QSharedPointer<PageTask> PageTaskPtr;
 
@@ -81,7 +79,6 @@ public:
                         QSharedPointer<interfaces::Fanfics> fanficInterface,
                         QSharedPointer<interfaces::Fandoms> fandomsInterface,
                         QSharedPointer<interfaces::PageTask> pageInterface,
-                        QSharedPointer<database::IDBWrapper> dbInterface,
                         QObject* obj = nullptr);
     FandomParseTaskResult Run(FandomParseTask task);
     void Run(PageTaskPtr task);
@@ -98,7 +95,6 @@ private:
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::PageTask> pageInterface;
-    QSharedPointer<database::IDBWrapper> dbInterface;
 signals:
     void taskStarted(FandomParseTask);
     void requestProgressbar(int);

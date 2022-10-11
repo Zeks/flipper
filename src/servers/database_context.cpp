@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/ffn/ffn_authors.h"
 #include "Interfaces/ffn/ffn_fanfics.h"
 #include "Interfaces/fandoms.h"
+#include "sqlitefunctions.h"
 static QString GetDbNameFromCurrentThread(){
     std::stringstream ss;
     ss << std::this_thread::get_id();
@@ -29,22 +30,31 @@ static QString GetDbNameFromCurrentThread(){
 }
 
 DatabaseContext::DatabaseContext(){
-    dbInterface.reset(new database::SqliteInterface());
     QString name = GetDbNameFromCurrentThread();
     QLOG_TRACE() << "OPENING CONNECTION:" << name;
-    dbInterface->InitDatabase2("database/CrawlerDB", name, false);
+    db = database::sqlite::InitSqliteDatabase2("database/CrawlerDB", name, false);
+}
+
+template<typename Base, typename Derived>
+QSharedPointer<Base> MakeAndAssignDB(sql::Database db){
+    QSharedPointer<Base> entity {new Derived()};
+    entity->db = db;
+    return entity;
+}
+
+template<typename Type>
+QSharedPointer<Type> MakeAndAssignDB(sql::Database db){
+    QSharedPointer<Type> entity {new Type()};
+    entity->db = db;
+    return entity;
 }
 
 void DatabaseContext::InitFanfics()
 {
-    authors =  QSharedPointer<interfaces::Authors> {new interfaces::FFNAuthors()};
-    authors->db = dbInterface->GetDatabase();
-    fandoms =  QSharedPointer<interfaces::Fandoms> {new interfaces::Fandoms()};
-    fandoms->db = dbInterface->GetDatabase();
+    authors =  MakeAndAssignDB<interfaces::Authors, interfaces::FFNAuthors>(this->db);;
+    fanfics =  MakeAndAssignDB<interfaces::Fanfics, interfaces::FFNFanfics>(this->db);;
+    fandoms =  MakeAndAssignDB<interfaces::Fandoms>(this->db);
 
-
-    fanfics =  QSharedPointer<interfaces::Fanfics> {new interfaces::FFNFanfics()};
-    fanfics->db = dbInterface->GetDatabase();
     fanfics->authorInterface = authors;
     fanfics->fandomInterface = fandoms;
 }
@@ -52,11 +62,11 @@ void DatabaseContext::InitFanfics()
 void DatabaseContext::InitFandoms()
 {
     fandoms =  QSharedPointer<interfaces::Fandoms> {new interfaces::Fandoms()};
-    fandoms->db = dbInterface->GetDatabase();
+    fandoms->db = this->db;
 }
 
 void DatabaseContext::InitAuthors()
 {
     authors =  QSharedPointer<interfaces::Authors> {new interfaces::FFNAuthors()};
-    authors->db = dbInterface->GetDatabase();
+    authors->db = this->db;
 }

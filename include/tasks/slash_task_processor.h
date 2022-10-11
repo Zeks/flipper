@@ -28,9 +28,7 @@ class Authors;
 class PageTask;
 class RecommendationLists;
 }
-namespace database{
-class IDBWrapper;
-}
+
 class PageTask;
 typedef QSharedPointer<PageTask> PageTaskPtr;
 
@@ -44,7 +42,6 @@ public:
                         QSharedPointer<interfaces::Fandoms> fandomsInterface,
                         QSharedPointer<interfaces::Authors> authorsInterface,
                         QSharedPointer<interfaces::RecommendationLists> recsInterface,
-                        QSharedPointer<database::IDBWrapper> dbInterface,
                         QObject* obj = nullptr);
     virtual ~SlashProcessor();
     inline void AddToSlashHash(QList<core::AuthorPtr> authors,
@@ -61,7 +58,6 @@ public:
     QSharedPointer<interfaces::Authors> authorsInterface;
     QSharedPointer<interfaces::PageTask> pageInterface;
     QSharedPointer<interfaces::RecommendationLists> recsInterface;
-    QSharedPointer<database::IDBWrapper> dbInterface;
     int lastI = 0; // used in slash filtering
 signals:
     void requestProgressbar(int);

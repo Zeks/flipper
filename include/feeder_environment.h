@@ -42,7 +42,7 @@ public:
     struct Interfaces{
         // the interface classes used to avoid direct database access in the application
         QSharedPointer<interfaces::RecommendationLists> recs;
-        QSharedPointer<database::IDBWrapper> db;
+        sql::Database db;
     };
 
 

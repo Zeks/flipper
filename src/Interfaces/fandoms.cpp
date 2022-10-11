@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/fandoms.h"
 #include "Interfaces/db_interface.h"
 #include "include/pure_sql.h"
+#include "include/sqlitefunctions.h"
 #include "include/core/section.h"
 #include "GlobalHeaders/run_once.h"
 #include "include/transaction.h"
@@ -262,8 +263,8 @@ void Fandoms::PushFandomToTopOfRecent(QString fandom)
     // needs to be done on Sync ideally
     // it's not a critical error to fail here, really
     database::Transaction transaction(db);
-    portableDBInterface->PushFandomToTopOfRecent(fandom);
-    portableDBInterface->RebaseFandomsToZero();
+    database::sqlite::PushFandomToTopOfRecent(fandom, db);
+    database::sqlite::RebaseFandomsToZero(db);
     transaction.finalize();
 }
 
@@ -298,7 +299,7 @@ bool Fandoms::Load()
 {
     Clear();
     // type makes it clearer
-    QStringList recentFandoms = portableDBInterface->FetchRecentFandoms();
+    QStringList recentFandoms = database::sqlite::FetchRecentFandoms(db);
     recentFandoms.removeAll(QStringLiteral(""));
     bool hadErrors = false;
 
@@ -325,7 +326,7 @@ bool Fandoms::Load()
 void Fandoms::ReloadRecentFandoms()
 {
     this->recentFandoms.clear();
-    QStringList recentFandoms = portableDBInterface->FetchRecentFandoms();
+    QStringList recentFandoms = database::sqlite::FetchRecentFandoms(db);
     recentFandoms.removeAll("");
     for(const auto& bit: recentFandoms)
     {

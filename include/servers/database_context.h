@@ -17,10 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
 #include <QSharedPointer>
+#include "sql_abstractions/sql_database.h"
 
-namespace database{
-    class IDBWrapper;
-}
 namespace interfaces {
 class Fanfics;
 class Fandoms;
@@ -33,8 +31,8 @@ public:
     void InitFanfics();
     void InitFandoms();
     void InitAuthors();
-    QSharedPointer<database::IDBWrapper> dbInterface;
     QSharedPointer<interfaces::Fanfics>  fanfics;
     QSharedPointer<interfaces::Fandoms>  fandoms;
     QSharedPointer<interfaces::Authors>  authors;
+    sql::Database db;
 };

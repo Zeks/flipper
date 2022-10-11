@@ -29,7 +29,6 @@ struct WriteStats
 };
 
 
-class IDBWrapper;
 //class IDBPersistentData{
 //  public:
 //    virtual ~IDBPersistentData();

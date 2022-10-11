@@ -107,7 +107,6 @@ public:
 
     bool isClient = false;
     sql::Database db;
-    QSharedPointer<database::IDBWrapper> portableDBInterface;
 private:
     bool AddToTopOfRecent(QString);
 

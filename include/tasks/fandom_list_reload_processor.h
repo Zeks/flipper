@@ -26,9 +26,7 @@ class Fanfics;
 class Fandoms;
 class PageTask;
 }
-namespace database{
-class IDBWrapper;
-}
+
 class PageTask;
 typedef QSharedPointer<PageTask> PageTaskPtr;
 class FFNFandomIndexParserBase;
@@ -40,7 +38,6 @@ public:
                               QSharedPointer<interfaces::Fanfics> fanficInterface,
                               QSharedPointer<interfaces::Fandoms> fandomsInterface,
                               QSharedPointer<interfaces::PageTask> pageInterface,
-                              QSharedPointer<database::IDBWrapper> dbInterface,
                               QObject* obj = nullptr);
     virtual ~FandomListReloadProcessor();
     void UpdateFandomList();
@@ -54,7 +51,7 @@ private:
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::PageTask> pageInterface;
-    QSharedPointer<database::IDBWrapper> dbInterface;
+
 signals:
     void requestProgressbar(int);
     void updateCounter(int);

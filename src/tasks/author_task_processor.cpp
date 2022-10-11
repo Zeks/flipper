@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/page_utils.h"
 #include "include/pagetask.h"
 #include "include/generic_utils.h"
+#include "include/sqlitefunctions.h"
 
 #include <QThread>
 #include <QFuture>
@@ -149,7 +150,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
             qDebug() << "Retrying attempted task: " << task->id << " " << subtask->id;
 
 
-        subtask->SetInitiated(dbInterface->GetCurrentDateTime());
+        subtask->SetInitiated(database::sqlite::GetCurrentDateTime(db));
 
         auto cast = static_cast<SubTaskAuthorContent*>(subtask->content.data());
         database::Transaction transaction(db);
@@ -274,7 +275,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
 
         }while(pageQueue.pending || pageQueue.data.size() > 0);
         subtask->updatedAuthors = updatedAuthorCounter;
-        subtask->SetFinished(dbInterface->GetCurrentDateTime());
+        subtask->SetFinished(database::sqlite::GetCurrentDateTime(db));
 
         task->updatedFics += subtask->updatedFics;
         task->addedFics   += subtask->addedFics;
@@ -294,7 +295,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
         emit resetEditorText();
     }
     if(!breakTriggered)
-        task->SetFinished(dbInterface->GetCurrentDateTime());
+        task->SetFinished(database::sqlite::GetCurrentDateTime(db));
     pageInterface->WriteTaskIntoDB(task);
     StopPageWorker();
 }

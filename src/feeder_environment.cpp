@@ -117,7 +117,6 @@ void FeederEnvironment::Init()
 {
     //QLOG_INFO() << "RNG INIT";
     std::unique_ptr<core::DefaultRNGgenerator> rng (new core::DefaultRNGgenerator());
-    rng->portableDBInterface = interfaces.db;
     queryBuilder.SetIdRNGgenerator(rng.release());
 
     QSettings settings("settings/ui.ini", QSettings::IniFormat);
@@ -158,10 +157,9 @@ inline core::Fanfic FeederEnvironment::LoadFanfic(sql::Query& q)
 void FeederEnvironment::InitInterfaces()
 {
     interfaces.recs   = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
-    interfaces.recs->portableDBInterface = interfaces.db;
-    interfaces.recs->db    = interfaces.db->GetDatabase();
-    queryBuilder.portableDBInterface = interfaces.db;
-    countQueryBuilder.portableDBInterface = interfaces.db;
+    interfaces.recs->db    = interfaces.db;
+    queryBuilder.db = interfaces.db;
+    countQueryBuilder.db = interfaces.db;
 }
 
 int FeederEnvironment::GetResultCount()

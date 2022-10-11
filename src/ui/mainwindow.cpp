@@ -267,7 +267,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     lblUserIdStatic= new QLabel;
     lblUserIdStatic->setText("Your id is:");
     lblUserIdActive= new QLabel;
-    lblUserIdActive->setText("<a href=\"" + env->interfaces.userDb->GetUserToken() + "\">"+ env->interfaces.userDb->GetUserToken() +"</a>");
+    lblUserIdActive->setText("<a href=\"" + env->userToken+ "\">"+env->userToken+"</a>");
     lblUserIdActive->setTextFormat(Qt::RichText);
     lblUserIdActive->setTextInteractionFlags(Qt::TextBrowserInteraction);
     lblUserIdActive->setToolTip("<FONT COLOR=black>This is used for troubleshooting.</FONT>");

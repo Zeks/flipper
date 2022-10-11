@@ -28,9 +28,6 @@ class Fandoms;
 class Authors;
 class PageTask;
 }
-namespace database{
-class IDBWrapper;
-}
 class PageTask;
 typedef QSharedPointer<PageTask> PageTaskPtr;
 
@@ -53,7 +50,7 @@ private:
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Authors> authorsInterface;
     QSharedPointer<interfaces::PageTask> pageInterface;
-    QSharedPointer<database::IDBWrapper> dbInterface;
+    sql::Database dbInterface;
 signals:
     void requestProgressbar(int);
     void updateCounter(int);

@@ -30,9 +30,7 @@ class Authors;
 class PageTask;
 class RecommendationLists;
 }
-namespace database{
-class IDBWrapper;
-}
+
 class PageTask;
 typedef QSharedPointer<PageTask> PageTaskPtr;
 

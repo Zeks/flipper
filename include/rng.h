@@ -56,7 +56,5 @@ struct DefaultRNGgenerator : public IRNGGenerator{
     void RemoveOlderRngSequencesPastTheLimit(size_t limit);
 
     QSharedPointer<RNGData> rngData;
-    QSharedPointer<database::IDBWrapper> portableDBInterface;
-
 };
 }

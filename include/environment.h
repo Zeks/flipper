@@ -145,11 +145,14 @@ public:
         QSharedPointer<interfaces::Genres> genres;
         QSharedPointer<interfaces::PageTask> pageTask;
         QSharedPointer<interfaces::RecommendationLists> recs;
-        QSharedPointer<database::IDBWrapper> db;
-        QSharedPointer<database::IDBWrapper> userDb;
-        QSharedPointer<database::IDBWrapper> backupDb;
-        QSharedPointer<database::IDBWrapper> pageCache;
-        QSharedPointer<database::IDBWrapper> tasks;
+        sql::Database userDb;
+        sql::Database pageCache;
+        sql::Database tasks;
+//        QSharedPointer<database::IDBWrapper> db;
+//        QSharedPointer<database::IDBWrapper> userDb;
+//        QSharedPointer<database::IDBWrapper> backupDb;
+//        QSharedPointer<database::IDBWrapper> pageCache;
+//        QSharedPointer<database::IDBWrapper> tasks;
     };
 
 
@@ -264,4 +267,5 @@ namespace env {
     WebPage RequestPage(QString pageUrl, fetching::CacheStrategy cacheStrategy, bool autoSaveToDB = false);
     WebPage RequestPage(QString pageUrl, sql::Database, fetching::CacheStrategy cacheStrategy, bool autoSaveToDB = false);
 }
+
 

@@ -134,7 +134,6 @@ protected:
     QSharedPointer<IWhereFilter> ignoredFandomsBuilder;
     QSharedPointer<IWhereFilter> inRecommendationsBuilder;
     QSharedPointer<Query> query;
-    sql::Database db;
     QString userToken;
     bool thinClientMode = false;
 };

@@ -21,13 +21,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDebug>
 #include <QSqlError>
 
-FicSourceDirect::FicSourceDirect(QSharedPointer<database::IDBWrapper> dbInterface, QSharedPointer<core::RNGData> rngData){
-    this->db = dbInterface;
+FicSourceDirect::FicSourceDirect(sql::Database db, QSharedPointer<core::RNGData> rngData){
+    this->db = db;
     std::unique_ptr<core::DefaultRNGgenerator> rng (new core::DefaultRNGgenerator());
-    rng->portableDBInterface = dbInterface;
     rng->rngData = rngData;
-    queryBuilder.portableDBInterface = dbInterface;
-    countQueryBuilder.portableDBInterface = dbInterface;
+    queryBuilder.db = db;
+    countQueryBuilder.db = db;
     QLOG_TRACE() << "RNG INIT";
     queryBuilder.SetIdRNGgenerator(rng.release());
     countQueryBuilder.rng = queryBuilder.rng;
@@ -50,7 +49,7 @@ sql::Query FicSourceDirect::BuildQuery(const core::StoryFilter& filter, bool cou
         currentQuery = countQueryBuilder.Build(filter);
     else
         currentQuery = queryBuilder.Build(filter);
-    sql::Query q(db->GetDatabase());
+    sql::Query q(db);
     q.prepare(currentQuery->str);
     auto it = currentQuery->bindings.cbegin();
     auto end = currentQuery->bindings.cend();

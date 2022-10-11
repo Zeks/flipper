@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/authors.h"
 #include "Interfaces/db_interface.h"
 #include "include/pure_sql.h"
+#include "include/sqlitefunctions.h"
 #include <QVector>
 
 namespace interfaces {
@@ -343,7 +344,8 @@ bool RecommendationLists::RemoveAuthorRecommendationStatsFromDatabase(int listId
 
 bool RecommendationLists::LoadListIntoDatabase(core::RecPtr list)
 {
-    auto timeStamp = portableDBInterface->GetCurrentDateTime();
+    auto timeStamp = database::sqlite::GetCurrentDateTime(db);
+    // todo unnecessary access to datetime extrenally
     auto result = sql::CreateOrUpdateRecommendationList(list, timeStamp, db);
     if(!result.success)
         return false;
@@ -547,3 +549,4 @@ bool RecommendationLists::WriteAuthorStatsForRecList(int listId, QVector<core::A
 
 
 }
+

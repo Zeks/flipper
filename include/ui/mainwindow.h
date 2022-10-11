@@ -62,9 +62,7 @@ class ActionProgress;
 class FFNFandomIndexParserBase;
 class QRImageProvider;
 
-namespace database {
-class IDBWrapper;
-}
+
 namespace Ui {
 class MainWindow;
 }

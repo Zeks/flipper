@@ -27,7 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 
 namespace interfaces {
-class IDBWrapper;
 class Fandoms;
 class Authors {
 public:
@@ -129,7 +128,6 @@ public:
     QHash<int, QList<QSharedPointer<core::AuthorRecommendationStats>>> cachedAuthorToTagStats;
 
     sql::Database db;
-    QSharedPointer<database::IDBWrapper> portableDBInterface;
 
 public:
     bool LoadAuthor(QString name, QString website);

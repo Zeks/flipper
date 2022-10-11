@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/pagetask_interface.h"
 #include "include/url_utils.h"
 #include "include/timeutils.h"
+#include "include/sqlitefunctions.h"
 
 #include <QThread>
 #include <QCoreApplication>
@@ -33,13 +34,11 @@ FandomLoadProcessor::FandomLoadProcessor(sql::Database db,
                                          QSharedPointer<interfaces::Fanfics> fanficInterface,
                                          QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                          QSharedPointer<interfaces::PageTask> pageInterface,
-                                         QSharedPointer<database::IDBWrapper> dbInterface,
                                          QObject *obj) : PageConsumer(obj)
 {
     this->fanficsInterface = fanficInterface;
     this->fandomsInterface = fandomsInterface;
     this->pageInterface = pageInterface;
-    this->dbInterface = dbInterface;
     this->db = db;
     CreatePageThreadWorker();
     connect(this, &FandomLoadProcessor::taskStarted, worker.data(), &PageThreadWorker::FandomTask);
@@ -227,7 +226,7 @@ PageTaskPtr FandomLoadProcessor::CreatePageTaskFromFandoms(QList<core::FandomPtr
 {
     database::Transaction transaction(pageInterface->db);
 
-    auto timestamp = dbInterface->GetCurrentDateTime();
+    auto timestamp = database::sqlite::GetCurrentDateTime(db);
     qDebug() << "Task timestamp" << timestamp;
     auto task = PageTask::CreateNewTask();
     task->allowedRetries = 3;

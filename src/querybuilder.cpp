@@ -958,9 +958,6 @@ void DefaultQueryBuilder::InitTagFilterBuilder(bool client, QString userToken)
         ignoredFandomsBuilder.reset(new FandomIgnoreFullDB);
     }
 }
-
-
-
 CountQueryBuilder::CountQueryBuilder(bool client, QString userToken) : DefaultQueryBuilder(client, userToken)
 {
 }

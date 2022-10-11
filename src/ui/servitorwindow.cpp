@@ -1084,13 +1084,11 @@ void ServitorWindow::on_pbUpdateFreshAuthors_clicked()
     auto db = sql::Database::database();
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
-    authorInterface->portableDBInterface = dbInterface;
 
     auto authors = authorInterface->GetAllAuthorsWithFavUpdateSince("ffn", QDateTime::currentDateTime().addMonths(-24));
 
     auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
     fandomInterface->db = db;
-    fandomInterface->portableDBInterface = dbInterface;
 
     auto fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     fanficsInterface->db = db;
@@ -1099,7 +1097,6 @@ void ServitorWindow::on_pbUpdateFreshAuthors_clicked()
 
     auto recsInterface = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
     recsInterface->db = db;
-    recsInterface->portableDBInterface = dbInterface;
     recsInterface->authorInterface = authorInterface;
 
 
@@ -1152,8 +1149,6 @@ void ServitorWindow::on_pbUpdateInterval_clicked()
     Q_UNUSED(isOpen);
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
-    dbInterface->SetDatabase(db);
-    authorInterface->portableDBInterface = dbInterface;
 
     auto authors = authorInterface->GetAllAuthorsWithFavUpdateBetween("ffn",
                                                                       QDateTime::currentDateTime().addMonths(-1*ui->sbUpdateIntervalStart->value()),
@@ -1164,7 +1159,6 @@ void ServitorWindow::on_pbUpdateInterval_clicked()
 
     auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
     fandomInterface->db = db;
-    fandomInterface->portableDBInterface = dbInterface;
 
     auto fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     fanficsInterface->db = db;
@@ -1173,7 +1167,6 @@ void ServitorWindow::on_pbUpdateInterval_clicked()
 
     auto recsInterface = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
     recsInterface->db = db;
-    recsInterface->portableDBInterface = dbInterface;
     recsInterface->authorInterface = authorInterface;
 
 
@@ -1214,7 +1207,6 @@ void ServitorWindow::on_pbReprocessAllFavPages_clicked()
     auto db = sql::Database::database();
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
-    authorInterface->portableDBInterface = dbInterface;
 
     QList<core::AuthorPtr> authors;
     {
@@ -1225,7 +1217,6 @@ void ServitorWindow::on_pbReprocessAllFavPages_clicked()
 
     auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
     fandomInterface->db = db;
-    fandomInterface->portableDBInterface = dbInterface;
 
     auto fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     fanficsInterface->db = db;
@@ -1234,7 +1225,6 @@ void ServitorWindow::on_pbReprocessAllFavPages_clicked()
 
     auto recsInterface = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
     recsInterface->db = db;
-    recsInterface->portableDBInterface = dbInterface;
     recsInterface->authorInterface = authorInterface;
 
 
@@ -1276,18 +1266,12 @@ void ServitorWindow::on_pbSlashCalc_clicked()
 {
     auto db = sql::Database::database();
     sql::Transaction transaction(db);
-    dbInterface->SetDatabase(db);
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
-    authorInterface->portableDBInterface = dbInterface;
-
-
-    //auto authors = authorInterface->GetAllAuthors("ffn");
 
 
     auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
     fandomInterface->db = db;
-    fandomInterface->portableDBInterface = dbInterface;
 
     auto fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     fanficsInterface->db = db;
@@ -1296,10 +1280,9 @@ void ServitorWindow::on_pbSlashCalc_clicked()
 
     auto recsInterface = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
     recsInterface->db = db;
-    recsInterface->portableDBInterface = dbInterface;
     recsInterface->authorInterface = authorInterface;
 
-    SlashProcessor slash(db,fanficsInterface, fandomInterface, authorInterface, recsInterface, dbInterface);
+    SlashProcessor slash(db,fanficsInterface, fandomInterface, authorInterface, recsInterface);
     slash.DoFullCycle(db, 2);
     transaction.finalize();
     QLOG_INFO() << "finished";

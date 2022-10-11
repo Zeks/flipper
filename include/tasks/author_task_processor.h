@@ -27,9 +27,7 @@ class Fandoms;
 class Authors;
 class PageTask;
 }
-namespace database{
-class IDBWrapper;
-}
+
 class PageTask;
 typedef QSharedPointer<PageTask> PageTaskPtr;
 
@@ -45,7 +43,6 @@ public:
                         QSharedPointer<interfaces::PageTask> pageTaskInterface,
                         QObject* obj = nullptr);
     void Run(PageTaskPtr task);
-    QSharedPointer<database::IDBWrapper> dbInterface;
 private:
     sql::Database db;
     sql::Database taskDB;

@@ -17,11 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/rng.h"
 #include "include/Interfaces/db_interface.h"
+#include "include/sqlitefunctions.h"
 #include <functional>
 #include <random>
 
 namespace core{
-QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, sql::Database, StoryFilter &filter)
+QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, sql::Database db, StoryFilter &filter)
 {
     auto where = userToken.toStdString() + query->str;
     QStringList result;
@@ -52,7 +53,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
         RemoveOlderRngSequencesPastTheLimit(200);
 
         QLOG_INFO() << "GENERATING RANDOM SEQUENCE";
-        auto idList = portableDBInterface->GetIdListForQuery(query);
+        auto idList = database::sqlite::GetIdListForQuery(query, db);
         if(idList.size() == 0)
             idList.push_back("-1");
         RNGData::ListPtr usedList;

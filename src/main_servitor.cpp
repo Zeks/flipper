@@ -60,21 +60,13 @@ int main(int argc, char *argv[])
     auto db = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","CrawlerDB","dbcode/dbinit.sql", "CrawlerDB", true);
     auto pcDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","PageCache","dbcode/pagecacheinit.sql", "PageCache", false);
     auto tasksDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","Tasks","dbcode/tasksinit.sql", "Tasks", false);
+    auto userDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","UserDB","dbcode/user_db_init.sql", "UserDB", false);
 
-    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
-    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-    QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
-    auto userDb = userDbInterface->InitDatabase("UserDB");
-    userDbInterface->ReadDbFile("dbcode/user_db_init.sql", "UserDB");
-    userDbInterface->EnsureUUIDForUserDatabase();
 
     ServitorWindow w;
-    w.dbInterface = dbInterface;
-    w.env.interfaces.userDb = userDbInterface;
-    w.env.interfaces.db = dbInterface;
-    w.env.interfaces.pageCache= pageCacheInterface;
-    w.env.interfaces.tasks = tasksInterface;
+    w.env.interfaces.userDb = userDb;
+    w.env.interfaces.pageCache= pcDb;
+    w.env.interfaces.tasks = tasksDb;
     w.env.InitInterfaces();
     w.env.userToken = QUuid::createUuid().toString();
 

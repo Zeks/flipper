@@ -156,7 +156,7 @@ private:
     core::StoryFilter FilterFromTask(const ::ProtoSpace::Filter&,
                                      const ::ProtoSpace::UserData&);
 
-    QSharedPointer<FicSource> InitFicSource(QString userToken, QSharedPointer<database::IDBWrapper> dbInterface);
+    QSharedPointer<FicSource> InitFicSource(QString userToken, sql::Database db);
     QSet<int> ProcessIDPackIntoFfnFicSet(const ::ProtoSpace::SiteIDPack& );
     QSet<int> ProcessFFNIDPackIntoFfnFicSet(const ProtoSpace::SiteIDPack & pack);
     UsedInSearch PrepareSearch(::ProtoSpace::ResponseInfo* response,

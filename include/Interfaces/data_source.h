@@ -64,7 +64,7 @@ public:
 class FicSourceDirect : public FicSource
 {
 public:
-    FicSourceDirect(QSharedPointer<database::IDBWrapper> db, QSharedPointer<core::RNGData> rngData);
+    FicSourceDirect(sql::Database db, QSharedPointer<core::RNGData> rngData);
     virtual ~FicSourceDirect() = default;
     virtual void FetchData(const core::StoryFilter &filter, QVector<core::Fanfic>*) override;
     sql::Query BuildQuery(const core::StoryFilter &filter, bool countOnly = false);
@@ -75,7 +75,7 @@ public:
     QSharedPointer<core::Query> currentQuery;
     core::DefaultQueryBuilder queryBuilder; // builds search queries
     core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
-    QSharedPointer<database::IDBWrapper> db;
+    sql::Database db;
 };
 
 

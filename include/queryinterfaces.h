@@ -23,7 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "sql_abstractions/sql_query.h"
 #include "storyfilter.h"
 //#include "Interfaces/db_interface.h"
-namespace database { class IDBWrapper; }
 
 namespace core {
 struct Query
@@ -39,7 +38,7 @@ class IQueryBuilder
 public:
     virtual ~IQueryBuilder(){}
     virtual QSharedPointer<Query> Build(StoryFilter,  bool createLimits = true) = 0;
-    QSharedPointer<database::IDBWrapper> portableDBInterface;
+    sql::Database db;
 };
 
 
