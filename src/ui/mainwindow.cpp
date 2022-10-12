@@ -2859,30 +2859,6 @@ void MainWindow::OnClearLikedAuthorsRequested()
     ui->chkLikedAuthors->setChecked(false);
 }
 
-
-
-
-
-
-
-bool DisplayOwnProfilePrompt()
-{
-    QMessageBox m;
-    m.setIcon(QMessageBox::Warning);
-    m.setText("\"Is your profile\" option is enabled!\n"
-              "Only enable this while you are loading your own favourite list.\n"
-              "This tells flipper to discard your own profile from recommendations for better results\n"
-              "This will also automatically assign \"Liked\" to all of the fics in the loaded profile\n"
-              "Are you sure you want to continue?");
-    auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
-    auto noButton =  m.addButton("No", QMessageBox::AcceptRole);
-    Q_UNUSED(noButton)
-    m.exec();
-    if(m.clickedButton() != yesButton)
-        return false;
-    return true;
-}
-
 QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(bool silent){
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->name = ui->cbNewListName->currentText();
