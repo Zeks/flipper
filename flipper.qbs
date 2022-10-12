@@ -70,6 +70,7 @@ App{
     cpp.minimumWindowsVersion: "6.0"
 
     files: [
+        "include/app/flipper/flipper_initializer.h",
         "include/core/db_entity.h",
         "include/core/experimental/fic_relations.h",
         "include/core/fandom.h",
@@ -83,6 +84,7 @@ App{
         "include/parsers/ffn/favparser_wrapper.h",
         "include/parsers/ffn/mobile_favparser.h",
         "src/Interfaces/fandom_lists.cpp",
+        "src/app/flipper/flipper_initializer.cpp",
         "src/core/fandom.cpp",
         "src/core/fanfic.cpp",
         "src/core/fav_list_details.cpp",
@@ -95,9 +97,7 @@ App{
         "forms.qrc",
         "icons.qrc",
         "include/Interfaces/authors.h",
-        
         "include/Interfaces/db_interface.h",
-        
         "include/Interfaces/fandoms.h",
         "include/Interfaces/fanfics.h",
         "include/Interfaces/ffn/ffn_fanfics.h",
@@ -140,9 +140,7 @@ App{
         "src/tasks/author_task_processor.cpp",
         "src/pageconsumer.cpp",
         "src/Interfaces/authors.cpp",
-        
         "src/Interfaces/db_interface.cpp",
-        
         "src/Interfaces/fandoms.cpp",
         "src/Interfaces/fanfics.cpp",
         "src/Interfaces/ffn/ffn_fanfics.cpp",
@@ -183,8 +181,6 @@ App{
         "include/tasks/humor_task_processor.h",
         "src/tasks/recommendations_reload_precessor.cpp",
         "include/tasks/recommendations_reload_precessor.h",
-//        "src/tasks/fandom_list_reload_processor.cpp",
-//        "include/tasks/fandom_list_reload_processor.h",
         "include/grpc/grpc_source.h",
         "include/Interfaces/data_source.h",
         "src/grpc/grpc_source.cpp",
@@ -302,3 +298,4 @@ App{
         fileTags: ["proto"]
     }
 }
+

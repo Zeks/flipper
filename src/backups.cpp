@@ -42,13 +42,14 @@ sql::DiagnosticSQLResult<sql::DBVerificationResult> VerifyDatabase(sql::Connecti
     return result;
 }
 
-bool ProcessBackupForInvalidDbFile(QString pathToFile, QString fileName,  QStringList error)
-{
-    QDir dir;
-    auto backupPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/backups";
-    dir.mkpath(backupPath);
-    dir.setPath(backupPath);
+bool ProcessBackupForInvalidDbFile(QString pathToFile,
+                                   QString fileName,
+                                   QStringList error)
 
+{
+    auto backupPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/backups";
+    QDir dir;
+    dir.setPath(backupPath);
     dir.setNameFilters({fileName + "*.sqlite"});
     auto entries = dir.entryList(QDir::NoFilter, QDir::Time|QDir::Reversed);
 
@@ -57,7 +58,9 @@ bool ProcessBackupForInvalidDbFile(QString pathToFile, QString fileName,  QStrin
     if(entries.size() > 0)
     {
 
-        QFile::copy(fullFileName, pathToFile + "/" + fileName + ".sqlite.corrupted." + QDateTime::currentDateTime().toString("yyMMdd_hhmm"));
+        if(QFileInfo::exists(fullFileName))
+            QFile::copy(fullFileName, pathToFile + "/" + fileName + ".sqlite.corrupted." + QDateTime::currentDateTime().toString("yyMMdd_hhmm"));
+
         QMessageBox::StandardButton reply;
         QString message = "Current database file is corrupted, but there is a backup in the ~User folder. Do you want to restore the backup?"
                           "\n\n"
