@@ -32,9 +32,63 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QTextCodec>
 #include <QStandardPaths>
 #include <QMessageBox>
-void SetupLogger()
+
+
+typedef sql::DiagnosticSQLResult<sql::DBVerificationResult> VerificationResult;
+
+
+struct FlipperInitializer{
+    FlipperInitializer():
+        coreEnvironment(new CoreEnvironment()),
+        uiSettings("settings/ui.ini", QSettings::IniFormat),
+        settings("settings/settings.ini", QSettings::IniFormat)
+    {
+        uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+        settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+
+    }
+    bool Init();
+    void SetupLogger() const;
+    void ProcessStateOfExistingDatabase();
+    bool PerformInitialSetup();
+    bool SetupForValidDatabase();
+    bool RequiresReinit() const;
+    bool SetupMainWindow();
+    void EnsureBackupPathExists(QString path);
+    void EnsureDelayForUserParsing();
+
+    QSharedPointer<CoreEnvironment> coreEnvironment;
+    MainWindow w;
+    bool hasDBFile = false;
+    bool backupRestored = false;
+    bool newInstanceCreatedRecs = false;
+    bool slashFilterScheduled = false;;
+    QSettings uiSettings;
+    QSettings settings;
+};
+
+bool FlipperInitializer::Init(){
+
+    SetupLogger();
+    ProcessStateOfExistingDatabase();
+    if(RequiresReinit() && !PerformInitialSetup())
+        return false;
+    else
+        SetupForValidDatabase();
+
+    SetupMainWindow();
+    database::sqlite::RemoveOlderBackups("UserDB");
+
+    return true;
+}
+
+void FlipperInitializer::EnsureBackupPathExists(QString path){
+    QDir dir;
+    dir.mkpath(path);
+}
+
+void FlipperInitializer::SetupLogger() const
 {
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
 
     An<QsLogging::Logger> logger;
     logger->setLoggingLevel(static_cast<QsLogging::Level>(settings.value("Logging/loglevel").toInt()));
@@ -50,27 +104,15 @@ void SetupLogger()
                 QsLogging::DestinationFactory::MakeDebugOutputDestination() );
     logger->addDestination(debugDestination);
     logger->addDestination(fileDestination);
+    QLOG_INFO() << "current appPath is: " << QDir::currentPath();
 }
 
 
 
-typedef sql::DiagnosticSQLResult<sql::DBVerificationResult> VerificationResult;
-int main(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
-    a.setApplicationName("Flipper");
-    SetupLogger();
 
-
-    QDir dir;
+void FlipperInitializer::ProcessStateOfExistingDatabase(){
     auto backupPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/backups";
-    dir.mkpath(backupPath);
-    dir.setPath(backupPath);
-
-    QSharedPointer<CoreEnvironment> coreEnvironment(new CoreEnvironment());
-    QLOG_INFO() << "current appPath is: " << QDir::currentPath();
-
-
+    EnsureBackupPathExists(backupPath);
     QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
     uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
@@ -79,13 +121,11 @@ int main(int argc, char *argv[])
 
     QString databaseFolderPath = uiSettings.value("Settings/dbPath", QCoreApplication::applicationDirPath()).toString();
     QString currentDatabaseFile = databaseFolderPath + "/" + "UserDB.sqlite";
-    bool hasDBFile = QFileInfo::exists(currentDatabaseFile);
+    hasDBFile = QFileInfo::exists(currentDatabaseFile);
     An<PageManager>()->timeout = settings.value("Settings/pageFetchTimeout", 2000).toInt();
 
-    bool backupRestored = false;
     if(databaseFolderPath.length() > 0)
     {
-
         VerificationResult verificationResult;
         sql::ConnectionToken token;
         token.folder = databaseFolderPath.toStdString();
@@ -93,11 +133,11 @@ int main(int argc, char *argv[])
         token.serviceName = "UserDB";
 
         if(hasDBFile)
-            verificationResult = VerifyDatabase(token);
-        bool validDbFile  = hasDBFile && verificationResult.success;
-        if(!validDbFile)
+            verificationResult = database::sqlite::VerifyDatabase(token);
+        hasDBFile  = hasDBFile && verificationResult.success;
+        if(!hasDBFile)
         {
-            backupRestored = ProcessBackupForInvalidDbFile(databaseFolderPath, "UserDB", verificationResult.data.data);
+            backupRestored = database::sqlite::ProcessBackupForInvalidDbFile(databaseFolderPath, "UserDB", verificationResult.data.data);
             if(!backupRestored)
                 hasDBFile = false;
             else
@@ -105,47 +145,76 @@ int main(int argc, char *argv[])
 
         }
     }
+}
+
+bool FlipperInitializer::PerformInitialSetup()
+{
+    InitialSetupDialog setupDialog;
+    setupDialog.setWindowTitle("Welcome!");
+    setupDialog.setWindowModality(Qt::ApplicationModal);
+    setupDialog.env = coreEnvironment;
+    setupDialog.exec();
+    if(!setupDialog.initComplete)
+        return false;
+    if(setupDialog.recsCreated)
+        newInstanceCreatedRecs = true;
+
+    slashFilterScheduled = !setupDialog.readsSlash;
+    return true;
+}
+
+bool FlipperInitializer::SetupForValidDatabase()
+{
+    coreEnvironment->InstantiateClientDatabases(uiSettings.value("Settings/dbPath", QCoreApplication::applicationDirPath()).toString());
+    coreEnvironment->InitInterfaces();
+    coreEnvironment->Init();
+    database::sqlite::CreateDatabaseBackup(coreEnvironment->GetUserDatabase(),
+                                           QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/backups",
+                                           "UserDB_" + QDateTime::currentDateTime().toString("yyMMdd"),
+                                           QDir::currentPath() + "/dbcode/user_db_init.sql");
 
 
-    MainWindow w;
-    bool scheduleSlashFilter = false;
-    if(!hasDBFile || !uiSettings.value("Settings/initialInitComplete", false).toBool())
-    {
-        InitialSetupDialog setupDialog;
-        setupDialog.setWindowTitle("Welcome!");
-        setupDialog.setWindowModality(Qt::ApplicationModal);
-        setupDialog.env = coreEnvironment;
-        setupDialog.exec();
-        if(!setupDialog.initComplete)
-            return 2;
-        if(setupDialog.recsCreated)
-            w.QueueDefaultRecommendations();
+    return true;
+}
 
-        scheduleSlashFilter = !setupDialog.readsSlash;
-    }
-    else
-    {
+bool FlipperInitializer::RequiresReinit() const
+{
+    return !hasDBFile || !uiSettings.value("Settings/initialInitComplete", false).toBool();
+}
 
-        coreEnvironment->InstantiateClientDatabases(uiSettings.value("Settings/dbPath", QCoreApplication::applicationDirPath()).toString());
-        coreEnvironment->InitInterfaces();
-        coreEnvironment->Init();
-        coreEnvironment->BackupUserDatabase();
-        RemoveOlderBackups("UserDB");
-        if(backupRestored)
-            w.QueueDefaultRecommendations();
-    }
-
-
-
+bool FlipperInitializer::SetupMainWindow()
+{
+    if(newInstanceCreatedRecs || backupRestored)
+        w.QueueDefaultRecommendations();
 
     w.env = coreEnvironment;
-    if(!w.Init(scheduleSlashFilter))
-        return 0;
+    if(!w.Init(slashFilterScheduled))
+        return false;
     w.InitConnections();
     w.show();
     w.DisplayInitialFicSelection();
     w.StartTaskTimer();
+    return true;
+}
+
+
+void FlipperInitializer::EnsureDelayForUserParsing(){
+    An<PageManager>()->timeout = settings.value("Settings/pageFetchTimeout", 2000).toInt();
+}
+
+
+
+int main(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
+    a.setApplicationName("Flipper");
+
+    FlipperInitializer initializer;
+
+    if(!initializer.Init())
+        return 1;
 
     return a.exec();
 }
+
 
