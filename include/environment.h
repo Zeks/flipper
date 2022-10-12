@@ -191,8 +191,7 @@ public:
     void ProcessListIntoRecommendations(QString list);
 
     QVector<int> GetSourceFicsFromFile(QString filename);
-    int  BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params,
-                                         QVector<int> sourceFics);
+    int  BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics);
 
     core::FavListDetails GetStatsForFicList(QVector<int>);
     int  BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);

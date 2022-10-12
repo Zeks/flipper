@@ -479,9 +479,6 @@ const static auto basicRecommendationsParamReader = [](RequestContext& reqContex
         params->ignoredFandoms.insert(task->data().user_data().ignored_fandoms().fandom_ids(i));
     for(auto i = 0; i< task->data().user_data().ignored_fics_size(); i++)
         params->ignoredDeadFics.insert(task->data().user_data().ignored_fics(i));
-    for(auto i = 0; i< task->data().user_data().tagged_fics_size(); i++)
-        params->ficData->taggedFics.insert(task->data().user_data().tagged_fics(i));
-    QLOG_INFO() << "received tagged fics size:" << task->data().user_data().tagged_fics_size();
     for(auto i = 0; i< task->data().user_data().liked_authors_size(); i++)
         params->likedAuthors.insert(task->data().user_data().liked_authors(i));
     for(auto i = 0; i< task->data().user_data().negative_feedback().basicnegatives_size(); i++)
@@ -627,12 +624,11 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     //recommendationsCreationParams->Log();
 
     An<core::RecCalculator> recCalculator;
-    QLOG_INFO() << "Mood data for source ficlist:";
     auto moodData = CalcMoodDistributionForFicList(ficResult.fetchedFics.keys(), recCalculator->holder.genreComposites);
 
 
     auto list = recCalculator->GetMatchedFicsForFavList(ficResult.fetchedFics, recommendationsCreationParams, moodData);
-    int baseVotes = recommendationsCreationParams->useMoodAdjustment ? 20 : 1;
+    int baseVotes = recommendationsCreationParams->useMoodAdjustment ? 100 : 1;
 
     //TimedAction dataPassAction("Passing data: ",[&](){
 
@@ -670,14 +666,9 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             if(adjustedVotes < 1)
                 adjustedVotes = 1;
             // purging based on mood
-//            if(key == 5113112)
-//            {
-//                QLOG_INFO() << "testing purge value:" << value << " divisor:" << baseVotes*list.pureMatches.value(key) << "has decent: " << list.decentMatches.value(key);
-//            }
-            if(recommendationsCreationParams->useMoodAdjustment
-                    //&& (static_cast<float>(list.decentMatches.value(key)) / static_cast<float>(list.pureMatches.value(key))) < 0.1f
-                    && list.decentMatches.value(key) < 1 && adjustedVotes < 10
-                    && !recommendationsCreationParams->likedAuthors.contains(recCalculator->holder.fics.value(key)->authorId))
+            if((recommendationsCreationParams->useMoodAdjustment && (value/(baseVotes*list.pureMatches.value(key))) < 1) &&
+                    list.decentMatches.value(key) == 0 &&
+                    !recommendationsCreationParams->likedAuthors.contains(recCalculator->holder.fics.value(key)->authorId))
             {
                 bool axisGenre = false;;
                 //qDebug() << "attempting to purge fic: " << key;

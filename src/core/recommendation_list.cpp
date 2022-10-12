@@ -42,7 +42,6 @@ void core::RecommendationList::PassSetupParamsInto(RecommendationList &other)
 void RecommendationListFicData::Clear()
 {
     sourceFics.clear();
-    taggedFics.clear();
     fics.clear();
     purges.clear();
     metascores.clear();

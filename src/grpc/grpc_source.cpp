@@ -1043,8 +1043,6 @@ static const auto paramToTaskFiller = [](auto& task, QSharedPointer<core::Recomm
         userData->mutable_negative_feedback()->add_strongnegatives(vote);
     for(auto fic: std::as_const(recList->ignoredDeadFics))
         userData->add_ignored_fics(fic);
-    for(auto fic: std::as_const(recList->ficData->taggedFics))
-        userData->add_tagged_fics(fic);
 
 };
 
