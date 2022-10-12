@@ -42,7 +42,10 @@ struct AuthorWeightingResult
     double GetCoefficient(){
         if(ownProfile == true)
             return 0;
-        return value;
+
+        if(!isValid)
+            return 1;
+        return 1 + value;
     }
     bool ownProfile = false;;
     double value = 0;

@@ -185,9 +185,8 @@ void FicFetcherPage::FillFicData()
     {
         if(sourceficsData->sourceFics.contains(sourceficsData->fics.at(i)))
             continue;
-        // TODO: (need to check how strict fresh mode in the bot works)
         if(!filter.strictFreshSort
-                || (filter.strictFreshSort && sourceficsData->ficToVotes[i] > 1))
+                || (filter.strictFreshSort && sourceficsData->metascores.at(i) > 1))
         filter.recommendationScoresSearchToken.ficToScore[sourceficsData->fics[i]] = sourceficsData->metascores.at(i);
     }
     if(filter.sortMode == core::StoryFilter::sm_gems)

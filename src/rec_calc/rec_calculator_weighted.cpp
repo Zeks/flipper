@@ -148,34 +148,26 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
         needsRangeAdjustment = true;
 
     // okay, I need to find the limits for deviation that pull a certain % of lists into rarity ranges
-    int uncommonAuthorCount = (authorList.size()/100.)*20.;
-    int rareAuthorCount = (authorList.size()/100.)*5;
-    int uniqueAuthorCount = (authorList.size()/100.)*2;
+    int uncommonAuthorCount = (authorList.size()/100.)*8.;
+    int rareAuthorCount = (authorList.size()/100.)*2.5;
+    int uniqueAuthorCount = (authorList.size()/100.)*0.5;
     int seenAuthorCount = 0;
-
-    QLOG_INFO() << "Ratio median:" << ratioMedian;
 
     for(auto authorId: authorList){
         seenAuthorCount++;
         if(seenAuthorCount == uncommonAuthorCount){
-            //QLOG_INFO() << "Author ratio: " << allAuthors[authorId].ratio << " assigning ratio: uncommon";
             auto ratio = allAuthors[authorId].ratio;
             auto currentRange = ratioMedian - ratio;
             uncommonRange = currentRange;
         }else if(seenAuthorCount == rareAuthorCount){
             auto ratio = allAuthors[authorId].ratio;
             auto currentRange = ratioMedian - ratio;
-            //QLOG_INFO() << "Author ratio: " << allAuthors[authorId].ratio << " assigning ratio: rare";
             rareRange = currentRange;
         }else if(seenAuthorCount == uniqueAuthorCount){
             auto ratio = allAuthors[authorId].ratio;
             auto currentRange = ratioMedian - ratio;
-            //QLOG_INFO() << "Author ratio: " << allAuthors[authorId].ratio << " assigning ratio: unique";
             uniqueRange = currentRange;
         }
-        else
-            //QLOG_INFO() << "Author ratio: " << allAuthors[authorId].ratio;
-        allAuthors[authorId].distance = ratioMedian - allAuthors[authorId].ratio;
     }
 
     for(auto authorId: authorList){
@@ -217,39 +209,32 @@ AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorRe
     {
         result.value = 0;
         result.ownProfile = true;
-        result.authorType = AuthorWeightingResult::EAuthorType::unique;
+        result.authorType = AuthorWeightingResult::EAuthorType::common;
         author.authorMatchCloseness = result.authorType;
         return result;
     }
 
-
-   if(unique)
+    if(unique)
     {
         result.authorType = AuthorWeightingResult::EAuthorType::unique;
         counter2Sigma++;
+        result.value = quadratic_coef(author.ratio,ratioMedian, quadraticDeviation, authorSize, maximumMatches, ECalcType::unique);
     }
     else if(rare)
     {
         result.authorType = AuthorWeightingResult::EAuthorType::rare;
         counter17Sigma++;
+        result.value  = quadratic_coef(author.ratio,ratioMedian,  quadraticDeviation,  authorSize, maximumMatches, ECalcType::rare);
     }
     else if(uncommon)
     {
         result.authorType = AuthorWeightingResult::EAuthorType::uncommon;
+        result.value  = quadratic_coef(author.ratio, ratioMedian, quadraticDeviation,  authorSize, maximumMatches, ECalcType::uncommon);
     }
     else
     {
         result.authorType = AuthorWeightingResult::EAuthorType::common;
     }
-
-    // doing more realistic smooth curving of assigned points than arbitrary ranges
-    // need to check different types of lists on how exactly is it processed
-   // the algo is now cubic distance from median ratio
-    float adjuster = author.distance/2.;
-    if(author.distance <= 1)
-        result.value = 0;
-    else
-        result.value = std::pow(adjuster, 3);
     author.authorMatchCloseness = result.authorType;
     return result;
 }

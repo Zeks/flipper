@@ -312,22 +312,23 @@ bool RecCalculatorImplBase::CollectVotes()
             //std::optional<double> neutralMoodSimilarity = GetNeutralDiffForLists(author);
 
             std::optional<double> touchyMoodSimilarity = GetTouchyDiffForLists(author);
-            double moodCoef  = 1;
+
             if(touchyMoodSimilarity.has_value())
             {
-
+                double coef  = 1;
                 if(weighting.authorType == core::AuthorWeightingResult::EAuthorType::rare ||
                         weighting.authorType == core::AuthorWeightingResult::EAuthorType::unique)
-                    moodCoef = GetCoeffForTouchyDiff(touchyMoodSimilarity.value(), false);
+                    coef = GetCoeffForTouchyDiff(touchyMoodSimilarity.value(), false);
                 else
-                    moodCoef = GetCoeffForTouchyDiff(touchyMoodSimilarity.value());
+                    coef = GetCoeffForTouchyDiff(touchyMoodSimilarity.value());
 
-                if(moodCoef > 0.99)
+                if(coef > 0.99)
                     result.decentMatches[fic] = 1;
                 //                if(author == 77257)
                 //                    qDebug() << "similarity coef for author: " << 77257 << "is: " << coef;
+                vote = votesBase*coef;
             }
-            vote = (votesBase + matchCountSimilarityCoef)*moodCoef;
+            vote = vote * matchCountSimilarityCoef;
             if(doTrashCounting &&  ownMajorNegatives.cardinality() > startOfTrashCounting){
                 if(allAuthors[author].negativeToPositiveMatches > 1.5){
                     vote = 0;
@@ -350,7 +351,7 @@ bool RecCalculatorImplBase::CollectVotes()
             }
 
             result.recommendations[fic]+= vote;
-            result.AddToBreakdown(fic, weighting.authorType, 1+weighting.GetCoefficient());
+            result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
     });
 
@@ -723,11 +724,6 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     if(average == 0)
         average = 1;
 
-    Roaring taggedFics;
-    QLOG_INFO() << "Processing tagged fics:" << params->ficData->taggedFics.size();
-    for(const auto& fic: std::as_const(params->ficData->taggedFics))
-        taggedFics.add(fic);
-
     minimumRatio = (average+1)/2 > 1 ? (average+1)/2 : 1;
 
     for(auto i = funcResult.ratioInfo.cbegin(); i != funcResult.ratioInfo.cend(); i++) {
@@ -735,7 +731,6 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         const auto& item = i.value();
         tempSummary.authors += item.authors;
         tempSummary.ficsAfterIgnore |= item.ficsAfterIgnore;
-        tempSummary.ficsAfterIgnore|=tempSummary.ficsAfterIgnore.operator-(taggedFics);
 
         auto& sumratio = funcResult.ratioSumInfo[i.key()];
         sumratio.ratio = i.key();
