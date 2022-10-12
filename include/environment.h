@@ -148,13 +148,8 @@ public:
         sql::Database userDb;
         sql::Database pageCache;
         sql::Database tasks;
-//        QSharedPointer<database::IDBWrapper> db;
-//        QSharedPointer<database::IDBWrapper> userDb;
-//        QSharedPointer<database::IDBWrapper> backupDb;
-//        QSharedPointer<database::IDBWrapper> pageCache;
-//        QSharedPointer<database::IDBWrapper> tasks;
     };
-
+    sql::Database GetUserDatabase() const;
 
     // reads settings into a files
     void ReadSettings();
@@ -229,7 +224,6 @@ public:
     QSet<int> GetFicsForNegativeTags();
     QSet<int> GetIgnoredDeadFics();
     void LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fanfic>& fanfics);
-    void BackupUserDatabase();
     int CreateDefaultRecommendationsForCurrentUser();
 
 

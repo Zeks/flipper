@@ -19,7 +19,6 @@ bool InstallCustomFunctions(QSqlDatabase db);
 bool InstallCustomFunctions(sql::Database db);
 bool ReadDbFile(QString file, QString connectionName);
 QStringList GetIdListForQuery(QSharedPointer<core::Query> query, sql::Database db);
-bool BackupSqliteDatabase(QString dbname);
 bool PushFandomToTopOfRecent(QString fandom, sql::Database db);
 QStringList FetchRecentFandoms(sql::Database db);
 bool RebaseFandomsToZero(sql::Database db);

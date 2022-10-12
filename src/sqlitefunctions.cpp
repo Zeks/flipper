@@ -528,41 +528,6 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, sql::Database d
     return result;
 }
 
-
-bool BackupSqliteDatabase(QString dbName)
-{
-    bool success = true;
-    #ifndef CLIENT_APP
-    Q_UNUSED(dbName)
-    #endif
-#ifdef CLIENT_APP
-    QDir dir("backups");
-    QStringList filters;
-    filters << "*.zip";
-    dir.setNameFilters(filters);
-    auto entries = dir.entryList(QDir::NoFilter, QDir::Time|QDir::Reversed);
-    qSort(entries.begin(),entries.end());
-    std::reverse(entries.begin(),entries.end());
-    qDebug() << entries;
-    QString nameWithExtension = dbName + ".sqlite";
-    if(!QFile::exists(nameWithExtension))
-        success = success && QFile::copy(nameWithExtension+ ".default", nameWithExtension);
-    QString backupName = "backups/" + dbName + "." + QDateTime::currentDateTime().date().toString("yyyy-MM-dd") + ".sqlite.zip";
-    if(!QFile::exists(backupName))
-        success = success && JlCompress::compressFile(backupName, "CrawlerDB.sqlite");
-
-    int i = 0;
-    for(QString entry : entries)
-    {
-        i++;
-        if(i < 10)
-            continue;
-        success = success && QFile::remove("backups/" + entry);
-    };
-#endif
-    return success;
-}
-
 bool PushFandomToTopOfRecent(QString fandom, sql::Database db)
 {
     QString upsert1 ("UPDATE recent_fandoms SET seq_num= (select max(seq_num) +1 from  recent_fandoms ) WHERE fandom = '%1'; ");

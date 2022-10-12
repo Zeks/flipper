@@ -16,11 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "backups.h"
+#include "sqlitefunctions.h"
 
 #include <QDir>
 #include <QFile>
 #include <QStandardPaths>
 #include <QMessageBox>
+namespace database {
+namespace sqlite{
 
 sql::DiagnosticSQLResult<sql::DBVerificationResult> VerifyDatabase(sql::ConnectionToken connectionToken){
 
@@ -104,3 +107,28 @@ void RemoveOlderBackups(QString fileName){
             QFile::remove(backupPath + "/" + entries.at(i));
     }
 }
+
+bool CreateDatabaseBackup(sql::Database originalDb, QString targetFolder, QString targetFile, QString dbInitFile)
+{
+    QDir backupDir;
+    backupDir.mkpath(targetFolder);
+
+    auto backupDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile(targetFolder, targetFile,
+                                                                         dbInitFile, targetFile, false);
+
+    database::Transaction transaction(backupDb);
+    sql::PassScoresToAnotherDatabase(originalDb, backupDb);
+    sql::PassTagSetToAnotherDatabase(originalDb, backupDb);
+    sql::PassFicTagsToAnotherDatabase(originalDb, backupDb);
+    sql::PassSnoozesToAnotherDatabase(originalDb, backupDb);
+    sql::PassFicNotesToAnotherDatabase(originalDb, backupDb);
+    sql::PassClientDataToAnotherDatabase(originalDb, backupDb);
+    sql::PassRecentFandomsToAnotherDatabase(originalDb, backupDb);
+    sql::PassReadingDataToAnotherDatabase(originalDb, backupDb);
+    sql::PassIgnoredFandomsToAnotherDatabase(originalDb, backupDb);
+    sql::PassFandomListSetToAnotherDatabase(originalDb, backupDb);
+    sql::PassFandomListDataToAnotherDatabase(originalDb, backupDb);
+    transaction.finalize();
+}
+
+}}

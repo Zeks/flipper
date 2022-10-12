@@ -19,6 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "pure_sql.h"
 #include "sql_abstractions/sql_connection_token.h"
 
-sql::DiagnosticSQLResult<sql::DBVerificationResult> VerifyDatabase(sql::ConnectionToken connectionToken);
-bool ProcessBackupForInvalidDbFile(QString pathToFile, QString fileName,  QStringList error);
-void RemoveOlderBackups(QString fileName);;
+
+namespace database {
+namespace sqlite{
+    sql::DiagnosticSQLResult<sql::DBVerificationResult> VerifyDatabase(sql::ConnectionToken connectionToken);
+    bool ProcessBackupForInvalidDbFile(QString pathToFile, QString fileName,  QStringList error);
+    void RemoveOlderBackups(QString fileName);
+    bool CreateDatabaseBackup(sql::Database originalDb,  QString targetFolder, QString targetFile, QString dbInitFile);
+}}

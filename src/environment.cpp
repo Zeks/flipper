@@ -39,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/timeutils.h"
 #include "include/in_tag_accessor.h"
 #include "include/sqlitefunctions.h"
+#include "include/backups.h"
 
 #ifdef USE_WEBVIEW
 #include "include/webview/pagegetter_w.h"
@@ -217,6 +218,11 @@ CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj), searchHistory(250)
 {
     ReadSettings();
     rngGenerator.reset(new core::DefaultRNGgenerator);
+}
+
+sql::Database CoreEnvironment::GetUserDatabase() const
+{
+    return interfaces.userDb;
 }
 
 void CoreEnvironment::ReadSettings()
@@ -1228,39 +1234,6 @@ void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, Q
     if(fanfics.size() <= 100){
         interfaces.recs->LoadPlaceAndRecommendationsData(&fanfics, filter);
     }
-}
-
-void CoreEnvironment::BackupUserDatabase()
-{
-    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
-    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-
-    qDebug() << uiSettings.value("Settings/dbPath").toString();
-    //QDir dbDir (uiSettings.value("Settings/dbPath").toString());
-    QDir backupDir (QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/backups");
-    backupDir.mkpath(backupDir.path());
-
-    QString backupFileName = "UserDB_" + QDateTime::currentDateTime().toString("yyMMdd") ;
-
-    QString backupFullFile = backupDir.path() + "/" + backupFileName + ".sqlite";
-    if(QFileInfo::exists(backupFullFile))
-        return;
-
-    auto backupDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile(backupDir.path(), backupFileName, QDir::currentPath() + "/dbcode/user_db_init.sql", backupFileName, false);
-
-    database::Transaction transaction(backupDb);
-    sql::PassScoresToAnotherDatabase(interfaces.userDb, backupDb);
-    sql::PassTagSetToAnotherDatabase(interfaces.userDb, backupDb);
-    sql::PassFicTagsToAnotherDatabase(interfaces.userDb, backupDb);
-    sql::PassSnoozesToAnotherDatabase(interfaces.userDb, backupDb);
-    sql::PassFicNotesToAnotherDatabase(interfaces.userDb, backupDb);
-    sql::PassClientDataToAnotherDatabase(interfaces.userDb, backupDb);
-    sql::PassRecentFandomsToAnotherDatabase(interfaces.userDb, backupDb);
-    sql::PassReadingDataToAnotherDatabase(interfaces.userDb, backupDb);
-    sql::PassIgnoredFandomsToAnotherDatabase(interfaces.userDb, backupDb);
-    sql::PassFandomListSetToAnotherDatabase(interfaces.userDb, backupDb);
-    sql::PassFandomListDataToAnotherDatabase(interfaces.userDb, backupDb);
-    transaction.finalize();
 }
 
 int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
