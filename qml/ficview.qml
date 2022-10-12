@@ -183,16 +183,9 @@ Rectangle {
                 id:info
                 font.pixelSize: mainWindow.textSize
                 text: "At page:"
-                anchors.bottom: row.bottom
-                anchors.bottomMargin: 2
             }
             Rectangle{
                 color: "lightyellow"
-
-                anchors.top: row.top
-                anchors.topMargin: 2
-                anchors.bottom: row.bottom
-                anchors.bottomMargin: 3
                 width: 80
                 height:row.height - 5
                 TextInput{
