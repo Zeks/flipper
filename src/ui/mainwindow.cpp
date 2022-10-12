@@ -3169,15 +3169,13 @@ void MainWindow::on_pbRefreshRecList_clicked()
 
     auto defaultParams = CreateReclistParamsFromUI(true);
     auto params = env->interfaces.recs->FetchParamsForRecList(ui->cbRecGroup->currentText());
-    params->userFFNId = env->interfaces.recs->GetUserProfile();
-    //params->PassSetupParamsInto(*defaultParams);
-    //params = defaultParams;
 
     if(!params)
     {
         QMessageBox::warning(nullptr, "Attention!", "Failed to read params for reclist refresh");
         return;
     }
+    params->userFFNId = env->interfaces.recs->GetUserProfile();
     auto listId = env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
     auto sources = env->GetListSourceFFNIds(listId);
     if(!sources.size()){
