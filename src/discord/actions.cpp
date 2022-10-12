@@ -38,7 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/review.h"
 #include "parsers/ffn/favparser_wrapper.h"
 #include "include/qstring_from_stringview.h"
-#include "Interfaces/interface_sqlite.h"
+
 #include "Interfaces/fandoms.h"
 #include "Interfaces/discord/users.h"
 #include "grpc/grpc_source.h"

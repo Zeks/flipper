@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "servers/feed.h"
 #include "logger/QsLog.h"
 #include "loggers/usage_statistics.h"
-#include "Interfaces/interface_sqlite.h"
+
 #include <QCoreApplication>
 #include <QSettings>
 #include <QtConcurrent>

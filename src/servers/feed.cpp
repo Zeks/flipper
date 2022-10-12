@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "core/section.h"
 #include "core/fav_list_analysis.h"
 #include "pure_sql.h"
-#include "Interfaces/interface_sqlite.h"
+
 #include "sqlitefunctions.h"
 #include "in_tag_accessor.h"
 #include "logger/QsLog.h"
@@ -37,7 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/ffn/ffn_authors.h"
 #include "Interfaces/ffn/ffn_fanfics.h"
 #include "Interfaces/db_interface.h"
-#include "Interfaces/interface_sqlite.h"
+
 #include "Interfaces/fandoms.h"
 #include "Interfaces/fanfics.h"
 #include "Interfaces/genres.h"

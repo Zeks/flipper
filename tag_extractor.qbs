@@ -23,12 +23,12 @@ cpp.includePaths: [
 ]
 
 files: [
-        "include/Interfaces/base.h",
+        
         "include/Interfaces/db_interface.h",
         "include/Interfaces/fanfics.h",
         "include/Interfaces/ffn/ffn_fanfics.h",
         "include/Interfaces/tags.h",
-        "include/Interfaces/interface_sqlite.h",
+        
         "include/pure_sql.h",
         "include/queryinterfaces.h",
         "include/regex_utils.h",
@@ -39,7 +39,7 @@ files: [
         "include/pagetask.h",
         "third_party/sqlite/sqlite3.c",
         "third_party/sqlite/sqlite3.h",
-        "src/Interfaces/base.cpp",
+        
         "src/Interfaces/db_interface.cpp",
         "src/Interfaces/tags.cpp",
         "src/pure_sql.cpp",
@@ -50,7 +50,7 @@ files: [
         "src/transaction.cpp",
         "src/pagetask.cpp",
         "src/main_tag_extractor.cpp",
-        "src/Interfaces/interface_sqlite.cpp",
+        
     ]
 
 cpp.staticLibraries: ["zlib", "quazip"]

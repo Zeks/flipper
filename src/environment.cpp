@@ -45,7 +45,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #endif
 
 #include "include/url_utils.h"
-#include "include/Interfaces/interface_sqlite.h"
+
 #include "sql_abstractions/sql_query.h"
 #include <QSqlError>
 #include <QTextCodec>

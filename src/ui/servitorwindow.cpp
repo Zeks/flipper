@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/genres.h"
 #include "include/Interfaces/fanfics.h"
 #include "include/Interfaces/fandoms.h"
-#include "include/Interfaces/interface_sqlite.h"
+
 #include "include/Interfaces/authors.h"
 #include "include/Interfaces/recommendation_lists.h"
 #include "include/Interfaces/ffn/ffn_fanfics.h"

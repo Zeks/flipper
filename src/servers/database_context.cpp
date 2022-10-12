@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "servers/database_context.h"
 #include "Interfaces/db_interface.h"
-#include "Interfaces/interface_sqlite.h"
+
 #include "Interfaces/ffn/ffn_authors.h"
 #include "Interfaces/ffn/ffn_fanfics.h"
 #include "Interfaces/fandoms.h"

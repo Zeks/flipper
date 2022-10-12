@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/fandoms.h"
 #include "Interfaces/fanfics.h"
 #include "Interfaces/db_interface.h"
-#include "Interfaces/interface_sqlite.h"
+
 #include "Interfaces/pagetask_interface.h"
 #include "include/ImmediateTooltipStyle.h"
 #include "ui/actionprogress.h"

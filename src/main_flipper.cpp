@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "ui/mainwindow.h"
 #include "ui/initialsetupdialog.h"
 #include "Interfaces/db_interface.h"
-#include "Interfaces/interface_sqlite.h"
+
 #include "include/sqlitefunctions.h"
 #include "include/pure_sql.h"
 #include "include/db_fixers.h"

@@ -95,9 +95,9 @@ App{
         "forms.qrc",
         "icons.qrc",
         "include/Interfaces/authors.h",
-        "include/Interfaces/base.h",
+        
         "include/Interfaces/db_interface.h",
-        "include/Interfaces/interface_sqlite.h",
+        
         "include/Interfaces/fandoms.h",
         "include/Interfaces/fanfics.h",
         "include/Interfaces/ffn/ffn_fanfics.h",
@@ -140,9 +140,9 @@ App{
         "src/tasks/author_task_processor.cpp",
         "src/pageconsumer.cpp",
         "src/Interfaces/authors.cpp",
-        "src/Interfaces/base.cpp",
+        
         "src/Interfaces/db_interface.cpp",
-        "src/Interfaces/interface_sqlite.cpp",
+        
         "src/Interfaces/fandoms.cpp",
         "src/Interfaces/fanfics.cpp",
         "src/Interfaces/ffn/ffn_fanfics.cpp",

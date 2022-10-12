@@ -149,7 +149,7 @@ App{
         "src/parsers/ffn/ffnparserbase.cpp",
         "include/Interfaces/data_source.h",
         "src/Interfaces/data_source.cpp",
-        "include/Interfaces/base.h",
+        
         "include/Interfaces/fandoms.h",
         "src/Interfaces/fandoms.cpp",
         "include/Interfaces/fanfics.h",
@@ -158,15 +158,15 @@ App{
         "src/Interfaces/ffn/ffn_fanfics.cpp",
         "include/Interfaces/ffn/ffn_authors.h",
         "include/Interfaces/db_interface.h",
-        "include/Interfaces/interface_sqlite.h",
+        
         "include/Interfaces/recommendation_lists.h",
         "src/Interfaces/authors.cpp",
-        "src/Interfaces/base.cpp",
+        
         "src/Interfaces/genres.cpp",
         "include/Interfaces/genres.h",
         "src/Interfaces/db_interface.cpp",
         "src/Interfaces/ffn/ffn_authors.cpp",
-        "src/Interfaces/interface_sqlite.cpp",
+        
         "src/Interfaces/recommendation_lists.cpp",
         "src/pagegetter.cpp",
         "include/pagegetter.h",

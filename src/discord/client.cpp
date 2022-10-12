@@ -5,7 +5,7 @@
 #include "include/parsers/ffn/favparser_wrapper.h"
 
 #include "Interfaces/db_interface.h"
-#include "Interfaces/interface_sqlite.h"
+
 #include "Interfaces/fanfics.h"
 #include "Interfaces/ffn/ffn_fanfics.h"
 #include "Interfaces/ffn/ffn_authors.h"

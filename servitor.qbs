@@ -99,7 +99,7 @@ App{
         "src/servers/token_processing.cpp",
         "src/ui/servitorwindow.cpp",
         "src/Interfaces/data_source.cpp",
-        "include/Interfaces/base.h",
+        
         "include/Interfaces/genres.h",
         "include/Interfaces/fandoms.h",
         "include/Interfaces/tags.h",
@@ -108,15 +108,15 @@ App{
         "include/Interfaces/ffn/ffn_fanfics.h",
         "include/Interfaces/ffn/ffn_authors.h",
         "include/Interfaces/db_interface.h",
-        "include/Interfaces/interface_sqlite.h",
+        
         "include/Interfaces/recommendation_lists.h",
         "src/Interfaces/authors.cpp",
-        "src/Interfaces/base.cpp",
+        
         "src/Interfaces/genres.cpp",
         "src/Interfaces/fandoms.cpp",
         "src/Interfaces/db_interface.cpp",
         "src/Interfaces/ffn/ffn_authors.cpp",
-        "src/Interfaces/interface_sqlite.cpp",
+        
         "src/Interfaces/recommendation_lists.cpp",
         "include/container_utils.h",
         "include/generic_utils.h",

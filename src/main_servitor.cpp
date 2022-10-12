@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QPluginLoader>
 
 #include "include/ui/servitorwindow.h"
-#include "include/Interfaces/interface_sqlite.h"
+
 
 void SetupLogger()
 {
