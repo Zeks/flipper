@@ -17,8 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 
 #include "GlobalHeaders/SingletonHolder.h"
 #include "sql_abstractions/sql_connection_token.h"
+#include "sql_abstractions/sql_database.h"
 
-#include "database.h"
+
 #include <mutex>
 
 namespace discord {
@@ -28,8 +29,8 @@ struct SqliteConnectionToken{
     QString folder;
 };
 
-struct LockedDatabase : public core::Database{
-    LockedDatabase(std::recursive_mutex& lock):core::Database(), lockGuard(lock){}
+struct LockedDatabase {
+    LockedDatabase(std::recursive_mutex& lock): lockGuard(lock){}
     ~LockedDatabase();
     std::lock_guard<std::recursive_mutex> lockGuard;
     sql::Database db;
