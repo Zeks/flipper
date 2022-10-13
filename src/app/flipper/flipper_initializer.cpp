@@ -129,7 +129,7 @@ bool FlipperInitializer::SetupMainWindow()
         w->QueueDefaultRecommendations();
 
     w->env = coreEnvironment;
-    if(!w->Init(slashFilterScheduled))
+    if(!w->InitFromReadyEnvironment(slashFilterScheduled))
         return false;
     w->InitConnections();
     w->show();

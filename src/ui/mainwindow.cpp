@@ -99,6 +99,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <chrono>
 #include <algorithm>
 #include <math.h>
+#include <cassert>
 
 namespace {
 template <typename T>
@@ -131,191 +132,47 @@ MainWindow::MainWindow(QWidget *parent) :
     refreshSpin(":/icons/icons/refresh_spin_lg.gif")
 {
     ui->setupUi(this);
-    ui->cbNormals->lineEdit()->setClearButtonEnabled(true);
-    ui->cbCrossovers->lineEdit()->setClearButtonEnabled(true);
-    ui->leContainsWords->setClearButtonEnabled(true);
-    ui->leContainsGenre->setClearButtonEnabled(true);
-    ui->leAuthorID->setClearButtonEnabled(true);
-    ui->leNotContainsWords->setClearButtonEnabled(true);
-    ui->leNotContainsGenre->setClearButtonEnabled(true);
-    ui->lblCrosses->hide();
-    ui->cbCrossovers->hide();
-    ui->chkUseAwaysPickAt->hide();
-    ui->leRecsAlwaysPickAt->hide();
-    ui->pbFandomSwitch->hide();
-    ui->chkIgnoreMarkedDeadFics->hide();
-    ui->pbProfileCompare->setVisible(false);
-    ui->leFFNProfileLeft->setVisible(false);
-    ui->leFFNProfileRight->setVisible(false);
+    this->setWindowTitle("Flipper");
+    this->setAttribute(Qt::WA_QuitOnClose);
 
-    reclistUIHelper.profileInput = ui->wdgProfileSelector;
-    reclistUIHelper.advancedSettings = ui->wdgAdvancedControls;
-    reclistUIHelper.urlOuter = ui->wdgUrlList;
-    reclistUIHelper.urlInner = ui->wdgUrlPart;
-    reclistUIHelper.main = this;
+    EnableClearButtonForRelevantLineEdits();
+    PerformDefaultElementHide();
+    PerformDevBuildUiAdjustment();
+    InstallCustomPalettesAndStylesheets();
+    InitializeRecCreationWidgetWithDefaultState();
+    InitializeHistoryNavigationButtons();
+    PerformPatreonColorization();
+    EnableImmediateTooltipsForRelevantElemetns();
+    InitSortingCombobox();
 
-    ui->rbSimpleMode->setChecked(true);
-    ui->rbProfileMode->setChecked(true);
-    reclistUIHelper.SetupVisibilityForElements();
-    ui->wdgRecsCreatorInner->hide();
-    ui->wdgUrlList->hide();
-    ui->wdgFilteringModes->hide();
+    // setting "Trending" filter to work a year back by default
+    ui->dteFavRateCut->setDate(QDate::currentDate().addDays(-366));
 
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    if(!settings.value("Settings/devBuild", false).toBool())
-    {
-        ui->pbDiagnosticList->hide();
-        ui->chkDisplayPurged->hide();
-    }
+    // removing Tag tab from the status display widget.
+    // todo, reove this legacy
+    ui->tagWidget->removeTab(1);
 
-    ui->lblCreationStatus->hide();
-
-    QPalette pal = palette();
-    pal.setColor(QPalette::Background, QColor("#f0f0f0FF"));
-    ui->wdgRecsCreatorInner->setAutoFillBackground(true);
-    ui->wdgRecsCreatorInner->setPalette(pal);
-
-    pal.setColor(QPalette::Background, QColor("#f0ddddFF"));
-    ui->lblAlgoTuners->setPalette(pal);
-    ui->lblAlgoTuners->setAutoFillBackground(true);
-    ui->lblAdvancedControls->setPalette(pal);
-    ui->lblAdvancedControls->setAutoFillBackground(true);
-
-    ui->lblMode->setPalette(pal);
-    ui->lblMode->setAutoFillBackground(true);
-
-    ui->lblSource->setPalette(pal);
-    ui->lblSource->setAutoFillBackground(true);
-
-    //    ui->wdgAdvancedControls->setPalette(pal);
-    //    ui->wdgAdvancedControls->setAutoFillBackground(true);
-
-
-    styleSheetForReclistMenu = "QPushButton{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(239,225,179, 128), stop:1 rgba(224,179,110, 128))}"
-                               "QPushButton:hover{background-color: #e0c56e; border: 1px solid black;border-radius: 5px;}"
-                               "}";
-
-    styleSheetForAccept = "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
-                          "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}}";
-    styleSheetForReclistCreation =  styleSheetForAccept;
-
-
-    ui->pbNewRecommendationList->setStyleSheet(styleSheetForReclistMenu);
-    ui->pbRecsCreateListFromSources->setStyleSheet(styleSheetForReclistCreation);
-
-    SetPreviousEnabled(false);
-    SetNextEnabled(false);
-
-    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
-    int currentLaunches = uiSettings.value("Settings/launches", 0).toInt() + 1;
-    uiSettings.setValue("Settings/launches", currentLaunches);
-
-    if(currentLaunches > 4 && !uiSettings.value("Settings/patreonSuppressed", false).toBool())
-        ui->tabWidget_2->setStyleSheet("QTabBar::tab:last { background-color: #ffe23f; }");
-
-    ui->lblRecentFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
-    //ui->lblIgnoredFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
-    ui->lblGenreInfo->setStyle(new ImmediateTooltipProxyStyle());
-    ui->chkUseReclistMatches->setStyle(new ImmediateTooltipProxyStyle());
-
-
-    if(!settings.value("Settings/devBuild", false).toBool())
-        ui->cbSortMode->removeItem(8);
+    InstantiateModels();
 
 }
 #define TO_STR2(x) #x
 #define STRINGIFY(x) TO_STR2(x)
-bool MainWindow::Init(bool scheduleSlashFilterOn)
+bool MainWindow::InitFromReadyEnvironment(bool scheduleSlashFilterOn)
 {
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
-
-    this->setWindowTitle("Flipper");
-    this->setAttribute(Qt::WA_QuitOnClose);
-    InitSortingCombobox();
-
-    ui->dteFavRateCut->setDate(QDate::currentDate().addDays(-366));
-    ui->pbLoadDatabase->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
-                                      "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
-                                      "}");
+    assert(env);
+    assert(env->interfaces.fandoms);
+    assert(env->interfaces.tags);
 
     ui->wdgTagsPlaceholder->fandomsInterface = env->interfaces.fandoms;
     ui->wdgTagsPlaceholder->tagsInterface = env->interfaces.tags;
 
-    recentFandomsModel = new QStringListModel;
-    ignoredFandomsModel = new QStringListModel;
-    ignoredFandomsSlashFilterModel= new QStringListModel;
-    recommendersModel= new QStringListModel;
-
-    ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
-
-    auto fandomList = env->interfaces.fandoms->GetFandomList(true);
-    ui->wdgFandomListPlaceholder->InitFandomList(fandomList);
-    ui->cbNormals->setModel(new QStringListModel(fandomList));
-    ui->cbCrossovers->setModel(new QStringListModel(fandomList));
-    //ui->cbIgnoreFandomSelector->setModel(new QStringListModel(fandomList));
-    ui->cbIgnoreFandomSlashFilter->setModel(new QStringListModel(fandomList));
-
-    actionProgress = new ActionProgress;
-    pbMain = actionProgress->ui->pbMain;
-    pbMain->setMinimumWidth(200);
-    pbMain->setMaximumWidth(200);
-    pbMain->setValue(0);
-    pbMain->setTextVisible(false);
-
-    lblCurrentOperation = new QLabel;
-    lblClientVersion= new QLabel;
-    lblClientVersion->setText("Client version: " + QString(STRINGIFY(CLIENT_VERSION)));
-
-    lblUserIdStatic= new QLabel;
-    lblUserIdStatic->setText("Your id is:");
-    lblUserIdActive= new QLabel;
-    lblUserIdActive->setText("<a href=\"" + env->userToken+ "\">"+env->userToken+"</a>");
-    lblUserIdActive->setTextFormat(Qt::RichText);
-    lblUserIdActive->setTextInteractionFlags(Qt::TextBrowserInteraction);
-    lblUserIdActive->setToolTip("<FONT COLOR=black>This is used for troubleshooting.</FONT>");
-    lblUserIdActive->setStyle(new ImmediateTooltipProxyStyle());
-    connect(lblUserIdActive, &QLabel::linkActivated, this, &MainWindow::onCopyDbUIDToClipboard);
-
-    ui->statusBar->addPermanentWidget(lblClientVersion,0);
-
-    if(!env->status.lastDBUpdate.isEmpty())
-    {
-        lblDBUpdateInfo = new QLabel;
-        QString dbUpdateText = "Fic DB last updated:";
-        lblDBUpdateInfo->setText(dbUpdateText);
-        ui->statusBar->addPermanentWidget(lblDBUpdateInfo,0);
-
-        auto dateFromDB = QDate::fromString(QDate::currentDate().toString("yyyy") + " " + env->status.lastDBUpdate, "yyyy MMM dd");
-        auto diff = dateFromDB.daysTo(QDate::currentDate());
-
-        QLOG_INFO() << "date diff: " << diff;
-
-        lblDBUpdateDate = new QLabel;
-        ui->statusBar->addPermanentWidget(lblDBUpdateDate,0);
-        QString prototype = "<b><font color=\"%1\">%2</font></b>";
-        lblDBUpdateDate->setText(prototype.arg(diff < 7 ? "darkGreen" : "darkBrown", env->status.lastDBUpdate));
-        lblDBUpdateDate->setStyle(new ImmediateTooltipProxyStyle());
-        lblDBUpdateInfo->setStyle(new ImmediateTooltipProxyStyle());
-
-        QString tooltip = "<FONT COLOR=black>Fanfic database updates roughly once in 20 to 30 days. When you see that the update has happened"
-                          " you can refresh your recommendation list with the Refresh button to the left of its name to see more fics.</FONT>";
-        lblDBUpdateInfo->setToolTip(tooltip);
-        lblDBUpdateDate->setToolTip(tooltip);
-
-    }
-    ui->statusBar->addPermanentWidget(lblUserIdStatic,0);
-    ui->statusBar->addPermanentWidget(lblUserIdActive,0);
-    ui->statusBar->addPermanentWidget(lblCurrentOperation,1);
-    ui->statusBar->addPermanentWidget(actionProgress,0);
-
-    ui->edtResults->setOpenLinks(false);
-    ui->tagWidget->removeTab(1);
+    ReadFandomListFromEnvironmentAndPassItToElements(env);
+    CreateStatusBar(env);
 
     recentFandomsModel->setStringList(env->interfaces.fandoms->GetRecentFandoms());
     ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
     ignoredFandomsSlashFilterModel->setStringList(env->interfaces.fandoms->GetIgnoredFandomsSlashFilter());
-    ui->lvTrackedFandoms->setModel(recentFandomsModel);
-    //ui->lvIgnoredFandoms->setModel(ignoredFandomsModel);
+    ui->lvRecentFandoms->setModel(recentFandomsModel);
     ui->lvExcludedFandomsSlashFilter->setModel(ignoredFandomsSlashFilterModel);
 
 
@@ -344,7 +201,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
     ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
     ignoreFandomSlashFilterMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromSlashFilterIgnoredList()));
-    ui->lvTrackedFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->lvRecentFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
     //ui->lvIgnoredFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->lvExcludedFandomsSlashFilter->setContextMenuPolicy(Qt::CustomContextMenu);
     //ui->edtResults->setOpenExternalLinks(true);
@@ -365,8 +222,9 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     ui->spRecsFan->setCollapsible(0,0);
     ui->spRecsFan->setCollapsible(1,0);
     ui->spRecsFan->setSizes({0,1000});
-    ui->wdgSlashFandomExceptions->hide();
-    ui->chkEnableSlashExceptions->hide();
+
+
+
 
     auto userFFNId = env->interfaces.recs->GetUserProfile();
     if(userFFNId > 0){
@@ -428,7 +286,7 @@ void MainWindow::InitConnections()
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagFromClipboard, this, &MainWindow::OnTagFromClipboard);
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagReloadRequested, this, &MainWindow::OnTagReloadRequested);
     connect(ui->wdgTagsPlaceholder, &TagWidget::clearLikedAuthors, this, &MainWindow::OnClearLikedAuthorsRequested);
-    connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
+    connect(ui->lvRecentFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
 
     //connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
     connect(ui->lvExcludedFandomsSlashFilter, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsSlashFilterContextMenu);
@@ -439,9 +297,7 @@ void MainWindow::InitConnections()
     connect(env.data(), &FlipperClientLogic::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
     connect(env.data(), &FlipperClientLogic::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
     connect(env.data(), &FlipperClientLogic::updateInfo, this, &MainWindow::OnNewProgressString);
-    ui->chkApplyLocalSlashFilter->setVisible(false);
-    ui->chkOnlySlashLocal->setVisible(false);
-    ui->chkInvertedSlashFilterLocal->setVisible(false);
+
 }
 
 void MainWindow::InitUIFromTask(PageTaskPtr task)
@@ -2686,7 +2542,7 @@ void MainWindow::OnOpenLogUrl(const QUrl & url)
 
 void MainWindow::OnRemoveFandomFromRecentList()
 {
-    auto fandom = ui->lvTrackedFandoms->currentIndex().data(0).toString();
+    auto fandom = ui->lvRecentFandoms->currentIndex().data(0).toString();
     env->interfaces.fandoms->RemoveFandomFromRecentList(fandom);
     env->interfaces.fandoms->ReloadRecentFandoms();
     recentFandomsModel->setStringList(env->interfaces.fandoms->GetRecentFandoms());
@@ -2701,7 +2557,7 @@ void MainWindow::OnRemoveFandomFromSlashFilterIgnoredList()
 
 void MainWindow::OnFandomsContextMenu(const QPoint &pos)
 {
-    fandomMenu.popup(ui->lvTrackedFandoms->mapToGlobal(pos));
+    fandomMenu.popup(ui->lvRecentFandoms->mapToGlobal(pos));
 }
 
 void MainWindow::OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos)
@@ -3457,6 +3313,204 @@ void MainWindow::DisplayRandomFicsForCurrentFilter()
 void MainWindow::QueueDefaultRecommendations()
 {
     defaultRecommendationsQueued = true;
+}
+
+void MainWindow::EnableClearButtonForRelevantLineEdits()
+{
+    ui->cbNormals->lineEdit()->setClearButtonEnabled(true);
+    ui->cbCrossovers->lineEdit()->setClearButtonEnabled(true);
+    ui->leContainsWords->setClearButtonEnabled(true);
+    ui->leContainsGenre->setClearButtonEnabled(true);
+    ui->leAuthorID->setClearButtonEnabled(true);
+    ui->leNotContainsWords->setClearButtonEnabled(true);
+    ui->leNotContainsGenre->setClearButtonEnabled(true);
+}
+
+void MainWindow::PerformDefaultElementHide()
+{
+    ui->lblCrosses->hide();
+    ui->cbCrossovers->hide();
+    ui->chkUseAwaysPickAt->hide();
+    ui->leRecsAlwaysPickAt->hide();
+    ui->pbFandomSwitch->hide();
+    ui->chkIgnoreMarkedDeadFics->hide();
+
+    ui->wdgRecsCreatorInner->hide();
+    ui->wdgUrlList->hide();
+    ui->wdgFilteringModes->hide();
+    ui->lblCreationStatus->hide();
+
+    ui->pbProfileCompare->setVisible(false);
+    ui->leFFNProfileLeft->setVisible(false);
+    ui->leFFNProfileRight->setVisible(false);
+
+    ui->chkApplyLocalSlashFilter->setVisible(false);
+    ui->chkOnlySlashLocal->setVisible(false);
+    ui->chkInvertedSlashFilterLocal->setVisible(false);
+
+
+    // these were never completed and need to remain hidden until they do
+    ui->wdgSlashFandomExceptions->hide();
+    ui->chkEnableSlashExceptions->hide();
+}
+
+void MainWindow::InstallCustomPalettesAndStylesheets()
+{
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QColor("#f0f0f0FF"));
+    ui->wdgRecsCreatorInner->setAutoFillBackground(true);
+    ui->wdgRecsCreatorInner->setPalette(pal);
+
+    pal.setColor(QPalette::Window, QColor("#f0ddddFF"));
+    ui->lblAlgoTuners->setPalette(pal);
+    ui->lblAlgoTuners->setAutoFillBackground(true);
+    ui->lblAdvancedControls->setPalette(pal);
+    ui->lblAdvancedControls->setAutoFillBackground(true);
+
+    ui->lblMode->setPalette(pal);
+    ui->lblMode->setAutoFillBackground(true);
+
+    ui->lblSource->setPalette(pal);
+    ui->lblSource->setAutoFillBackground(true);
+
+    styleSheetForReclistMenu = "QPushButton{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(239,225,179, 128), stop:1 rgba(224,179,110, 128))}"
+                               "QPushButton:hover{background-color: #e0c56e; border: 1px solid black;border-radius: 5px;}"
+                               "}";
+    styleSheetForAccept = "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
+                          "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}}";
+    styleSheetForReclistCreation =  styleSheetForAccept;
+
+    ui->pbNewRecommendationList->setStyleSheet(styleSheetForReclistMenu);
+    ui->pbRecsCreateListFromSources->setStyleSheet(styleSheetForReclistCreation);
+    ui->pbLoadDatabase->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
+                                      "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
+                                      "}");
+
+}
+
+void MainWindow::InitializeRecCreationWidgetWithDefaultState()
+{
+    reclistUIHelper.profileInput = ui->wdgProfileSelector;
+    reclistUIHelper.advancedSettings = ui->wdgAdvancedControls;
+    reclistUIHelper.urlOuter = ui->wdgUrlList;
+    reclistUIHelper.urlInner = ui->wdgUrlPart;
+    reclistUIHelper.main = this;
+    reclistUIHelper.SetupVisibilityForElements();
+
+    ui->rbSimpleMode->setChecked(true);
+    ui->rbProfileMode->setChecked(true);
+
+}
+
+void MainWindow::EnableImmediateTooltipsForRelevantElemetns()
+{
+    ui->lblRecentFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
+    ui->lblGenreInfo->setStyle(new ImmediateTooltipProxyStyle());
+    ui->chkUseReclistMatches->setStyle(new ImmediateTooltipProxyStyle());
+}
+
+void MainWindow::PerformPatreonColorization()
+{
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    int currentLaunches = uiSettings.value("Settings/launches", 0).toInt() + 1;
+    uiSettings.setValue("Settings/launches", currentLaunches);
+
+    if(currentLaunches > 4 && !uiSettings.value("Settings/patreonSuppressed", false).toBool())
+        ui->tabWidget_2->setStyleSheet("QTabBar::tab:last { background-color: #ffe23f; }");
+
+}
+
+void MainWindow::PerformDevBuildUiAdjustment()
+{
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    if(!settings.value("Settings/devBuild", false).toBool())
+    {
+        ui->pbDiagnosticList->hide();
+        ui->chkDisplayPurged->hide();
+    }
+    if(!settings.value("Settings/devBuild", false).toBool())
+        ui->cbSortMode->removeItem(8);
+}
+
+void MainWindow::InitializeHistoryNavigationButtons()
+{
+    SetPreviousEnabled(false);
+    SetNextEnabled(false);
+}
+
+void MainWindow::InstantiateModels()
+{
+    recentFandomsModel = new QStringListModel;
+    ignoredFandomsModel = new QStringListModel;
+    ignoredFandomsSlashFilterModel= new QStringListModel;
+    recommendersModel= new QStringListModel;
+}
+
+void MainWindow::ReadFandomListFromEnvironmentAndPassItToElements(QSharedPointer<FlipperClientLogic> env)
+{
+    auto fandomList = env->interfaces.fandoms->GetFandomList(true);
+    ui->wdgFandomListPlaceholder->InitFandomList(fandomList);
+
+    ui->cbNormals->setModel(new QStringListModel(fandomList));
+    ui->cbCrossovers->setModel(new QStringListModel(fandomList));
+
+    ui->cbIgnoreFandomSlashFilter->setModel(new QStringListModel(fandomList));
+}
+
+void MainWindow::CreateStatusBar(QSharedPointer<FlipperClientLogic> env)
+{
+    actionProgress = new ActionProgress;
+    pbMain = actionProgress->ui->pbMain;
+    pbMain->setMinimumWidth(200);
+    pbMain->setMaximumWidth(200);
+    pbMain->setValue(0);
+    pbMain->setTextVisible(false);
+
+    lblCurrentOperation = new QLabel;
+    lblClientVersion= new QLabel;
+    lblClientVersion->setText("Client version: " + QString(STRINGIFY(CLIENT_VERSION)));
+
+    lblUserIdStatic= new QLabel;
+    lblUserIdStatic->setText("Your id is:");
+    lblUserIdActive= new QLabel;
+    lblUserIdActive->setText("<a href=\"" + env->userToken+ "\">"+env->userToken+"</a>");
+    lblUserIdActive->setTextFormat(Qt::RichText);
+    lblUserIdActive->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    lblUserIdActive->setToolTip("<FONT COLOR=black>This is used for troubleshooting.</FONT>");
+    lblUserIdActive->setStyle(new ImmediateTooltipProxyStyle());
+    connect(lblUserIdActive, &QLabel::linkActivated, this, &MainWindow::onCopyDbUIDToClipboard);
+
+    ui->statusBar->addPermanentWidget(lblClientVersion,0);
+
+    if(!env->status.lastDBUpdate.isEmpty())
+    {
+        lblDBUpdateInfo = new QLabel;
+        QString dbUpdateText = "Fic DB last updated:";
+        lblDBUpdateInfo->setText(dbUpdateText);
+        ui->statusBar->addPermanentWidget(lblDBUpdateInfo,0);
+
+        auto dateFromDB = QDate::fromString(QDate::currentDate().toString("yyyy") + " " + env->status.lastDBUpdate, "yyyy MMM dd");
+        auto diff = dateFromDB.daysTo(QDate::currentDate());
+
+        QLOG_INFO() << "date diff: " << diff;
+
+        lblDBUpdateDate = new QLabel;
+        ui->statusBar->addPermanentWidget(lblDBUpdateDate,0);
+        QString prototype = "<b><font color=\"%1\">%2</font></b>";
+        lblDBUpdateDate->setText(prototype.arg(diff < 7 ? "darkGreen" : "darkBrown", env->status.lastDBUpdate));
+        lblDBUpdateDate->setStyle(new ImmediateTooltipProxyStyle());
+        lblDBUpdateInfo->setStyle(new ImmediateTooltipProxyStyle());
+
+        QString tooltip = "<FONT COLOR=black>Fanfic database updates roughly once in 20 to 30 days. When you see that the update has happened"
+                          " you can refresh your recommendation list with the Refresh button to the left of its name to see more fics.</FONT>";
+        lblDBUpdateInfo->setToolTip(tooltip);
+        lblDBUpdateDate->setToolTip(tooltip);
+
+    }
+    ui->statusBar->addPermanentWidget(lblUserIdStatic,0);
+    ui->statusBar->addPermanentWidget(lblUserIdActive,0);
+    ui->statusBar->addPermanentWidget(lblCurrentOperation,1);
+    ui->statusBar->addPermanentWidget(actionProgress,0);
 }
 
 void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)

@@ -124,7 +124,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
 
     //initalizes widgets
-    bool Init(bool scheduleSlashOn = false);
+    bool InitFromReadyEnvironment(bool scheduleSlashOn = false);
 
 
     ~MainWindow();
@@ -150,6 +150,19 @@ public:
     QSharedPointer<FlipperClientLogic> env;
 
 private:
+
+    void EnableClearButtonForRelevantLineEdits();
+    void PerformDefaultElementHide();
+    void InstallCustomPalettesAndStylesheets();
+    void InitializeRecCreationWidgetWithDefaultState();
+    void EnableImmediateTooltipsForRelevantElemetns();
+    void PerformPatreonColorization();
+    void PerformDevBuildUiAdjustment();
+    void InitializeHistoryNavigationButtons();
+    void InstantiateModels();
+
+    void ReadFandomListFromEnvironmentAndPassItToElements(QSharedPointer<FlipperClientLogic> env);
+    void CreateStatusBar(QSharedPointer<FlipperClientLogic> env);
 
     // sets up the model for fanfics
     void SetupFanficTable();
@@ -294,12 +307,7 @@ private:
 
     Ui::MainWindow *ui;
 
-    ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
-
-    bool cancelCurrentTaskPressed = false;
-
     QStringList tagList; // user tags used in the system
-
     QTimer taskTimer; // used to initiate the warnign about unfinished tasks after the app window is shown
 
     std::function<void(int)> callProgress; // temporary shit while I decouple page getter from ui
@@ -322,30 +330,33 @@ private:
     QDialog* expanderWidget = nullptr; // a dialog to display data from currentExpandedEdit for editing
     QTextEdit* edtExpander = new QTextEdit; //text edit taht contains the data of currentExpandedEdit while tis displayed by expanderWidget
 
-    //TagWidget* tagWidgetDynamic = new TagWidget; // tag filtering widget on Tags panel
-
+    ReclistCreationUIHelper reclistUIHelper;
 
     QQuickWidget* qwFics = nullptr; // a widget that holds qml fic search results
     QProgressBar* pbMain = nullptr; // a link to the progresspar on the ActionProgress widget
+    ActionProgress* actionProgress = nullptr;
+
     QLabel* lblClientVersion = nullptr; // a copyable user id
     QLabel* lblUserIdStatic = nullptr; // a copyable user id
     QLabel* lblUserIdActive = nullptr; // a copyable user id
     QLabel* lblDBUpdateInfo = nullptr; // a copyable user id
     QLabel* lblDBUpdateDate = nullptr; // a copyable user id
     QLabel* lblCurrentOperation = nullptr; // basically an expander so that actionProgress is shown to the right
-    ActionProgress* actionProgress = nullptr;
+
     QMenu fandomMenu;
     QMenu ignoreFandomMenu;
     QMenu ignoreFandomSlashFilterMenu;
+
     QRImageProvider* imgProvider = nullptr;
-    bool defaultRecommendationsQueued = false;
-    ReclistCreationUIHelper reclistUIHelper;
+
     QString lastCreatedListName;
     QString styleSheetForAccept;
     QString styleSheetForReclistMenu;
     QString styleSheetForReclistCreation;
-    bool reclistCreationShown = false;
     QString reclistToReturn;
+
+    bool reclistCreationShown = false;
+    bool defaultRecommendationsQueued = false;
 
 
 public slots:
