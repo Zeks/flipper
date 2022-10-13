@@ -338,7 +338,6 @@ private:
     QMenu ignoreFandomMenu;
     QMenu ignoreFandomSlashFilterMenu;
     QRImageProvider* imgProvider = nullptr;
-    QString primedTag;
     bool defaultRecommendationsQueued = false;
     ReclistCreationUIHelper reclistUIHelper;
     QString lastCreatedListName;

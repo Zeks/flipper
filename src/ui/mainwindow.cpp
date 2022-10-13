@@ -38,6 +38,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "regex_utils.h"
 #include "Interfaces/tags.h"
 
+#include "genericeventfilter.h"
+#include "include/parsers/ffn/desktop_favparser.h"
+#include "include/parsers/ffn/fandomparser.h"
+#include "include/parsers/ffn/fandomindexparser.h"
+#include "include/web/url_utils.h"
+#include "include/pure_sql.h"
+#include "include/transaction.h"
+#include "include/tasks/fandom_task_processor.h"
+#include "include/tasks/author_task_processor.h"
+#include "include/tasks/author_stats_processor.h"
+#include "include/tasks/slash_task_processor.h"
+#include "include/tasks/humor_task_processor.h"
+#include "include/tasks/recommendations_reload_precessor.h"
+#include "include/tasks/fandom_list_reload_processor.h"
+#include "include/web/page_utils.h"
+#include "include/flipper_client_logic.h"
+#include "include/generic_utils.h"
+#include "include/statistics_utils.h"
+
+
+#include "Interfaces/ffn/ffn_authors.h"
+#include "Interfaces/ffn/ffn_fanfics.h"
+#include "Interfaces/fandoms.h"
+#include "Interfaces/recommendation_lists.h"
+#include "Interfaces/tags.h"
+#include "Interfaces/genres.h"
+
+
 #include <QMessageBox>
 #include <QReadWriteLock>
 #include <QReadLocker>
@@ -72,34 +100,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <algorithm>
 #include <math.h>
 
-#include "genericeventfilter.h"
-
-
-#include "include/parsers/ffn/desktop_favparser.h"
-#include "include/parsers/ffn/fandomparser.h"
-#include "include/parsers/ffn/fandomindexparser.h"
-#include "include/web/url_utils.h"
-#include "include/pure_sql.h"
-#include "include/transaction.h"
-#include "include/tasks/fandom_task_processor.h"
-#include "include/tasks/author_task_processor.h"
-#include "include/tasks/author_stats_processor.h"
-#include "include/tasks/slash_task_processor.h"
-#include "include/tasks/humor_task_processor.h"
-#include "include/tasks/recommendations_reload_precessor.h"
-#include "include/tasks/fandom_list_reload_processor.h"
-#include "include/web/page_utils.h"
-#include "include/flipper_client_logic.h"
-#include "include/generic_utils.h"
-#include "include/statistics_utils.h"
-
-
-#include "Interfaces/ffn/ffn_authors.h"
-#include "Interfaces/ffn/ffn_fanfics.h"
-#include "Interfaces/fandoms.h"
-#include "Interfaces/recommendation_lists.h"
-#include "Interfaces/tags.h"
-#include "Interfaces/genres.h"
+namespace {
 template <typename T>
 struct SortedBit{
     T value;
@@ -119,8 +120,9 @@ struct TaskProgressGuard
     }
     bool hasFailures = false;
     MainWindow* w = nullptr;
-
 };
+
+}
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -1754,7 +1756,7 @@ void MainWindow::OnTagAddInTagWidget(QVariant tag, QVariant row)
     int rownum = row.toInt();
     SetTag(rownum, tag.toString());
 
-    //primedTag = tag.toString();
+
 
 
 }
@@ -1763,18 +1765,6 @@ void MainWindow::OnTagRemoveInTagWidget(QVariant tag, QVariant row)
 {
     int rownum = row.toInt();
     UnsetTag(rownum, tag.toString());
-    //    if(primedTag == tag.toString())
-    //    {
-    //        QObject* windowObject= qwFics->rootObject();
-    //        windowObject->setProperty("magnetTag", tag);
-
-    //        QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
-    //        uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    //        uiSettings.setValue("Settings/magneticTag", tag.toString());
-    //    }
-    //    else{
-    //        primedTag = "";
-    //    }
 }
 
 
