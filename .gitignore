@@ -54,6 +54,7 @@ Run/feed_server.lib
 Run/flipper.lib
 Run/database/*
 Run/tmp/*
+Run/Logs/*
 Run/curl
 Run/tmpfaves/*
 Run/scripts/*
