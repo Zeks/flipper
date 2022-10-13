@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/sqlitefunctions.h"
-#include "include/db_fixers.h"
+
 
 #include "servers/feed.h"
 #include "logger/QsLog.h"

@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/pagetask_interface.h"
 #include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/Interfaces/ffn/ffn_fanfics.h"
-#include "include/db_fixers.h"
+
 #include "include/parsers/ffn/desktop_favparser.h"
 #include "include/tasks/author_cache_reprocessor.h"
 #include "include/in_tag_accessor.h"
