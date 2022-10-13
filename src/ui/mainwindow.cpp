@@ -135,15 +135,17 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setWindowTitle("Flipper");
     this->setAttribute(Qt::WA_QuitOnClose);
 
-    EnableClearButtonForRelevantLineEdits();
     PerformDefaultElementHide();
+    EnableClearButtonForRelevantLineEdits();
+    // hides some stuff for non dev builds
     PerformDevBuildUiAdjustment();
     InstallCustomPalettesAndStylesheets();
     InitializeRecCreationWidgetWithDefaultState();
     InitializeHistoryNavigationButtons();
     PerformPatreonColorization();
-    EnableImmediateTooltipsForRelevantElemetns();
-    InitSortingCombobox();
+    EnableImmediateTooltipsForRelevantElements();
+    InitFanficListSortingCombobox();
+    FillContextMenuActions();
 
     // setting "Trending" filter to work a year back by default
     ui->dteFavRateCut->setDate(QDate::currentDate().addDays(-366));
@@ -154,88 +156,46 @@ MainWindow::MainWindow(QWidget *parent) :
 
     InstantiateModels();
 
+
+    // the rest are various settings ot deservign separate blocks
+    // by default recommendations creation widget is not visible
+    ui->wdgRecsCreatorInner->hide();
+
 }
 #define TO_STR2(x) #x
 #define STRINGIFY(x) TO_STR2(x)
+#define TIER2
 bool MainWindow::InitFromReadyEnvironment(bool scheduleSlashFilterOn)
 {
-    assert(env);
-    assert(env->interfaces.fandoms);
-    assert(env->interfaces.tags);
+    assert(env && env->interfaces.tags
+           && env->interfaces.fandoms
+           && env->interfaces.recs);
 
-    ui->wdgTagsPlaceholder->fandomsInterface = env->interfaces.fandoms;
-    ui->wdgTagsPlaceholder->tagsInterface = env->interfaces.tags;
-
-    ReadFandomListFromEnvironmentAndPassItToElements(env);
+    InitInterfacesForTagsWidget(env);
+    ReadFandomListsIntoUI(env);
+    ReadTagsIntoUI(env);
+    ReadRecommendationListStateIntoUI(env);
     CreateStatusBar(env);
+    SetupFanficTable(env);
+    TIER2 ResetFilterUItoDefaults();
+    TIER2 ReadSettings();
 
-    recentFandomsModel->setStringList(env->interfaces.fandoms->GetRecentFandoms());
-    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
-    ignoredFandomsSlashFilterModel->setStringList(env->interfaces.fandoms->GetIgnoredFandomsSlashFilter());
-    ui->lvRecentFandoms->setModel(recentFandomsModel);
-    ui->lvExcludedFandomsSlashFilter->setModel(ignoredFandomsSlashFilterModel);
-
-
-    ProcessTagsIntoGui();
-    FillRecTagCombobox();
-
-
-    imgProvider = new QRImageProvider;
-    SetupFanficTable();
-    //FillRecommenderListView();
-    //CreatePageThreadWorker();
-    callProgress = [&](int counter) {
-        pbMain->setTextVisible(true);
-        pbMain->setFormat("%v");
-        pbMain->setValue(counter);
-        pbMain->show();
-    };
-    callProgressText = [&](QString value) {
-        ui->edtResults->insertHtml(value);
-        ui->edtResults->ensureCursorVisible();
-    };
-    cleanupEditor = [&](void) {
-        ui->edtResults->clear();
-    };
-
-    fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
-    ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
-    ignoreFandomSlashFilterMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromSlashFilterIgnoredList()));
-    ui->lvRecentFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
-    //ui->lvIgnoredFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
-    ui->lvExcludedFandomsSlashFilter->setContextMenuPolicy(Qt::CustomContextMenu);
-    //ui->edtResults->setOpenExternalLinks(true);
-    ui->edtRecsContents->setReadOnly(false);
-    ui->wdgRecsCreatorInner->hide();
-    SetClientMode();
-    ResetFilterUItoDefaults();
-    ReadSettings();
+    // todo, I don't think eventloop is already working here
+    // this may just be wrong
     QApplication::processEvents();
     QApplication::processEvents();
-    if(!ui->cbCrossovers->currentText().isEmpty())
-        ui->chkCrossovers->setChecked(true);
-    //    ui->spRecsFan->setStretchFactor(0, 0);
-    //    ui->spRecsFan->setStretchFactor(1, 1);
-    ui->spFanIgnFan->setCollapsible(0,0);
-    ui->spFanIgnFan->setCollapsible(1,0);
-    ui->spFanIgnFan->setSizes({100,900});
-    ui->spRecsFan->setCollapsible(0,0);
-    ui->spRecsFan->setCollapsible(1,0);
-    ui->spRecsFan->setSizes({0,1000});
 
 
+    TIER2 InitializeDefaultSplitterSizes();
 
+    VerifyUserFFNId();
 
-    auto userFFNId = env->interfaces.recs->GetUserProfile();
-    if(userFFNId > 0){
-        ui->leUserFFNId->setText(QString::number(userFFNId));
-        on_pbVerifyUserFFNId_clicked();
-    }
+    // this is used to set up the slash filter state on the first launch
+    // this is called so late to overwrite default settings
     if(scheduleSlashFilterOn)
         ui->chkEnableSlashFilter->setChecked(true);
 
-    ui->wdgFandomListPlaceholder->env = env;
-    ui->wdgFandomListPlaceholder->InitTree();
+    InitFandomListWidget(env);
 
     return true;
 }
@@ -503,7 +463,7 @@ void MainWindow::SetupTableAccess()
 }
 
 
-void MainWindow::SetupFanficTable()
+void MainWindow::SetupFanficTable(QSharedPointer<FlipperClientLogic> env)
 {
     holder = new TableDataListHolder<QVector, core::Fanfic>();
     typetableModel = new FicModel();
@@ -530,6 +490,7 @@ void MainWindow::SetupFanficTable()
 
     holder->SetData(env->fanfics);
     qwFics = new QQuickWidget();
+    imgProvider = new QRImageProvider;
     qwFics->engine()->addImageProvider("qrImageProvider",imgProvider);
     QHBoxLayout* lay = new QHBoxLayout;
     lay->addWidget(qwFics);
@@ -593,6 +554,16 @@ void MainWindow::SetupFanficTable()
     connect(windowObject, SIGNAL(pageRequested(int)), this, SLOT(OnDisplayExactPage(int)));
     windowObject->setProperty("magnetTag", uiSettings.value("Settings/magneticTag").toString());
 
+}
+
+void MainWindow::FillContextMenuActions()
+{
+    fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
+    ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
+    ignoreFandomSlashFilterMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromSlashFilterIgnoredList()));
+
+    ui->lvRecentFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->lvExcludedFandomsSlashFilter->setContextMenuPolicy(Qt::CustomContextMenu);
 }
 
 void MainWindow::OnDisplayNextPage()
@@ -689,7 +660,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::InitSortingCombobox()
+void MainWindow::InitFanficListSortingCombobox()
 {
     ui->cbSortMode->clear();
     ui->cbSortMode->addItem("Wordcount", static_cast<int>(core::StoryFilter::sm_wordcount));
@@ -800,8 +771,9 @@ int MainWindow::GetResultCount()
 
 
 
-void MainWindow::ProcessTagsIntoGui()
+void MainWindow::ReadTagsIntoUI(QSharedPointer<FlipperClientLogic> env)
 {
+    assert(env->interfaces.tags);
     auto tagList = env->interfaces.tags->ReadUserTags();
     QList<QPair<QString, QString>> tagPairs;
 
@@ -1142,6 +1114,8 @@ void MainWindow::OnGetUrlsForTags(bool idMode)
 
 void MainWindow::ReadSettings()
 {
+    assert(initProgress.fandomListsReady);
+    assert(initProgress.recsUiHelperFilled);
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
@@ -1154,6 +1128,9 @@ void MainWindow::ReadSettings()
 
     ui->cbNormals->setCurrentText(uiSettings.value("Settings/normals", "").toString());
     ui->cbCrossovers->setCurrentText(uiSettings.value("Settings/crosses", "").toString());
+
+    if(!ui->cbCrossovers->currentText().isEmpty())
+        ui->chkCrossovers->setChecked(true);
 
     ui->cbMaxWordCount->setCurrentText(uiSettings.value("Settings/maxWordCount", "").toString());
     ui->cbMinWordCount->setCurrentText(uiSettings.value("Settings/minWordCount", 100000).toString());
@@ -1278,6 +1255,8 @@ void MainWindow::ReadSettings()
         this->move(uiSettings.value("Settings/position").toPoint());
     if(uiSettings.value("Settings/maximized").toInt())
         this->showMaximized();
+
+
 
 
 }
@@ -1856,8 +1835,10 @@ void MainWindow::AddToProgressLog(QString value)
 }
 
 
-void MainWindow::FillRecTagCombobox()
+void MainWindow::ReadRecommendationListStateIntoUI(QSharedPointer<FlipperClientLogic> env)
 {
+    assert(env->interfaces.recs);
+
     auto lists = env->interfaces.recs->GetAllRecommendationListNames();
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
     SilentCall(ui->cbRecGroupSecond)->setModel(new QStringListModel(lists));
@@ -1879,9 +1860,10 @@ void MainWindow::FillRecTagCombobox()
     QSettings settings("settings/ui.ini", QSettings::IniFormat);
     auto storedRecList = settings.value("Settings/currentList").toString();
     auto storedSecondRecList = settings.value("Settings/currentListSecond").toString();
-    qDebug() << QDir::currentPath();
+
     ui->cbRecGroup->setCurrentText(storedRecList);
     ui->cbRecGroupSecond->setCurrentText(storedSecondRecList);
+
     auto listId = env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
     env->interfaces.recs->SetCurrentRecommendationList(listId);
 }
@@ -1936,10 +1918,7 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 }
 
 
-void MainWindow::SetClientMode()
-{
-    ui->chkLimitPageSize->setChecked(true);
-}
+
 
 void MainWindow::OpenRecommendationList(QString listName)
 {
@@ -1973,7 +1952,7 @@ int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> pa
                                                     "Try using more source fics, or loosen the restrictions");
     }
 
-    FillRecTagCombobox();
+    ReadRecommendationListStateIntoUI(env);
     FillRecommenderListView();
 
     return result;
@@ -2649,7 +2628,7 @@ void MainWindow::OnFillDBIdsForTags()
 
 void MainWindow::OnTagReloadRequested()
 {
-    ProcessTagsIntoGui();
+    ReadTagsIntoUI(env);
     tagList = env->interfaces.tags->ReadUserTags();
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
 }
@@ -2975,6 +2954,12 @@ void MainWindow::on_pbReapplyFilteringMode_clicked()
 
 void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
 {
+
+    assert(initProgress.tagWidgetInterfacesFilled);
+    // env pointer is passed to make sure no one thinks to call this
+    // before it's ready as wdgTagsPlaceholder needs  interfaces from it
+    // to function
+    Q_UNUSED(env)
     ui->chkRandomizeSelection->setChecked(false);
     //ui->chkEnableSlashFilter->setChecked(true);
     ui->chkEnableTagsFilter->setChecked(false);
@@ -3020,12 +3005,10 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->chkUseReclistMatches->setChecked(false);
     ui->chkDisplayPurged->setChecked(false);
     ui->sbMinimumListMatches->setValue(0);
-    ui->wdgTagsPlaceholder->ClearSelection();
     ui->cbSourceListLimiter->setCurrentIndex(0);
     ui->cbIDMode->setCurrentIndex(0);
     ui->leAuthorID->setText("");
     ui->chkIdSearch->setChecked(false);
-    ui->wdgTagsPlaceholder->ResetFilters();
     ui->cbSortDirection->setCurrentIndex(0);
     ui->chkDisplaySnoozed->setChecked(false);
     ui->chkLikedAuthors->setChecked(false);
@@ -3035,6 +3018,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     if(ui->cbRecGroup->currentText() == "#similarfics" && reclistToReturn.isEmpty())
         ui->cbRecGroup->setCurrentIndex(1);
 
+    ui->wdgTagsPlaceholder->ResetFilters();
 }
 
 void MainWindow::DetectGenreSearchState()
@@ -3399,10 +3383,11 @@ void MainWindow::InitializeRecCreationWidgetWithDefaultState()
 
     ui->rbSimpleMode->setChecked(true);
     ui->rbProfileMode->setChecked(true);
+    initProgress.recsUiHelperFilled = true;
 
 }
 
-void MainWindow::EnableImmediateTooltipsForRelevantElemetns()
+void MainWindow::EnableImmediateTooltipsForRelevantElements()
 {
     ui->lblRecentFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
     ui->lblGenreInfo->setStyle(new ImmediateTooltipProxyStyle());
@@ -3446,8 +3431,44 @@ void MainWindow::InstantiateModels()
     recommendersModel= new QStringListModel;
 }
 
-void MainWindow::ReadFandomListFromEnvironmentAndPassItToElements(QSharedPointer<FlipperClientLogic> env)
+void MainWindow::InitializeDefaultSplitterSizes()
 {
+    ui->spFanIgnFan->setCollapsible(0,0);
+    ui->spFanIgnFan->setCollapsible(1,0);
+    ui->spFanIgnFan->setSizes({100,900});
+    ui->spRecsFan->setCollapsible(0,0);
+    ui->spRecsFan->setCollapsible(1,0);
+    ui->spRecsFan->setSizes({0,1000});
+}
+
+void MainWindow::VerifyUserFFNId()
+{
+    assert(env && env->interfaces.recs);
+    auto userFFNId = env->interfaces.recs->GetUserProfile();
+    if(userFFNId > 0){
+        ui->leUserFFNId->setText(QString::number(userFFNId));
+        on_pbVerifyUserFFNId_clicked();
+    }
+}
+
+void MainWindow::InitInterfacesForTagsWidget(QSharedPointer<FlipperClientLogic> env)
+{
+    ui->wdgTagsPlaceholder->fandomsInterface = env->interfaces.fandoms;
+    ui->wdgTagsPlaceholder->tagsInterface = env->interfaces.tags;
+    initProgress.tagWidgetInterfacesFilled = true;
+}
+
+void MainWindow::InitFandomListWidget(QSharedPointer<FlipperClientLogic> env)
+{
+    ui->wdgFandomListPlaceholder->env = env;
+    ui->wdgFandomListPlaceholder->InitTree();
+    initProgress.fandomlistWidgetInitialized = true;
+}
+
+void MainWindow::ReadFandomListsIntoUI(QSharedPointer<FlipperClientLogic> env)
+{
+    assert(env->interfaces.fandoms);
+
     auto fandomList = env->interfaces.fandoms->GetFandomList(true);
     ui->wdgFandomListPlaceholder->InitFandomList(fandomList);
 
@@ -3455,6 +3476,14 @@ void MainWindow::ReadFandomListFromEnvironmentAndPassItToElements(QSharedPointer
     ui->cbCrossovers->setModel(new QStringListModel(fandomList));
 
     ui->cbIgnoreFandomSlashFilter->setModel(new QStringListModel(fandomList));
+
+
+    recentFandomsModel->setStringList(env->interfaces.fandoms->GetRecentFandoms());
+    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
+    ignoredFandomsSlashFilterModel->setStringList(env->interfaces.fandoms->GetIgnoredFandomsSlashFilter());
+    ui->lvRecentFandoms->setModel(recentFandomsModel);
+    ui->lvExcludedFandomsSlashFilter->setModel(ignoredFandomsSlashFilterModel);
+    initProgress.fandomListsReady = true;
 }
 
 void MainWindow::CreateStatusBar(QSharedPointer<FlipperClientLogic> env)
@@ -3567,7 +3596,7 @@ void MainWindow::on_pbDeleteRecList_clicked()
     {
         auto id = env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
         env->interfaces.recs->DeleteList(id);
-        FillRecTagCombobox();
+        ReadRecommendationListStateIntoUI(env);
     }
     else
     {

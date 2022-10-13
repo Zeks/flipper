@@ -86,6 +86,7 @@ void TagWidget::InitFromTags(int id, QList<QPair<QString, QString> > tags)
 
 void TagWidget::InitEditFromTags(QStringList tags)
 {
+
     QHash<QString, int> tagSizes;
     if(ui->chkDisplayTagSize)
         tagSizes = tagsInterface->GetTagSizes(tags);
@@ -101,8 +102,6 @@ void TagWidget::InitEditFromTags(QStringList tags)
 
         auto toInsert = ("<a href=\"0 " + tag + " \">" + label + "</a>    ");
         ui->edtTags->insertHtml(toInsert);
-//        if(ui->chkDisplayTagSize->isChecked())
-//            ui->edtTags->insertHtml("<br>");
     }
 }
 

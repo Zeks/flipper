@@ -108,6 +108,14 @@ public:
 };
 
 
+struct InitializationProgress{
+    bool fandomListsReady = false;
+    bool tagWidgetInterfacesFilled = false;
+    bool fandomlistWidgetInitialized = false;
+    bool recsUiHelperFilled = false;
+
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -128,7 +136,7 @@ public:
 
 
     ~MainWindow();
-    void InitSortingCombobox();
+    void InitFanficListSortingCombobox();
     // used to set up signal/slot connections
     void InitConnections();
     // sets up the timer that later triggers a check if there are unfinished tasks
@@ -148,6 +156,9 @@ public:
     void QueueDefaultRecommendations();
 
     QSharedPointer<FlipperClientLogic> env;
+    // this is used to make sure functions are not called in the wrong order
+    // after they are "optimized"
+    InitializationProgress initProgress;;
 
 private:
 
@@ -155,20 +166,27 @@ private:
     void PerformDefaultElementHide();
     void InstallCustomPalettesAndStylesheets();
     void InitializeRecCreationWidgetWithDefaultState();
-    void EnableImmediateTooltipsForRelevantElemetns();
+    void EnableImmediateTooltipsForRelevantElements();
     void PerformPatreonColorization();
     void PerformDevBuildUiAdjustment();
     void InitializeHistoryNavigationButtons();
     void InstantiateModels();
+    void InitializeDefaultSplitterSizes();
+    void VerifyUserFFNId();
+    void InitInterfacesForTagsWidget(QSharedPointer<FlipperClientLogic> env);
+    void InitFandomListWidget(QSharedPointer<FlipperClientLogic> env);
 
-    void ReadFandomListFromEnvironmentAndPassItToElements(QSharedPointer<FlipperClientLogic> env);
+    void ReadFandomListsIntoUI(QSharedPointer<FlipperClientLogic> env);
     void CreateStatusBar(QSharedPointer<FlipperClientLogic> env);
 
     // sets up the model for fanfics
-    void SetupFanficTable();
+    void SetupFanficTable(QSharedPointer<FlipperClientLogic> env);
+
+
+    void FillContextMenuActions();
+
     // sets up the interface to access fic params from core::fic class
     void SetupTableAccess();
-
     //bool event(QEvent * e);
     // reads settings into a files
     void ReadSettings();
@@ -207,7 +225,7 @@ private:
 //    void UpdateFandomList(UpdateFandomTask);
 
     // used to fill tagwidget
-    void ProcessTagsIntoGui();
+    void ReadTagsIntoUI(QSharedPointer<FlipperClientLogic> env);
 
     // used to set tag to a certain fic
     void SetTag(int id, QString tag, bool silent = false);
@@ -233,7 +251,7 @@ private:
     void AddToProgressLog(QString);
 
     // fills the sort by list combobox with names of recommendation lists
-    void FillRecTagCombobox();
+    void ReadRecommendationListStateIntoUI(QSharedPointer<FlipperClientLogic> env);
 
     // fills the authors list view with names from currently active recommendation list
     void FillRecommenderListView(bool forceRefresh = false);
@@ -310,9 +328,7 @@ private:
     QStringList tagList; // user tags used in the system
     QTimer taskTimer; // used to initiate the warnign about unfinished tasks after the app window is shown
 
-    std::function<void(int)> callProgress; // temporary shit while I decouple page getter from ui
-    std::function<void(void)> cleanupEditor; // temporary shit while I decouple page getter from ui
-    std::function<void(QString)> callProgressText; // temporary shit while I decouple page getter from ui
+
 
     QMovie refreshSpin; // an indicator that some work is in progress
     // using the Movie because it can animate while stuff is happening otherwise without much hassle from my side
