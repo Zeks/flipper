@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QHash>
 #include <QWriteLocker>
 #include <QReadLocker>
-#include "include/webpage.h"
+#include "include/web/webpage.h"
 #include "include/core/section.h"
 namespace statistics_utils
 {

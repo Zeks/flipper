@@ -1,6 +1,6 @@
 #include "parsers/ffn/mobile_favparser.h"
 #include "flipper_client_logic.h"
-#include "pagegetter.h"
+#include "web/pagegetter.h"
 #include "timeutils.h"
 #include <QCoreApplication>
 namespace parsers{

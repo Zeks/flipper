@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "Interfaces/pagetask_interface.h"
 #include "Interfaces/db_interface.h"
 #include "include/pure_sql.h"
-#include "include/pagegetter.h"
+#include "include/web/pagegetter.h"
 #include "GlobalHeaders/run_once.h"
 #include "include/transaction.h"
 

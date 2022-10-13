@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/recommendation_lists.h"
 #include "include/Interfaces/ffn/ffn_fanfics.h"
 #include "include/Interfaces/ffn/ffn_authors.h"
-#include "include/url_utils.h"
+#include "include/web/url_utils.h"
 
 #include "include/grpc/grpc_source.h"
 #include "include/sqlitefunctions.h"
@@ -43,8 +43,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/parsers/ffn/ficparser.h"
 #include "include/parsers/ffn/desktop_favparser.h"
 #include "include/timeutils.h"
-#include "include/page_utils.h"
-#include "pagegetter.h"
+#include "include/web/page_utils.h"
+#include "web/pagegetter.h"
 #include "tasks/recommendations_reload_precessor.h"
 #include <type_traits>
 #include <algorithm>

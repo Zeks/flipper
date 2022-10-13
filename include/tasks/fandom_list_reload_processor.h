@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QObject>
 #include <QDate>
 #include <QSharedPointer>
-#include "include/pageconsumer.h"
+#include "include/web/pageconsumer.h"
 #include "include/core/section.h"
 
 namespace interfaces{

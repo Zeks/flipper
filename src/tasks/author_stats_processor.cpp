@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "tasks/author_stats_processor.h"
-#include "include/pagegetter.h"
-#include "include/pagetask.h"
+#include "include/web/pagegetter.h"
+#include "include/web/pagetask.h"
 #include "include/parsers/ffn/fandomparser.h"
 #include "include/parsers/ffn/desktop_favparser.h"
 #include "include/transaction.h"
@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/fandoms.h"
 #include "include/Interfaces/authors.h"
 #include "include/Interfaces/pagetask_interface.h"
-#include "include/page_utils.h"
+#include "include/web/page_utils.h"
 #include "include/timeutils.h"
 #include "include/statistics_utils.h"
 

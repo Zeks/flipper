@@ -43,9 +43,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "libs/ui-models/include/AdaptingTableModel.h"
 #include "qml_ficmodel.h"
 #include "include/core/section.h"
-#include "include/pagetask.h"
+#include "include/web/pagetask.h"
 #include "include/tasks/fandom_task_processor.h"
-#include "include/pagegetter.h"
+#include "include/web/pagegetter.h"
 #include "querybuilder.h"
 #include "include/flipper_client_logic.h"
 #include <vector>

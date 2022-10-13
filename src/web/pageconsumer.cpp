@@ -13,8 +13,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>*/
-#include "include/pageconsumer.h"
-#include "include/pagegetter.h"
+#include "include/web/pageconsumer.h"
+#include "include/web/pagegetter.h"
 #include "include/transaction.h"
 PageConsumer::PageConsumer(QObject* obj):QObject(obj){}
 

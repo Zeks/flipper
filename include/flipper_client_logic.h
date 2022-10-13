@@ -25,11 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/tasks/author_task_processor.h"
 //#include "qml_ficmodel.h"
 #include "include/core/section.h"
-#include "include/pagetask.h"
+#include "include/web/pagetask.h"
 #include "include/rng.h"
 #include "include/tasks/fandom_task_processor.h"
 #include "include/tasks/author_cache_reprocessor.h"
-#include "include/pagegetter.h"
+#include "include/web/pagegetter.h"
 #include "querybuilder.h"
 #include "grpc/grpc_source.h"
 

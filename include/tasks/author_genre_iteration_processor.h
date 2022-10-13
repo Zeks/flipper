@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QDate>
 #include <QSharedPointer>
 
-#include "include/pageconsumer.h"
+#include "include/web/pageconsumer.h"
 #include "include/flipper_client_logic.h"
 #include "include/core/section.h"
 #include "third_party/roaring/roaring.hh"

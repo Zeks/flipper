@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "tasks/recommendations_reload_precessor.h"
-#include "include/pagegetter.h"
-#include "include/pagetask.h"
+#include "include/web/pagegetter.h"
+#include "include/web/pagetask.h"
 #include "include/parsers/ffn/fandomparser.h"
 #include "include/parsers/ffn/desktop_favparser.h"
 #include "include/transaction.h"
@@ -28,10 +28,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/recommendation_lists.h"
 //#include "include/flipper_client_logic.h"
 #include "include/in_tag_accessor.h"
-#include "include/url_utils.h"
+#include "include/web/url_utils.h"
 #include "include/flipper_client_logic.h"
 #include "include/timeutils.h"
-#include "include/page_utils.h"
+#include "include/web/page_utils.h"
 
 #include "sql_abstractions/sql_transaction.h"
 #include <array>

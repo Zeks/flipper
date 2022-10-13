@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/fandoms.h"
 #include "Interfaces/fanfics.h"
 #include "Interfaces/db_interface.h"
-#include "pagetask.h"
+#include "web/pagetask.h"
 #include "Interfaces/tags.h"
 #include "parsers/ffn/fandomindexparser.h"
 #include "transaction.h"

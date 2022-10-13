@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "sql_abstractions/sql_database.h"
 #include <QSharedPointer>
 #include <QUuid>
-#include "pagetask.h"
+#include "web/pagetask.h"
 class PageSubTask;
 class PageTask;
 

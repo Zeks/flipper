@@ -1,5 +1,5 @@
 #pragma once
-#include "include/webpage.h"
+#include "include/web/webpage.h"
 #include "include/parsers/ffn/desktop_favparser.h"
 #include "include/parsers/ffn/mobile_favparser.h"
 #include <QObject>

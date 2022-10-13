@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QString>
 #include <QSharedPointer>
 #include "core/section.h"
-#include "pagegetter.h"
+#include "web/pagegetter.h"
 #include <functional>
 #include "include/parsers/ffn/ffnparserbase.h"
 

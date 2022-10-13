@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QString>
 #include <QScopedPointer>
 #include "GlobalHeaders/SingletonHolder.h"
-#include "include/webpage.h"
+#include "include/web/webpage.h"
 #include "include/web/cache_strategy.h"
 
 namespace discord {

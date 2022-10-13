@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/parsers/ffn/desktop_favparser.h"
 #include "include/core/section.h"
 #include "include/pure_sql.h"
-#include "include/url_utils.h"
+#include "include/web/url_utils.h"
 #include "include/regex_utils.h"
 #include "include/Interfaces/fandoms.h"
 #include <QDebug>

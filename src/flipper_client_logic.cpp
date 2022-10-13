@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/flipper_client_logic.h"
 #include "include/ui/tagwidget.h"
-#include "include/page_utils.h"
+#include "include/web/page_utils.h"
 #include "include/regex_utils.h"
 #include "include/Interfaces/recommendation_lists.h"
 #include "include/Interfaces/fandoms.h"

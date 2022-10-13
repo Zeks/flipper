@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma once
 #include <QSharedPointer>
 #include <QObject>
-#include "include/webpage.h"
+#include "include/web/webpage.h"
 
 class PageThreadWorker;
 struct PageQueue{

@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QThread>
 #include "GlobalHeaders/SingletonHolder.h"
 #include "include/tasks/fandom_task_processor.h"
-#include "include/webpage.h"
+#include "include/web/webpage.h"
 
 #include <atomic>
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/parsers/ffn/ffnparserbase.h"
-#include "include/url_utils.h"
+#include "include/web/url_utils.h"
 #include <QDebug>
 #include <QSettings>
 
