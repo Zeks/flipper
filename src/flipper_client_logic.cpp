@@ -1153,6 +1153,15 @@ QSet<int> FlipperClientLogic::GetAuthorsContainingFicFromRecList(int fic, QStrin
     return resultingAuthors;
 }
 
+QStringList FlipperClientLogic::GetAuthorsContainingFicFromRecListAsStringList(int fic, QString recList)
+{
+    auto authors = GetAuthorsContainingFicFromRecList(fic, recList);
+    QStringList authorList;
+    for(auto author: authors)
+        authorList.push_back(QString::number(author));
+    return authorList;
+}
+
 QSet<int> FlipperClientLogic::GetFicsForTags(QStringList tags)
 {
     interfaces::TagIDFetcherSettings tagFetcherSettings;
@@ -1227,6 +1236,25 @@ void FlipperClientLogic::RefreshSnoozes()
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     auto expiredSnoozes = grpcSource->GetExpiredSnoozes(snoozeInfo);
     interfaces.fanfics->WriteExpiredSnoozes(expiredSnoozes);
+}
+
+void FlipperClientLogic::InstallNewStoryFilter(const core::StoryFilter & newFilter)
+{
+    filter = newFilter;
+    filter.recordPage = 0;
+    pageOfCurrentQuery = 0;
+}
+
+void FlipperClientLogic::InstallRandomStoryFilter(const core::StoryFilter & newFilter, int ficCount)
+{
+    filter = newFilter;
+    filter.recordPage = 0;
+    pageOfCurrentQuery = 0;
+}
+
+QString FlipperClientLogic::MakeUserUrlFromID(QString id)
+{
+    return "https://www.fanfiction.net/u/" +id;
 }
 
 void FlipperClientLogic::UseFandomTask(PageTaskPtr task)

@@ -97,7 +97,7 @@ public:
     bool simpleMode = true;
     ESourcesMode sourcesMode = sm_profile;
 
-    void SetupVisibilityForElements();
+    void SetupVisibilityForRecsCreatorElements();
 
 
    QWidget* profileInput = nullptr;
@@ -142,8 +142,6 @@ public:
     // sets up the timer that later triggers a check if there are unfinished tasks
     // written into the task databse
     void StartTaskTimer();
-    // used to set up the approriate UI elemnts when task execution starts
-    void InitUIFromTask(PageTaskPtr);
 
     // used to indicate "action in progress" status to the user
     void SetWorkingStatus();
@@ -175,18 +173,19 @@ private:
     void VerifyUserFFNId();
     void InitInterfacesForTagsWidget(QSharedPointer<FlipperClientLogic> env);
     void InitFandomListWidget(QSharedPointer<FlipperClientLogic> env);
-
     void ReadFandomListsIntoUI(QSharedPointer<FlipperClientLogic> env);
     void CreateStatusBar(QSharedPointer<FlipperClientLogic> env);
 
     // sets up the model for fanfics
     void SetupFanficTable(QSharedPointer<FlipperClientLogic> env);
 
-
     void FillContextMenuActions();
 
+    void InitializeQmlPropertiesFromSettings(QQuickWidget* qwFics);
+    void InitializeQmlConnectionsToCpp(QQuickWidget* qwFics);
+
     // sets up the interface to access fic params from core::fic class
-    void SetupTableAccess();
+    void SetupAccessorsForGenericFanficTable();
     //bool event(QEvent * e);
     // reads settings into a files
     void ReadSettings();
@@ -272,7 +271,8 @@ private:
     void ProcessStoryFilterIntoGUI(core::StoryFilter filter);
 
     FilterErrors ValidateFilter();
-
+    void ResetUrlListEditor(QTextBrowser*edit);
+    void FillFicUrlsIntoRecsCreator(QTextBrowser *edit, const QSet<QString>&);
 
 
 
@@ -426,12 +426,21 @@ public slots:
 
     // invoked on "Search" click
     void on_pbLoadDatabase_clicked();
-    void LoadAutomaticSettingsForRecListSources(int size);
     QSet<QString> LoadFavourteIdsFromFFNProfile(QString, QLabel *infoLabel = nullptr);
+    bool VerifyProfileUrlString(QString);
     void OnQMLRefilter();
     void OnQMLFandomToggled(QVariant);
     void OnQMLAuthorToggled(QVariant, QVariant active);
     void OnGetUrlsForTags(bool);
+
+    // custom filtering modes
+    void SetRecommenderFilteringMode(QStringList);
+    void SetAuthorFilteringMode(QStringList);
+    void SetIdFilteringMode(QStringList);
+    void UnsetAuthorFilteringMode();
+
+
+
 private slots:
 
     // used to receive tag events from tag widget on Tags tab
@@ -453,7 +462,6 @@ private slots:
     // and set the tracked tick for the fandom to the value from the database
     void OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous);
 
-    void OpenRecommendationList(QString);
 
     // used to put urls for all authors in the current list into the clipboard
     void OnCopyFavUrls();

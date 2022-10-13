@@ -209,6 +209,7 @@ public:
     void FillDBIDsForTags();
     QList<int> GetDBIDsForFics(QVector<int>);
     QSet<int> GetAuthorsContainingFicFromRecList(int fic, QString recList);
+    QStringList GetAuthorsContainingFicFromRecListAsStringList(int fic, QString recList);
     QSet<int> GetFicsForTags(QStringList);
     QSet<int> GetFicsForNegativeTags();
     QSet<int> GetIgnoredDeadFics();
@@ -217,6 +218,11 @@ public:
 
 
     void RefreshSnoozes();
+
+    void InstallNewStoryFilter(const core::StoryFilter &);
+    void InstallRandomStoryFilter(const core::StoryFilter &newFilter, int ficCount);
+    QString MakeUserUrlFromID(QString);
+
 
     Interfaces interfaces;
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder

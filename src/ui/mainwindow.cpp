@@ -102,11 +102,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <cassert>
 
 namespace {
+// this is used to apply names and sorting to statistical information
+// for information about user's recommendation list
 template <typename T>
-struct SortedBit{
+struct NameValueDecorator{
     T value;
     QString name;
 };
+
+// this class is a scope guard simplifying operations with state of mainwindow
+// ... or it would be if I wasn't lazy and sent the actual operations into another thread
+//  as it is, it basically does nothing other than creates an illusion I am actually processing it
+// todo... something, I am not sure it's feasible to split all them operations into another thread
+// considering literally the only thing it's needed for is eye candy and the ui needs to be locked up anyway
 struct TaskProgressGuard
 {
     TaskProgressGuard(MainWindow* w){
@@ -151,7 +159,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->dteFavRateCut->setDate(QDate::currentDate().addDays(-366));
 
     // removing Tag tab from the status display widget.
-    // todo, reove this legacy
+    // todo, remove this legacy tab altogether
     ui->tagWidget->removeTab(1);
 
     InstantiateModels();
@@ -171,6 +179,8 @@ bool MainWindow::InitFromReadyEnvironment(bool scheduleSlashFilterOn)
            && env->interfaces.fandoms
            && env->interfaces.recs);
 
+    // made these separate function accepting env
+    // to signify those should be called in tier 2 of initialization
     InitInterfacesForTagsWidget(env);
     ReadFandomListsIntoUI(env);
     ReadTagsIntoUI(env);
@@ -205,6 +215,8 @@ void MainWindow::InitConnections()
     connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
     connect(ui->wdgTagsPlaceholder, &TagWidget::createUrlsForTags, this, &MainWindow::OnGetUrlsForTags);
+
+    //this connection is actually currently never triggered
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
         qwFics->rootContext()->setContextProperty("ficModel", nullptr);
 
@@ -218,13 +230,14 @@ void MainWindow::InitConnections()
             on_pbLoadDatabase_clicked();
         ui->edtResults->setUpdatesEnabled(true);
         ui->edtResults->setReadOnly(true);
-        holder->SetData(env->fanfics);
-        typetableModel->OnReloadDataFromInterface();
-        qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
+        backendFanficDataKeeper->SetData(env->fanfics);
+        qmlFanficModel->OnReloadDataFromInterface();
+        qwFics->rootContext()->setContextProperty("ficModel", qmlFanficModel);
     });
 
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagDeleted, [&](QString tag){
         ui->wdgTagsPlaceholder->OnRemoveTagFromEdit(tag);
+        auto& tagList = env->tagList;
 
         if(tagList.contains(tag))
         {
@@ -234,6 +247,7 @@ void MainWindow::InitConnections()
         }
     });
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagAdded, [&](QString tag){
+        auto& tagList = env->tagList;
         if(!tagList.contains(tag))
         {
             env->interfaces.tags->CreateTag(tag);
@@ -260,197 +274,57 @@ void MainWindow::InitConnections()
 
 }
 
-void MainWindow::InitUIFromTask(PageTaskPtr task)
-{
-    if(!task)
-        return;
-    AddToProgressLog("Authors: " + QString::number(task->size));
-    ReinitProgressbar(task->size);
-}
-
 int ConvertFicSnoozeModeToInt (core::Fanfic::EFicSnoozeMode type){return static_cast<int>(type);}
 void AssignFicSnoozeModeFromInt(core::Fanfic* data, int value){data->userData.snoozeMode = static_cast<core::Fanfic::EFicSnoozeMode>(value);}
 
-#define ADD_STRING_GETSET(HOLDER,ROW,ROLE,PARAM)  \
-    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fanfic* data) \
-{ \
-    if(data) \
-    return QVariant(data->PARAM); \
-    else \
-    return QVariant(); \
-    } \
-    ); \
-    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fanfic* data, QVariant value) \
-{ \
-    if(data) \
-    data->PARAM = value.toString(); \
-    } \
-    )
-
-
-#define ADD_STRING_NUMBER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
-    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fanfic* data) \
-{ \
-    if(data){ \
-    QString temp;\
-    QSettings settings("settings/ui.ini", QSettings::IniFormat);\
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));\
-    if(settings.value("Settings/commasInWordcount", false).toBool()){\
-    QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));\
-    QLocale aEnglish;\
-    temp = aEnglish.toString(data->PARAM.toInt());}\
-    else{ \
-    temp = data->PARAM;} \
-    return QVariant(temp);} \
-    else \
-    return QVariant(); \
-    } \
-    ); \
-    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fanfic* data, QVariant value) \
-{ \
-    if(data) \
-    data->PARAM = value.toString(); \
-    } \
-    ) \
-
-
-#define ADD_DATE_GETSET(HOLDER,ROW,ROLE,PARAM)  \
-    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fanfic* data) \
-{ \
-    if(data) \
-    return QVariant(data->PARAM); \
-    else \
-    return QVariant(); \
-    } \
-    ); \
-    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fanfic* data, QVariant value) \
-{ \
-    if(data) \
-    data->PARAM = value.toDateTime(); \
-    } \
-    ) \
-
-#define ADD_STRING_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
-    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fanfic* data) \
-{ \
-    if(data) \
-    return QVariant(data->PARAM); \
-    else \
-    return QVariant(); \
-    } \
-    ); \
-    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fanfic* data, QVariant value) \
-{ \
-    if(data) \
-    data->PARAM = QString::number(value.toInt()); \
-    } \
-    ) \
-
-#define ADD_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
-    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fanfic* data) \
-{ \
-    if(data) \
-    return QVariant(data->PARAM); \
-    else \
-    return QVariant(); \
-    } \
-    ); \
-    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fanfic* data, QVariant value) \
-{ \
-    if(data) \
-    data->PARAM = value.toInt(); \
-    } \
-    ) \
-
-#define ADD_ENUM_GETSET(GETTER, SETTER, HOLDER,ROW,ROLE,PARAM)  \
-    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fanfic* data) \
-{ \
-    if(data) \
-    return QVariant(GETTER(data->PARAM)); \
-    else \
-    return QVariant(); \
-    } \
-    ); \
-    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fanfic* data, QVariant value) \
-{ \
-    if(data) \
-    SETTER(data, value.toInt());    \
-    } \
-    ) \
-
-#define ADD_STRINGLIST_GETTER(HOLDER,ROW,ROLE,PARAM)  \
-    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fanfic* data) \
-{ \
-    if(data) \
-    return QVariant(data->PARAM); \
-    else \
-    return QVariant(); \
-    } \
-    ) \
-
-
-
-
-void MainWindow::SetupTableAccess()
+#include "ui/mainwindow_getset_macros.h"
+void MainWindow::SetupAccessorsForGenericFanficTable()
 {
     //    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated"
     //                       << "published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews"
     // << "chapters" << "complete" << "atChapter" << "minSlashLevel" );
-    ADD_STRING_GETSET(holder, 0, 0, fandom);
-    ADD_STRING_GETSET(holder, 1, 0, author->name);
-    ADD_STRING_GETSET(holder, 2, 0, title);
-    ADD_STRING_GETSET(holder, 3, 0, summary);
-    ADD_STRING_GETSET(holder, 4, 0, genreString);
-    ADD_STRING_GETSET(holder, 5, 0, charactersFull);
-    ADD_STRING_GETSET(holder, 6, 0, rated);
-    ADD_DATE_GETSET(holder, 7, 0, published);
-    ADD_DATE_GETSET(holder, 8, 0, updated);
-    ADD_STRING_GETSET(holder, 9, 0, urlFFN);
-    ADD_STRING_GETSET(holder, 10, 0, userData.tags);
-    ADD_STRING_NUMBER_GETSET(holder, 11, 0, wordCount);
-    ADD_STRING_INTEGER_GETSET(holder, 12, 0, favourites);
-    ADD_STRING_INTEGER_GETSET(holder, 13, 0, reviews);
-    ADD_STRING_INTEGER_GETSET(holder, 14, 0, chapters);
-    ADD_INTEGER_GETSET(holder, 15, 0, complete);
-    ADD_INTEGER_GETSET(holder, 16, 0, userData.atChapter);
-    ADD_INTEGER_GETSET(holder, 17, 0, identity.id);
-    ADD_INTEGER_GETSET(holder, 18, 0, recommendationsData.recommendationsMainList);
-    ADD_STRING_GETSET(holder, 19, 0, statistics.realGenreString);
-    ADD_INTEGER_GETSET(holder, 20, 0, author_id);
-    ADD_INTEGER_GETSET(holder, 21, 0, statistics.minSlashPass);
-    ADD_STRINGLIST_GETTER(holder, 22, 0, recommendationsData.voteBreakdown);
-    ADD_STRINGLIST_GETTER(holder, 23, 0, recommendationsData.voteBreakdownCounts);
-    ADD_INTEGER_GETSET(holder, 24, 0, userData.likedAuthor);
-    ADD_INTEGER_GETSET(holder, 25, 0, recommendationsData.purged);
-    ADD_INTEGER_GETSET(holder, 26, 0, score);
-    ADD_INTEGER_GETSET(holder, 27, 0, userData.snoozeExpired);
-    ADD_ENUM_GETSET(ConvertFicSnoozeModeToInt, AssignFicSnoozeModeFromInt, holder, 28, 0, userData.snoozeMode);
-    ADD_INTEGER_GETSET(holder, 29, 0, userData.chapterTillSnoozed);
-    ADD_INTEGER_GETSET(holder, 30, 0, userData.chapterSnoozed);
-    ADD_STRING_GETSET(holder, 31, 0, notes);
-    ADD_STRINGLIST_GETTER(holder, 32, 0, quotes);
-    ADD_STRINGLIST_GETTER(holder, 33, 0, uiData.selected);
-    ADD_INTEGER_GETSET(holder, 34, 0, recommendationsData.recommendationsSecondList);
-    ADD_INTEGER_GETSET(holder, 35, 0, recommendationsData.placeInMainList);
-    ADD_INTEGER_GETSET(holder, 36, 0, recommendationsData.placeInSecondList);
-    ADD_INTEGER_GETSET(holder, 37, 0, recommendationsData.placeOnFirstPedestal);
-    ADD_INTEGER_GETSET(holder, 38, 0, recommendationsData.placeOnSecondPedestal);
-    ADD_INTEGER_GETSET(holder, 39, 0, userData.ficIsSnoozed);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 0, 0, fandom);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 1, 0, author->name);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 2, 0, title);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 3, 0, summary);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 4, 0, genreString);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 5, 0, charactersFull);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 6, 0, rated);
+    ADD_DATE_GETSET(backendFanficDataKeeper, 7, 0, published);
+    ADD_DATE_GETSET(backendFanficDataKeeper, 8, 0, updated);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 9, 0, urlFFN);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 10, 0, userData.tags);
+    ADD_STRING_NUMBER_GETSET(backendFanficDataKeeper, 11, 0, wordCount);
+    ADD_STRING_INTEGER_GETSET(backendFanficDataKeeper, 12, 0, favourites);
+    ADD_STRING_INTEGER_GETSET(backendFanficDataKeeper, 13, 0, reviews);
+    ADD_STRING_INTEGER_GETSET(backendFanficDataKeeper, 14, 0, chapters);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 15, 0, complete);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 16, 0, userData.atChapter);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 17, 0, identity.id);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 18, 0, recommendationsData.recommendationsMainList);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 19, 0, statistics.realGenreString);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 20, 0, author_id);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 21, 0, statistics.minSlashPass);
+    ADD_STRINGLIST_GETTER(backendFanficDataKeeper, 22, 0, recommendationsData.voteBreakdown);
+    ADD_STRINGLIST_GETTER(backendFanficDataKeeper, 23, 0, recommendationsData.voteBreakdownCounts);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 24, 0, userData.likedAuthor);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 25, 0, recommendationsData.purged);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 26, 0, score);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 27, 0, userData.snoozeExpired);
+    ADD_ENUM_GETSET(ConvertFicSnoozeModeToInt, AssignFicSnoozeModeFromInt, backendFanficDataKeeper, 28, 0, userData.snoozeMode);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 29, 0, userData.chapterTillSnoozed);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 30, 0, userData.chapterSnoozed);
+    ADD_STRING_GETSET(backendFanficDataKeeper, 31, 0, notes);
+    ADD_STRINGLIST_GETTER(backendFanficDataKeeper, 32, 0, quotes);
+    ADD_STRINGLIST_GETTER(backendFanficDataKeeper, 33, 0, uiData.selected);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 34, 0, recommendationsData.recommendationsSecondList);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 35, 0, recommendationsData.placeInMainList);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 36, 0, recommendationsData.placeInSecondList);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 37, 0, recommendationsData.placeOnFirstPedestal);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 38, 0, recommendationsData.placeOnSecondPedestal);
+    ADD_INTEGER_GETSET(backendFanficDataKeeper, 39, 0, userData.ficIsSnoozed);
 
-    holder->AddFlagsFunctor(
+    backendFanficDataKeeper->AddFlagsFunctor(
                 [](const QModelIndex& index)
     {
         if(index.column() == 8)
@@ -465,13 +339,19 @@ void MainWindow::SetupTableAccess()
 
 void MainWindow::SetupFanficTable(QSharedPointer<FlipperClientLogic> env)
 {
-    holder = new TableDataListHolder<QVector, core::Fanfic>();
-    typetableModel = new FicModel();
 
-    SetupTableAccess();
+    //////////////////////////////// SETTING UP MODEL PART/////////////////////////
+    // this is the "interface" class that the model actualy queries for data
+    // has dynamically assigned getters and setters rerouting roles to members
+    backendFanficDataKeeper = new TableDataListHolder<QVector, core::Fanfic>();
+    // custom descendant of the gemeric model to pass rolenames to the table
+    // todo, I could extend the table itself
+    qmlFanficModel = new FicModel();
+
+    SetupAccessorsForGenericFanficTable();
 
 
-    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary"
+    backendFanficDataKeeper->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary"
                        << "genre" << "characters" << "rated" << "published"
                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
@@ -484,11 +364,13 @@ void MainWindow::SetupFanficTable(QSharedPointer<FlipperClientLogic> env)
 
 
 
-    typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
+    // acsting to base class interface pointer because model can't work with templates
+    qmlFanficModelInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(backendFanficDataKeeper));
+    qmlFanficModel->SetInterface(qmlFanficModelInterface);
+    // this assigns actual backend vector and triggers the model reset
+    backendFanficDataKeeper->SetData(env->fanfics);
 
-    typetableModel->SetInterface(typetableInterface);
-
-    holder->SetData(env->fanfics);
+    //////////////////////////////// SETTING UP QML PART/////////////////////////
     qwFics = new QQuickWidget();
     imgProvider = new QRImageProvider;
     qwFics->engine()->addImageProvider("qrImageProvider",imgProvider);
@@ -496,12 +378,31 @@ void MainWindow::SetupFanficTable(QSharedPointer<FlipperClientLogic> env)
     lay->addWidget(qwFics);
     ui->wdgFicviewPlaceholder->setLayout(lay);
     qwFics->setResizeMode(QQuickWidget::SizeRootObjectToView);
-    qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
+    qwFics->rootContext()->setContextProperty("ficModel", qmlFanficModel);
 
     env->interfaces.tags->LoadAlltags();
-    tagList = env->interfaces.tags->ReadUserTags();
-    qwFics->rootContext()->setContextProperty("tagModel", tagList);
+    env->ReinitTagList();
+    qwFics->rootContext()->setContextProperty("tagModel", env->tagList);
+    qwFics->rootContext()->setContextProperty("main", this);
+    QUrl source("qrc:/qml/ficview.qml");
+    qwFics->setSource(source);
 
+    InitializeQmlPropertiesFromSettings(qwFics);
+    InitializeQmlConnectionsToCpp(qwFics);
+}
+
+void MainWindow::FillContextMenuActions()
+{
+    fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
+    ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
+    ignoreFandomSlashFilterMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromSlashFilterIgnoredList()));
+
+    ui->lvRecentFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->lvExcludedFandomsSlashFilter->setContextMenuPolicy(Qt::CustomContextMenu);
+}
+
+void MainWindow::InitializeQmlPropertiesFromSettings(QQuickWidget* qwFics)
+{
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
@@ -521,12 +422,15 @@ void MainWindow::SetupFanficTable(QSharedPointer<FlipperClientLogic> env)
                                               uiSettings.value("Settings/displaySecondReclist", false).toBool());
     qwFics->rootContext()->setContextProperty("scanIconVisible",
                                               settings.value("Settings/scanIconVisible", true).toBool());
-    qwFics->rootContext()->setContextProperty("main", this);
-    QUrl source("qrc:/qml/ficview.qml");
-    qwFics->setSource(source);
 
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("magnetTag", uiSettings.value("Settings/magneticTag").toString());
+
+}
+
+void MainWindow::InitializeQmlConnectionsToCpp(QQuickWidget *qwFics)
+{
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
-
     connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant)));
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(heartDoubleClicked(QVariant)), this, SLOT(OnHeartDoubleClicked(QVariant)));
@@ -541,7 +445,6 @@ void MainWindow::SetupFanficTable(QSharedPointer<FlipperClientLogic> env)
     connect(childObject, SIGNAL(tagDeletedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagRemoveInTagWidget(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
     connect(childObject, SIGNAL(findSimilarClicked(QVariant)), this, SLOT(OnFindSimilarClicked(QVariant)));
-    //connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
     connect(childObject, SIGNAL(refilter()), this, SLOT(OnQMLRefilter()));
     connect(childObject, SIGNAL(fandomToggled(QVariant)), this, SLOT(OnQMLFandomToggled(QVariant)));
     connect(childObject, SIGNAL(authorToggled(QVariant, QVariant)), this, SLOT(OnQMLAuthorToggled(QVariant,QVariant)));
@@ -552,18 +455,6 @@ void MainWindow::SetupFanficTable(QSharedPointer<FlipperClientLogic> env)
     connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
     connect(windowObject, SIGNAL(shuffleClicked()), this, SLOT(OnShuffleDisplayedData()));
     connect(windowObject, SIGNAL(pageRequested(int)), this, SLOT(OnDisplayExactPage(int)));
-    windowObject->setProperty("magnetTag", uiSettings.value("Settings/magneticTag").toString());
-
-}
-
-void MainWindow::FillContextMenuActions()
-{
-    fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
-    ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
-    ignoreFandomSlashFilterMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromSlashFilterIgnoredList()));
-
-    ui->lvRecentFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
-    ui->lvExcludedFandomsSlashFilter->setContextMenuPolicy(Qt::CustomContextMenu);
 }
 
 void MainWindow::OnDisplayNextPage()
@@ -580,7 +471,23 @@ void MainWindow::OnDisplayNextPage()
     FetchScoresForFics();
     PlaceResults();
     AnalyzeCurrentFilter();
+}
 
+
+void MainWindow::OnDisplayPreviousPage()
+{
+    TaskProgressGuard guard(this);
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("havePagesAfter", true);
+    env->filter.recordPage = --env->pageOfCurrentQuery;
+
+    if(env->pageOfCurrentQuery == 0)
+        windowObject->setProperty("havePagesBefore", false);
+    windowObject->setProperty("currentPage", env->pageOfCurrentQuery);
+    LoadData();
+    FetchScoresForFics();
+    PlaceResults();
+    AnalyzeCurrentFilter();
 }
 
 void MainWindow::OnShuffleDisplayedData()
@@ -614,25 +521,10 @@ void MainWindow::OnShuffleDisplayedData()
             windowObject->setProperty("selectedIndex", selectedIndex);
         }
     }
-    holder->SetData(env->fanfics);
+    backendFanficDataKeeper->SetData(env->fanfics);
 
 }
 
-void MainWindow::OnDisplayPreviousPage()
-{
-    TaskProgressGuard guard(this);
-    QObject* windowObject= qwFics->rootObject();
-    windowObject->setProperty("havePagesAfter", true);
-    env->filter.recordPage = --env->pageOfCurrentQuery;
-
-    if(env->pageOfCurrentQuery == 0)
-        windowObject->setProperty("havePagesBefore", false);
-    windowObject->setProperty("currentPage", env->pageOfCurrentQuery);
-    LoadData();
-    FetchScoresForFics();
-    PlaceResults();
-    AnalyzeCurrentFilter();
-}
 
 void MainWindow::OnDisplayExactPage(int page)
 {
@@ -714,21 +606,14 @@ void MainWindow::LoadData()
         windowObject->setProperty("havePagesAfter", env->filter.recordLimit > 0 && env->sizeOfCurrentQuery > env->filter.recordLimit);
 
     }
-    //ui->edtResults->setOpenExternalLinks(true);
-    //ui->edtResults->clear();
-    //ui->edtResults->setUpdatesEnabled(false);
 
     QObject* windowObject= qwFics->rootObject();
     auto& currentFrame = env->searchHistory.AccessCurrent();
     currentFrame.selectedIndex = windowObject->property("selectedIndex").toInt();
-    currentFrame.fanfics = holder->GetData();
+    currentFrame.fanfics = backendFanficDataKeeper->GetData();
 
     env->LoadData();
     FetchScoresForFics();
-
-
-
-
     SaveCurrentQuery();
 
     if(env->searchHistory.Size() > 1)
@@ -754,7 +639,7 @@ void MainWindow::LoadData()
 
 
 
-    holder->SetData(env->fanfics);
+    backendFanficDataKeeper->SetData(env->fanfics);
     //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     //    childObject->setProperty("authorFilterActive", false);
 }
@@ -786,13 +671,13 @@ void MainWindow::ReadTagsIntoUI(QSharedPointer<FlipperClientLogic> env)
 void MainWindow::SetTag(int id, QString tag, bool)
 {
     env->interfaces.tags->SetTagForFic(id, tag);
-    tagList = env->interfaces.tags->ReadUserTags();
+    env->ReinitTagList();
 }
 
 void MainWindow::UnsetTag(int id, QString tag)
 {
     env->interfaces.tags->RemoveTagFromFic(id, tag);
-    tagList = env->interfaces.tags->ReadUserTags();
+    env->ReinitTagList();
 }
 
 void MainWindow::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)>)
@@ -821,13 +706,13 @@ void MainWindow::OnCopyAllUrls()
     TaskProgressGuard guard(this);
     QClipboard *clipboard = QApplication::clipboard();
     QString result;
-    for(int i = 0; i < typetableModel->rowCount(); i ++)
+    for(int i = 0; i < qmlFanficModel->rowCount(); i ++)
     {
         if(ui->chkInfoForLinks->isChecked())
         {
-            result += typetableModel->index(i, 2).data().toString() + "\n";
+            result += qmlFanficModel->index(i, 2).data().toString() + "\n";
         }
-        result += "https://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";//\n
+        result += "https://www.fanfiction.net/s/" + qmlFanficModel->index(i, 9).data().toString() + "\n";//\n
         if(ui->chkInfoForLinks->isChecked())
             result += "\n";
     }
@@ -840,8 +725,8 @@ void MainWindow::OnDoFormattedListByFandoms()
     QClipboard *clipboard = QApplication::clipboard();
     QString result;
     QList<int> ficIds;
-    for(int i = 0; i < typetableModel->rowCount(); i ++)
-        ficIds.push_back(typetableModel->index(i, 17).data().toInt());
+    for(int i = 0; i < qmlFanficModel->rowCount(); i ++)
+        ficIds.push_back(qmlFanficModel->index(i, 17).data().toInt());
     QSet<QPair<QString, int>> already;
     QMap<int, QList<core::Fanfic*>> byFandoms;
     for(core::Fanfic& fic : env->fanfics)
@@ -871,8 +756,6 @@ void MainWindow::OnDoFormattedListByFandoms()
             continue;
         result+= "<li><a href=\"#" + name.toLower().replace(" ","_") +"\">" + name + "</a></li>";
     }
-    An<PageManager> pager;
-    pager->SetDatabase(sql::Database::database());
 
     for(auto i = byFandoms.begin(); i != byFandoms.end(); i++)
     {
@@ -917,8 +800,8 @@ void MainWindow::OnDoFormattedList()
     QClipboard *clipboard = QApplication::clipboard();
     QString result;
     QList<int> ficIds;
-    for(int i = 0; i < typetableModel->rowCount(); i ++)
-        ficIds.push_back(typetableModel->index(i, 17).data().toInt());
+    for(int i = 0; i < qmlFanficModel->rowCount(); i ++)
+        ficIds.push_back(qmlFanficModel->index(i, 17).data().toInt());
     //QSet<QPair<QString, int>> already;
     //QMap<QString, QList<int>> byFandoms;
     for(core::Fanfic& fic : env->fanfics)
@@ -947,9 +830,7 @@ void MainWindow::on_pbLoadDatabase_clicked()
 {
     TaskProgressGuard guard(this);
     database::Transaction transaction(env->interfaces.fandoms->db);
-    env->filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-    env->filter.recordPage = 0;
-    env->pageOfCurrentQuery = 0;
+    env->InstallNewStoryFilter(ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics));
     if(env->filter.isValid)
     {
         LoadData();
@@ -957,47 +838,6 @@ void MainWindow::on_pbLoadDatabase_clicked()
     }
     AnalyzeCurrentFilter();
     transaction.finalize();
-}
-
-void MainWindow::LoadAutomaticSettingsForRecListSources(int size)
-{
-    if(size == 0)
-        return;
-    if(size == 1)
-    {
-        ui->leRecsMinimumMatches->setText("1");
-        ui->leRecsPickRatio->setText("99999");
-        ui->leRecsAlwaysPickAt->setText("1");
-        return;
-    }
-    if(size > 1 && size <= 7)
-    {
-        ui->leRecsMinimumMatches->setText("4");
-        ui->leRecsPickRatio->setText("70");
-        ui->leRecsAlwaysPickAt->setText(QString::number(size));
-        return;
-    }
-    if(size > 7 && size <= 20)
-    {
-        ui->leRecsMinimumMatches->setText("6");
-        ui->leRecsPickRatio->setText("70");
-        ui->leRecsAlwaysPickAt->setText(QString::number(size));
-        return;
-    }
-    if(size > 20 && size <= 300)
-    {
-        ui->leRecsMinimumMatches->setText("6");
-        ui->leRecsPickRatio->setText("50");
-        ui->leRecsAlwaysPickAt->setText(QString::number(size));
-        return;
-    }
-    if(size > 300)
-    {
-        ui->leRecsMinimumMatches->setText("6");
-        ui->leRecsPickRatio->setText("40");
-        ui->leRecsAlwaysPickAt->setText(QString::number(size));
-        return;
-    }
 }
 
 QSet<QString> MainWindow::LoadFavourteIdsFromFFNProfile(QString url, QLabel* infoLabel)
@@ -1016,6 +856,21 @@ QSet<QString> MainWindow::LoadFavourteIdsFromFFNProfile(QString url, QLabel* inf
     return result;
 }
 
+bool MainWindow::VerifyProfileUrlString(QString url)
+{
+    QSet<QString> result;
+    //need to make sure it *is* FFN url
+    //https://www.fanfiction.net/u/3697775/Rumour-of-an-Alchemist
+    QRegularExpression rx("https://www.fanfiction.net/u/(\\d)+");
+    auto match = rx.match(url);
+    if(!match.hasMatch())
+    {
+        QMessageBox::warning(nullptr, "Warning!", "URL is not an FFN author url\nNeeeds to be a https://www.fanfiction.net/u/NUMERIC_ID");
+        return false;
+    }
+    return true;
+}
+
 void MainWindow::OnQMLRefilter()
 {
     on_pbLoadDatabase_clicked();
@@ -1027,7 +882,7 @@ void MainWindow::OnQMLFandomToggled(QVariant var)
 
     int rownum = var.toInt();
 
-    QModelIndex index = typetableModel->index(rownum, 0);
+    QModelIndex index = qmlFanficModel->index(rownum, 0);
     auto data = index.data(static_cast<int>(FicModel::FandomRole)).toString();
 
     QStringList list = data.split("&", QString::SkipEmptyParts);
@@ -1047,26 +902,16 @@ void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
 
     int rownum = var.toInt();
 
-    QModelIndex index = typetableModel->index(rownum, 0);
+    QModelIndex index = qmlFanficModel->index(rownum, 0);
     auto data = index.data(static_cast<int>(FicModel::AuthorIdRole)).toInt();
     if(active.toBool())
-    {
-        ui->chkRandomizeSelection->setChecked(false);
-        ui->leAuthorID->setText(QString::number(data));
-        ui->chkIdSearch->setChecked(true);
-    }
+        SetAuthorFilteringMode({QString::number(data)});
     else
-    {
-        ui->chkIdSearch->setChecked(false);
-        ui->leAuthorID->setText("");
-    }
-    ui->cbIDMode->setCurrentIndex(1);
-    env->filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-    //env->filter.useThisAuthor = data;
-    LoadData();
+        UnsetAuthorFilteringMode();
 
-    //    /QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
-    //childObject->setProperty("authorFilterActive", true);
+    env->InstallNewStoryFilter(ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics));
+
+    LoadData();
     AnalyzeCurrentFilter();
 
 }
@@ -1109,6 +954,35 @@ void MainWindow::OnGetUrlsForTags(bool idMode)
     }
 
     clipboard->setText(result);
+}
+
+void MainWindow::SetRecommenderFilteringMode(QStringList authors)
+{
+        SetIdFilteringMode(authors);
+        ui->cbIDMode->setCurrentIndex(2);
+        qwFics->rootObject()->setProperty("chartDisplay", false);
+}
+
+void MainWindow::SetAuthorFilteringMode(QStringList authors)
+{
+    SetIdFilteringMode(authors);
+    ui->cbIDMode->setCurrentIndex(1);
+    qwFics->rootObject()->setProperty("chartDisplay", false);
+}
+
+void MainWindow::SetIdFilteringMode(QStringList ids)
+{
+    ui->leAuthorID->setText(ids.join(","));
+    ui->chkIdSearch->setChecked(true);
+
+    ui->chkRandomizeSelection->setChecked(false);
+    ui->wdgTagsPlaceholder->ResetFilters();
+}
+
+void MainWindow::UnsetAuthorFilteringMode()
+{
+    ui->chkIdSearch->setChecked(false);
+    ui->leAuthorID->setText("");
 }
 
 
@@ -1243,7 +1117,7 @@ void MainWindow::ReadSettings()
         ui->rbSelectedTagsMode->setChecked(true);
         reclistUIHelper.sourcesMode = ReclistCreationUIHelper::sm_tags;
     }
-    reclistUIHelper.SetupVisibilityForElements();
+    reclistUIHelper.SetupVisibilityForRecsCreatorElements();
 
 
     DetectGenreSearchState();
@@ -1381,7 +1255,6 @@ QString MainWindow::GetCrossoverFandomName()
 int MainWindow::GetCurrentFandomID()
 {
     return env->interfaces.fandoms->GetIDForName(core::Fandom::ConvertName(ui->cbNormals->currentText()));
-    //return core::Fandom::ConvertName(ui->cbNormals->currentText());
 }
 
 int MainWindow::GetCrossoverFandomID()
@@ -1392,53 +1265,51 @@ int MainWindow::GetCrossoverFandomID()
 void MainWindow::OnChapterUpdated(QVariant row, QVariant chapter)
 {
     int rownum = row.toInt();
-    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    auto id = qmlFanficModel->data(qmlFanficModel->index(rownum, 17), 0).toInt();
 
     env->interfaces.fanfics->AssignChapter(id, chapter.toInt());
 
-    auto index = typetableModel->index(rownum, 16);
-    typetableModel->setData(index,chapter,0);
+    auto index = qmlFanficModel->index(rownum, 16);
+    qmlFanficModel->setData(index,chapter,0);
 
-    typetableModel->updateAll();
+    qmlFanficModel->updateAll();
 }
 
 
 void MainWindow::OnTagAdd(QVariant tag, QVariant row)
 {
     int rownum = row.toInt();
-    QModelIndex index = typetableModel->index(rownum, 10);
-    auto data = typetableModel->data(index, 0).toString();
+    QModelIndex index = qmlFanficModel->index(rownum, 10);
+    auto data = qmlFanficModel->data(index, 0).toString();
     data += " " + tag.toString();
 
-    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    auto id = qmlFanficModel->data(qmlFanficModel->index(rownum, 17), 0).toInt();
     SetTag(id, tag.toString());
 
-    typetableModel->setData(index,data,0);
-    typetableModel->updateAll();
+    qmlFanficModel->setData(index,data,0);
+    qmlFanficModel->updateAll();
 }
 
 void MainWindow::OnTagRemove(QVariant tag, QVariant row)
 {
     int rownum = row.toInt();
-    QModelIndex index = typetableModel->index(row.toInt(), 10);
-    auto data = typetableModel->data(index, 0).toString();
+    QModelIndex index = qmlFanficModel->index(row.toInt(), 10);
+    auto data = qmlFanficModel->data(index, 0).toString();
     data = data.replace(tag.toString(), "");
 
-    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    auto id = qmlFanficModel->data(qmlFanficModel->index(rownum, 17), 0).toInt();
     UnsetTag(id, tag.toString());
 
-    typetableModel->setData(index,data,0);
-    typetableModel->updateAll();
+    qmlFanficModel->setData(index,data,0);
+    qmlFanficModel->updateAll();
 }
 
 void MainWindow::OnHeartDoubleClicked(QVariant row)
 {
     int rownum = row.toInt();
-    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
-    auto authors = env->GetAuthorsContainingFicFromRecList(id, ui->cbRecGroup->currentText());
-    QStringList authorList;
-    for(auto author: authors)
-        authorList.push_back(QString::number(author));
+    auto id = qmlFanficModel->data(qmlFanficModel->index(rownum, 17), 0).toInt();
+    auto authorList = env->GetAuthorsContainingFicFromRecListAsStringList(id, ui->cbRecGroup->currentText());
+
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(settings.value("Settings/clipboardAuthorsOnHeartClick", false).toBool())
     {
@@ -1447,20 +1318,8 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
     }
     else
     {
-        ui->leAuthorID->setText(authorList.join(","));
-        ui->chkIdSearch->setChecked(true);
-
-        ui->chkRandomizeSelection->setChecked(false);
-        ui->cbIDMode->setCurrentIndex(2);
-        ui->wdgTagsPlaceholder->ResetFilters();
-        env->filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-        env->filter.recordPage = 0;
-        env->pageOfCurrentQuery = 0;
-        //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("mainWindow");
-        //    if(childObject)
-        //        childObject->setProperty("chartDisplay", false);
-        qwFics->rootObject()->setProperty("chartDisplay", false);
-
+        SetRecommenderFilteringMode(authorList);
+        env->InstallNewStoryFilter(ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics));
         LoadData();
     }
 
@@ -1470,7 +1329,7 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
 void MainWindow::OnScoreAdjusted(QVariant row, QVariant newScore, QVariant oldScore)
 {
     int rownum = row.toInt();
-    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    auto id = qmlFanficModel->data(qmlFanficModel->index(rownum, 17), 0).toInt();
     int actualScore = 0;
     if(newScore == oldScore)
     {
@@ -1483,15 +1342,15 @@ void MainWindow::OnScoreAdjusted(QVariant row, QVariant newScore, QVariant oldSc
         actualScore = newScore.toInt();
     }
 
-    typetableModel->setData(typetableModel->index(rownum, 26), actualScore, Qt::DisplayRole);
-    typetableModel->updateAll();
+    qmlFanficModel->setData(qmlFanficModel->index(rownum, 26), actualScore, Qt::DisplayRole);
+    qmlFanficModel->updateAll();
 }
 
 void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapter)
 {
     int rownum = row.toInt();
-    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
-    auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
+    auto id = qmlFanficModel->data(qmlFanficModel->index(rownum, 17), 0).toInt();
+    auto currentChapter = qmlFanficModel->data(qmlFanficModel->index(rownum, 14), 0).toInt();
     core::FanficSnoozeStatus data;
     data.ficId = id;
     if(type.toInt() == 0)
@@ -1511,11 +1370,11 @@ void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapt
         data.untilFinished = 0; // chapter or until finished
         data.snoozedAtChapter = currentChapter;
         data.snoozedTillChapter = chapter.toInt();
-        typetableModel->setData(typetableModel->index(rownum, 29), chapter.toInt(), Qt::DisplayRole);
+        qmlFanficModel->setData(qmlFanficModel->index(rownum, 29), chapter.toInt(), Qt::DisplayRole);
     }
 
-    typetableModel->setData(typetableModel->index(rownum, 28), type.toInt(), Qt::DisplayRole);
-    typetableModel->updateAll();
+    qmlFanficModel->setData(qmlFanficModel->index(rownum, 28), type.toInt(), Qt::DisplayRole);
+    qmlFanficModel->updateAll();
     env->interfaces.fanfics->SnoozeFic(data);
 }
 
@@ -1527,9 +1386,9 @@ void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapt
 void MainWindow::OnSnoozeAdded(QVariant row)
 {
     int rownum = row.toInt();
-    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    auto id = qmlFanficModel->data(qmlFanficModel->index(rownum, 17), 0).toInt();
 
-    auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
+    auto currentChapter = qmlFanficModel->data(qmlFanficModel->index(rownum, 14), 0).toInt();
     core::FanficSnoozeStatus info;
     info.ficId = id;
     info.untilFinished = 0;
@@ -1537,42 +1396,42 @@ void MainWindow::OnSnoozeAdded(QVariant row)
     info.snoozedAtChapter = currentChapter;
     env->interfaces.fanfics->SnoozeFic(info);
 
-    QModelIndex index = typetableModel->index(rownum, 27);
-    typetableModel->setData(index,0,0);
-    typetableModel->setData(index.sibling(index.row(), 29),currentChapter+1,0);
-    typetableModel->setData(index.sibling(index.row(), 30),currentChapter,0);
-    typetableModel->setData(index.sibling(index.row(), 39),true,0);
-    typetableModel->updateAll();
+    QModelIndex index = qmlFanficModel->index(rownum, 27);
+    qmlFanficModel->setData(index,0,0);
+    qmlFanficModel->setData(index.sibling(index.row(), 29),currentChapter+1,0);
+    qmlFanficModel->setData(index.sibling(index.row(), 30),currentChapter,0);
+    qmlFanficModel->setData(index.sibling(index.row(), 39),true,0);
+    qmlFanficModel->updateAll();
 }
 
 void MainWindow::OnSnoozeRemoved(QVariant row)
 {
     int rownum = row.toInt();
-    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    auto id = qmlFanficModel->data(qmlFanficModel->index(rownum, 17), 0).toInt();
     env->interfaces.fanfics->RemoveSnooze(id);
-    QModelIndex index = typetableModel->index(rownum, 27);
-    typetableModel->setData(index.sibling(index.row(), 39),false,0);
-    typetableModel->setData(index,0,0);
-    typetableModel->updateAll();
+    QModelIndex index = qmlFanficModel->index(rownum, 27);
+    qmlFanficModel->setData(index.sibling(index.row(), 39),false,0);
+    qmlFanficModel->setData(index,0,0);
+    qmlFanficModel->updateAll();
 }
 
 void MainWindow::OnNotesEdited(QVariant row, QVariant note)
 {
     int rownum = row.toInt();
-    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    auto id = qmlFanficModel->data(qmlFanficModel->index(rownum, 17), 0).toInt();
     if(note.toString().isEmpty())
         env->interfaces.fanfics->RemoveNoteFromFic(id);
     else
         env->interfaces.fanfics->AddNoteToFic(id, note.toString());
 
-    typetableModel->setData(typetableModel->index(rownum, 31), note.toString(), Qt::DisplayRole);
-    typetableModel->updateAll();
+    qmlFanficModel->setData(qmlFanficModel->index(rownum, 31), note.toString(), Qt::DisplayRole);
+    qmlFanficModel->updateAll();
 }
 
 void MainWindow::OnNewQRSource(QVariant row)
 {
     int rownum = row.toInt();
-    auto id = typetableModel->data(typetableModel->index(rownum, 9), 0).toInt();
+    auto id = qmlFanficModel->data(qmlFanficModel->index(rownum, 9), 0).toInt();
     imgProvider->url = QString("https://www.fanfiction.net/s/%1/1").arg(QString::number(id));
     QSize size(200,200);
     auto px = imgProvider->requestPixmap("test", &size, {});
@@ -1634,7 +1493,7 @@ void MainWindow::PlaceResults()
 {
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
-    holder->SetData(env->fanfics);
+    backendFanficDataKeeper->SetData(env->fanfics);
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     QMetaObject::invokeMethod(childObject, "positionViewAtBeginning");
     ReinitRecent(GetCurrentFandomName());
@@ -1918,26 +1777,6 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 }
 
 
-
-
-void MainWindow::OpenRecommendationList(QString listName)
-{
-    env->filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_whole_list,
-                                            false,
-                                            listName);
-    if(env->filter.isValid)
-    {
-        env->filter.sortMode = core::StoryFilter::sm_metascore;
-        auto startRecLoad = std::chrono::high_resolution_clock::now();
-        LoadData();
-        auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-        qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-        ui->edtResults->setUpdatesEnabled(true);
-        ui->edtResults->setReadOnly(true);
-        holder->SetData(env->fanfics);
-    }
-}
-
 int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool)
 {
     TaskProgressGuard guard(this);
@@ -1991,6 +1830,27 @@ FilterErrors MainWindow::ValidateFilter()
         result.AddError("Current filter doesn't make sense because selected recommendation list is empty");
     }
     return result;
+}
+
+void MainWindow::ResetUrlListEditor(QTextBrowser*edit)
+{
+    edit->clear();
+    edit->setOpenExternalLinks(false);
+    edit->setOpenLinks(false);
+    edit->setReadOnly(false);
+    auto font = edit->font();
+    font.setPixelSize(14);
+
+    edit->setFont(font);
+}
+
+void MainWindow::FillFicUrlsIntoRecsCreator(QTextBrowser*edit, const QSet<QString>& fics)
+{
+
+    for(const auto& fic: std::as_const(fics))
+    {
+        edit->insertHtml("https://www.fanfiction.net/s/" + fic + "<br>");
+    }
 }
 
 
@@ -2629,8 +2489,8 @@ void MainWindow::OnFillDBIdsForTags()
 void MainWindow::OnTagReloadRequested()
 {
     ReadTagsIntoUI(env);
-    tagList = env->interfaces.tags->ReadUserTags();
-    qwFics->rootContext()->setContextProperty("tagModel", tagList);
+    env->ReinitTagList();
+    qwFics->rootContext()->setContextProperty("tagModel", env->tagList);
 }
 
 void MainWindow::OnClearLikedAuthorsRequested()
@@ -3054,34 +2914,14 @@ void MainWindow::DetectSlashSearchState()
 
 void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leUrl, QLabel* infoLabel)
 {
-    bool intUrl = false;
-    leUrl->text().toInt(&intUrl);
-    QString url = leUrl->text();
-    if(intUrl)
-        url = "https://www.fanfiction.net/u/" + url;
-
-
-    auto fics = LoadFavourteIdsFromFFNProfile(url, infoLabel);
-    pbMain->setValue(0);
-    //pbMain->hide();
-    QCoreApplication::processEvents();
+    auto url = env->MakeUserUrlFromID(leUrl->text().trimmed());
+    if(!VerifyProfileUrlString(url))
+        return;
+    auto fics = env->LoadAuthorFicIdsForRecCreation(url,  infoLabel);
     if(fics.size() == 0)
         return;
-
-    //LoadAutomaticSettingsForRecListSources(fics.size());
-    edit->clear();
-    edit->setOpenExternalLinks(false);
-    edit->setOpenLinks(false);
-    edit->setReadOnly(false);
-    auto font = edit->font();
-    font.setPixelSize(14);
-
-    edit->setFont(font);
-
-    for(const auto& fic: std::as_const(fics))
-    {
-        edit->insertHtml("https://www.fanfiction.net/s/" + fic + "<br>");
-    }
+    ResetUrlListEditor(edit);
+    FillFicUrlsIntoRecsCreator(edit, fics);
 }
 
 QVector<int> MainWindow::PickFicIDsFromTextBrowser(QTextBrowser * edit)
@@ -3138,13 +2978,13 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     ui->edtAnalysisResults->insertHtml("<br>");
 
 
-    QVector<SortedBit<double>> sizes = {{stats.sizeFactors[0], "Small"},
+    QVector<NameValueDecorator<double>> sizes = {{stats.sizeFactors[0], "Small"},
                                         {stats.sizeFactors[1], "Medium"},
                                         {stats.sizeFactors[2], "Large"},
                                         {stats.sizeFactors[3], "Huge"}};
     ui->edtAnalysisResults->insertHtml("Sizes%:<br>");
     QString sizeTemplate = "%1: <font color=blue>%2</font>";
-    std::sort(std::begin(sizes), std::end(sizes), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
+    std::sort(std::begin(sizes), std::end(sizes), [](const NameValueDecorator<double>& m1,const NameValueDecorator<double>& m2){
         return m1.value > m2.value;
     });
     for(const auto& size : std::as_const(sizes))
@@ -3162,8 +3002,8 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
 
     QString moodTemplate = "%1: <font color=blue>%2</font>";
 
-    QVector<SortedBit<double>> moodsVec = {{stats.moodSad,  "sad"},{stats.moodNeutral, "neutral"},{stats.moodHappy, "happy"}};
-    std::sort(std::begin(moodsVec), std::end(moodsVec), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
+    QVector<NameValueDecorator<double>> moodsVec = {{stats.moodSad,  "sad"},{stats.moodNeutral, "neutral"},{stats.moodHappy, "happy"}};
+    std::sort(std::begin(moodsVec), std::end(moodsVec), [](const NameValueDecorator<double>& m1,const NameValueDecorator<double>& m2){
         return m1.value > m2.value;
     });
     for(const auto& mood : std::as_const(moodsVec))
@@ -3174,11 +3014,11 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     }
     ui->edtAnalysisResults->insertHtml("<br>");
 
-    QVector<SortedBit<double>> genres;
+    QVector<NameValueDecorator<double>> genres;
 
     for(auto i = stats.genreFactors.begin(); i != stats.genreFactors.end(); i++)
         genres.push_back({i.value(),i.key()});
-    std::sort(std::begin(genres), std::end(genres), [](const SortedBit<double>& g1,const SortedBit<double>& g2){
+    std::sort(std::begin(genres), std::end(genres), [](const NameValueDecorator<double>& g1,const NameValueDecorator<double>& g2){
         return g1.value > g2.value;
     });
     QString genreTemplate = "%1: <font color=blue>%2</font>";
@@ -3198,14 +3038,14 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
 
     //ui->edtAnalysisResults->insertHtml(QString("Fandom diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.fandomsDiversity)));
     ui->edtAnalysisResults->insertHtml("Fandoms:<br>");
-    QVector<SortedBit<int>> fandoms;
+    QVector<NameValueDecorator<int>> fandoms;
 
     for(auto i = stats.fandomsConverted.begin(); i != stats.fandomsConverted.end(); i++)
     {
         QString name = env->interfaces.fandoms->GetNameForID(i.key());
         fandoms.push_back({i.value(), name});
     }
-    std::sort(std::begin(fandoms), std::end(fandoms), [](const SortedBit<int>& g1,const SortedBit<int>& g2){
+    std::sort(std::begin(fandoms), std::end(fandoms), [](const NameValueDecorator<int>& g1,const NameValueDecorator<int>& g2){
         return g1.value > g2.value;
     });
     QString fandomTemplate = "%1: <font color=blue>%2</font>";
@@ -3224,13 +3064,13 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
 void MainWindow::AnalyzeCurrentFilter()
 {
     QString result;
-    for(int i = 0; i < typetableModel->rowCount(); i ++)
+    for(int i = 0; i < qmlFanficModel->rowCount(); i ++)
     {
         if(ui->chkInfoForLinks->isChecked())
         {
-            result += typetableModel->index(i, 2).data().toString() + "\n";
+            result += qmlFanficModel->index(i, 2).data().toString() + "\n";
         }
-        result += "https://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";//\n
+        result += "https://www.fanfiction.net/s/" + qmlFanficModel->index(i, 9).data().toString() + "\n";//\n
     }
     auto ids = PickFicIDsFromString(result);
     AnalyzeIdList(ids);
@@ -3276,16 +3116,14 @@ void MainWindow::FetchScoresForFics()
                                        ui->cbSortMode->currentIndex()) ==  core::StoryFilter::sm_minimize_dislikes ?
                     core::StoryFilter::st_minimal_dislikes : core::StoryFilter::st_points;
         env->LoadNewScoreValuesForFanfics(filter, env->fanfics);
-        holder->SetData(env->fanfics);
+        backendFanficDataKeeper->SetData(env->fanfics);
     }
 }
 
 
 void MainWindow::DisplayRandomFicsForCurrentFilter()
 {
-    env->filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-    env->filter.randomizeResults = true;
-    env->filter.maxFics = ui->sbMaxRandomFicCount->value();
+    env->InstallRandomStoryFilter(ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics), ui->sbMaxRandomFicCount->value());
     if(env->filter.isValid)
     {
         LoadData();
@@ -3379,7 +3217,7 @@ void MainWindow::InitializeRecCreationWidgetWithDefaultState()
     reclistUIHelper.urlOuter = ui->wdgUrlList;
     reclistUIHelper.urlInner = ui->wdgUrlPart;
     reclistUIHelper.main = this;
-    reclistUIHelper.SetupVisibilityForElements();
+    reclistUIHelper.SetupVisibilityForRecsCreatorElements();
 
     ui->rbSimpleMode->setChecked(true);
     ui->rbProfileMode->setChecked(true);
@@ -3764,7 +3602,7 @@ void MainWindow::on_pbPreviousResults_clicked()
 {
 
     auto& currentFrame = env->searchHistory.AccessCurrent();
-    currentFrame.fanfics = holder->GetData();
+    currentFrame.fanfics = backendFanficDataKeeper->GetData();
 
     QObject* windowObject= qwFics->rootObject();
     currentFrame.selectedIndex = windowObject->property("selectedIndex").toInt();
@@ -3789,7 +3627,7 @@ void MainWindow::on_pbPreviousResults_clicked()
 void MainWindow::on_pbNextResults_clicked()
 {
     auto& currentFrame = env->searchHistory.AccessCurrent();
-    currentFrame.fanfics = holder->GetData();
+    currentFrame.fanfics = backendFanficDataKeeper->GetData();
 
     QObject* windowObject= qwFics->rootObject();
     currentFrame.selectedIndex = windowObject->property("selectedIndex").toInt();
@@ -3811,7 +3649,7 @@ void MainWindow::on_pbNextResults_clicked()
 
 void MainWindow::LoadFrameIntoUI(const FilterFrame &frame)
 {
-    holder->SetData(env->fanfics);
+    backendFanficDataKeeper->SetData(env->fanfics);
     ProcessStoryFilterIntoGUI(frame.filter);
     ui->wdgFandomListPlaceholder->RestoreFandomListToken(frame.savedFandomLists, FandomListWidget::frm_token_state);
 
@@ -3870,7 +3708,7 @@ void MainWindow::on_chkDisplayAuthorName_stateChanged(int)
     settings.setValue("Settings/displayAuthorName", ui->chkDisplayAuthorName->isChecked());
     settings.sync();
     qwFics->rootContext()->setContextProperty("displayAuthorNameInList", ui->chkDisplayAuthorName->isChecked());
-    holder->SetData(env->fanfics);
+    backendFanficDataKeeper->SetData(env->fanfics);
 }
 
 void MainWindow::on_chkDisplaySecondList_stateChanged(int)
@@ -3880,7 +3718,7 @@ void MainWindow::on_chkDisplaySecondList_stateChanged(int)
     settings.sync();
     qwFics->rootContext()->setContextProperty("displayListDifferenceInList", ui->chkDisplaySecondList->isChecked());
     ui->cbRecGroupSecond->setVisible(ui->chkDisplaySecondList->isChecked());
-    holder->SetData(env->fanfics);
+    backendFanficDataKeeper->SetData(env->fanfics);
 }
 
 void MainWindow::on_chkDisplayComma_stateChanged(int)
@@ -3888,7 +3726,7 @@ void MainWindow::on_chkDisplayComma_stateChanged(int)
     QSettings settings("settings/ui.ini", QSettings::IniFormat);
     settings.setValue("Settings/commasInWordcount", ui->chkDisplayComma->isChecked());
     settings.sync();
-    holder->SetData(env->fanfics);
+    backendFanficDataKeeper->SetData(env->fanfics);
 }
 
 void MainWindow::on_chkDisplayDetectedGenre_stateChanged(int )
@@ -3897,7 +3735,7 @@ void MainWindow::on_chkDisplayDetectedGenre_stateChanged(int )
     settings.setValue("Settings/displayDetectedGenre", ui->chkDisplayDetectedGenre->isChecked());
     settings.sync();
     qwFics->rootContext()->setContextProperty("detailedGenreModeInList",ui->chkDisplayDetectedGenre->isChecked());
-    holder->SetData(env->fanfics);
+    backendFanficDataKeeper->SetData(env->fanfics);
 }
 
 void MainWindow::on_cbFicIDDisplayMode_currentIndexChanged(const QString &)
@@ -3906,7 +3744,7 @@ void MainWindow::on_cbFicIDDisplayMode_currentIndexChanged(const QString &)
     settings.setValue("Settings/idDisplayMode", ui->cbFicIDDisplayMode->currentIndex());
     settings.sync();
     qwFics->rootContext()->setContextProperty("idDisplayModeInList", ui->cbFicIDDisplayMode->currentIndex());
-    holder->SetData(env->fanfics);
+    backendFanficDataKeeper->SetData(env->fanfics);
 }
 
 
@@ -3940,7 +3778,7 @@ void MainWindow::on_rbSimpleMode_clicked()
 {
     reclistUIHelper.simpleMode = true;
     ui->chkRecsAutomaticSettings->setChecked(true);
-    reclistUIHelper.SetupVisibilityForElements();
+    reclistUIHelper.SetupVisibilityForRecsCreatorElements();
     QCoreApplication::processEvents();
     ui->spRecsFan->setSizes({0,1000});
 }
@@ -3948,7 +3786,7 @@ void MainWindow::on_rbSimpleMode_clicked()
 void MainWindow::on_rbAdvancedMode_clicked()
 {
     reclistUIHelper.simpleMode = false;
-    reclistUIHelper.SetupVisibilityForElements();
+    reclistUIHelper.SetupVisibilityForRecsCreatorElements();
     QCoreApplication::processEvents();
     ui->spRecsFan->setSizes({0,1000});
 }
@@ -3956,7 +3794,7 @@ void MainWindow::on_rbAdvancedMode_clicked()
 void MainWindow::on_rbProfileMode_clicked()
 {
     reclistUIHelper.sourcesMode = ReclistCreationUIHelper::sm_profile;
-    reclistUIHelper.SetupVisibilityForElements();
+    reclistUIHelper.SetupVisibilityForRecsCreatorElements();
     QCoreApplication::processEvents();
     ui->spRecsFan->setSizes({0,1000});
 }
@@ -3964,7 +3802,7 @@ void MainWindow::on_rbProfileMode_clicked()
 void MainWindow::on_rbUrlMode_clicked()
 {
     reclistUIHelper.sourcesMode = ReclistCreationUIHelper::sm_urls;
-    reclistUIHelper.SetupVisibilityForElements();
+    reclistUIHelper.SetupVisibilityForRecsCreatorElements();
     QCoreApplication::processEvents();
     ui->spRecsFan->setSizes({0,1000});
 }
@@ -3972,7 +3810,7 @@ void MainWindow::on_rbUrlMode_clicked()
 void MainWindow::on_rbSelectedTagsMode_clicked()
 {
     reclistUIHelper.sourcesMode = ReclistCreationUIHelper::sm_tags;
-    reclistUIHelper.SetupVisibilityForElements();
+    reclistUIHelper.SetupVisibilityForRecsCreatorElements();
     QCoreApplication::processEvents();
     ui->spRecsFan->setSizes({0,1000});
 }
@@ -3980,7 +3818,7 @@ void MainWindow::on_rbSelectedTagsMode_clicked()
 void MainWindow::on_pbNewRecommendationList_clicked()
 {
     if(!reclistCreationShown){
-        reclistUIHelper.SetupVisibilityForElements();
+        reclistUIHelper.SetupVisibilityForRecsCreatorElements();
         ui->pbNewRecommendationList->setText("Hide");
         ui->pbNewRecommendationList->setPalette(this->style()->standardPalette());
         ui->pbNewRecommendationList->setStyleSheet(styleSheetForReclistMenu);
@@ -3999,7 +3837,7 @@ void MainWindow::on_pbNewRecommendationList_clicked()
 
 void MainWindow::on_leFFNProfileInputForUrls_returnPressed()
 {
-    LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leRecsFFNUrl);
+    LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leRecsFFNUrl, ui->lblCreationStatus);
 }
 
 
@@ -4046,13 +3884,14 @@ void MainWindow::onCopyDbUIDToClipboard(const QString& text)
 
 void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
 {
-    if(env->TestAuthorID(ui->leFFNProfileInputForUrls, ui->lblCreationStatus))
-        LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leFFNProfileInputForUrls);
+    if(env->TestAuthorID(ui->leFFNProfileInputForUrls, ui->lblCreationStatus)){
+        LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leFFNProfileInputForUrls, ui->lblCreationStatus);
+    }
     else
         ui->lblCreationStatus->setText("<font color=\"darkRed\">Not a valid FFN user ID.</font>");
 }
 
-void ReclistCreationUIHelper::SetupVisibilityForElements()
+void ReclistCreationUIHelper::SetupVisibilityForRecsCreatorElements()
 {
     main->setUpdatesEnabled(false);
     if(simpleMode)
@@ -4070,7 +3909,7 @@ void ReclistCreationUIHelper::SetupVisibilityForElements()
             urlInner->show();
 
             auto palette = advancedSettings->palette();
-            palette.setColor(QPalette::Background, QColor("#f0ddddFF"));
+            palette.setColor(QPalette::Window, QColor("#f0ddddFF"));
             urlOuter->setAutoFillBackground(true);
             urlOuter->setPalette(palette);
         }
@@ -4088,7 +3927,7 @@ void ReclistCreationUIHelper::SetupVisibilityForElements()
         else{
             urlInner->show();
             auto palette = advancedSettings->palette();
-            palette.setColor(QPalette::Background, QColor("#f0ddddFF"));
+            palette.setColor(QPalette::Window, QColor("#f0ddddFF"));
             urlOuter->setAutoFillBackground(true);
             urlOuter->setPalette(palette);
         }
