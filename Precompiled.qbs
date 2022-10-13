@@ -7,9 +7,9 @@ import qbs
             var filename = ""
 
             if(projecttype.useGuiLib)
-                filename = "include/pch.h"
+                filename = "include/precompiled/pch.h"
             else
-                filename = "include/pch_core.h"
+                filename = "include/precompiled/pch_core.h"
             return [filepath + filename]
         }
         fileTags: ["cpp_pch_src"]
