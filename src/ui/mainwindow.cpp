@@ -440,7 +440,6 @@ void MainWindow::InitConnections()
     ui->chkApplyLocalSlashFilter->setVisible(false);
     ui->chkOnlySlashLocal->setVisible(false);
     ui->chkInvertedSlashFilterLocal->setVisible(false);
-
 }
 
 void MainWindow::InitUIFromTask(PageTaskPtr task)
@@ -810,7 +809,6 @@ void MainWindow::OnDisplayExactPage(int page)
 {
     TaskProgressGuard guard(this);
     if(page < 0
-            //|| (page-1)*env->filter.recordLimit > env->sizeOfCurrentQuery
             || env->sizeOfCurrentQuery < (page - 1)*env->filter.recordLimit
             || (env->filter.recordPage+1) == page)
         return;
@@ -830,7 +828,6 @@ void MainWindow::OnDisplayExactPage(int page)
 MainWindow::~MainWindow()
 {
     WriteSettings();
-    env->WriteSettings();
     delete ui;
 }
 
@@ -847,12 +844,6 @@ void MainWindow::InitSortingCombobox()
     ui->cbSortMode->addItem("Your Score", static_cast<int>(core::StoryFilter::sm_userscores));
     ui->cbSortMode->addItem("Minimize Dislikes", static_cast<int>(core::StoryFilter::sm_minimize_dislikes));
     ui->cbSortMode->addItem("Gems", static_cast<int>(core::StoryFilter::sm_gems));
-}
-
-
-void MainWindow::InitInterfaces()
-{
-    env->InitInterfaces();
 }
 
 void MainWindow::SaveCurrentQuery()
@@ -2062,12 +2053,6 @@ void MainWindow::FillRecommenderListView(bool forceRefresh)
     recommendersModel->setStringList(result);
 }
 
-core::AuthorPtr MainWindow::LoadAuthor(QString url)
-{
-    TaskProgressGuard guard(this);
-    return env->LoadAuthor(url, sql::Database::database());
-}
-
 ECacheMode MainWindow::GetCurrentCacheMode() const
 {
     return ECacheMode::dont_use_cache;
@@ -2705,7 +2690,6 @@ void MainWindow::OnCopyFavUrls()
 
 void MainWindow::on_chkRandomizeSelection_toggled(bool checked)
 {
-    //ui->chkRandomizeSelection->setEnabled(checked);
     ui->sbMaxRandomFicCount->setEnabled(checked);
 }
 
@@ -2713,29 +2697,6 @@ void MainWindow::OnOpenLogUrl(const QUrl & url)
 {
     QDesktopServices::openUrl(url);
 }
-
-void MainWindow::OnWipeCache()
-{
-    An<PageManager> pager;
-    pager->WipeAllCache();
-}
-
-
-//void MainWindow::UpdateFandomList(UpdateFandomTask )
-//{
-//    TaskProgressGuard guard(this);
-
-//    ui->edtResults->clear();
-
-//    sql::Database db = sql::Database::database();
-//    FandomListReloadProcessor proc(db, env->interfaces.fanfics, env->interfaces.fandoms, env->interfaces.pageTask, env->interfaces.db);
-//    connect(&proc, &FandomListReloadProcessor::displayWarning, this, &MainWindow::OnWarningRequested);
-//    connect(&proc, &FandomListReloadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
-//    connect(&proc, &FandomListReloadProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
-//    connect(&proc, &FandomListReloadProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
-//    proc.UpdateFandomList();
-//}
-
 
 
 void MainWindow::OnRemoveFandomFromRecentList()
@@ -2802,8 +2763,6 @@ void MainWindow::on_pbCreateHTML_clicked()
 
 void MainWindow::OnFindSimilarClicked(QVariant url)
 {
-    //auto id = url_utils::GetWebId(url.toString(), "ffn");
-    //auto id = env->interfaces.fanfics->GetIDFromWebID(url.toInt(),"ffn");
     if(url == "-1")
         return;
     ResetFilterUItoDefaults(false);
@@ -3488,7 +3447,8 @@ void MainWindow::FetchScoresForFics()
         core::ReclistFilter filter;
         filter.mainListId = mainListId;
         filter.secondListId = secondListId;
-        filter.scoreType = SortRecoder(ui->cbSortMode, ui->cbSortMode->currentIndex()) ==  core::StoryFilter::sm_minimize_dislikes ?
+        filter.scoreType = SortRecoder(ui->cbSortMode,
+                                       ui->cbSortMode->currentIndex()) ==  core::StoryFilter::sm_minimize_dislikes ?
                     core::StoryFilter::st_minimal_dislikes : core::StoryFilter::st_points;
         env->LoadNewScoreValuesForFanfics(filter, env->fanfics);
         holder->SetData(env->fanfics);

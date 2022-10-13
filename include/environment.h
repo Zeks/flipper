@@ -151,11 +151,6 @@ public:
     };
     sql::Database GetUserDatabase() const;
 
-    // reads settings into a files
-    void ReadSettings();
-    // writes settings into a files
-    void WriteSettings();
-
     bool Init();
     static void InitMetatypes();
     // used to set up connections between database and interfaces
@@ -207,7 +202,6 @@ public:
 
     void Log(QString);
 
-    core::AuthorPtr LoadAuthor(QString url, sql::Database db);
     QSet<QString> LoadAuthorFicIdsForRecCreation(QString url,
                                                  QLabel* infoTarget = nullptr,
                                                  bool silent = false);

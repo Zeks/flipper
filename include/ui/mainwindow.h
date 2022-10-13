@@ -129,9 +129,6 @@ public:
 
     ~MainWindow();
     void InitSortingCombobox();
-    // used to set up connections between database and interfaces
-    // and between differnt interfaces themselves
-    void InitInterfaces();
     // used to set up signal/slot connections
     void InitConnections();
     // sets up the timer that later triggers a check if there are unfinished tasks
@@ -228,9 +225,6 @@ private:
     // fills the authors list view with names from currently active recommendation list
     void FillRecommenderListView(bool forceRefresh = false);
 
-    // loads the author favourites page into the database
-    // used in recommendations page
-    core::AuthorPtr LoadAuthor(QString url);
 
     // a utility to pass a functor to all the authors
     void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
@@ -456,8 +450,6 @@ private slots:
 //                        FFNFandomIndexParserBase* parser,
 //                        QSharedPointer<interfaces::Fandoms> fandomInterface);
     void OnOpenLogUrl(const QUrl&);
-
-    void OnWipeCache();
 
     void GenerateFormattedList();
     void OnFindSimilarClicked(QVariant);

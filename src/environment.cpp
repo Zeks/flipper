@@ -216,7 +216,6 @@ void CoreEnvironment::LoadHistoryFrame(FilterFrame frame)
 
 CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj), searchHistory(250)
 {
-    ReadSettings();
     rngGenerator.reset(new core::DefaultRNGgenerator);
 }
 
@@ -225,15 +224,6 @@ sql::Database CoreEnvironment::GetUserDatabase() const
     return interfaces.userDb;
 }
 
-void CoreEnvironment::ReadSettings()
-{
-
-}
-
-void CoreEnvironment::WriteSettings()
-{
-
-}
 static inline QString CreateConnectString(QString ip,QString port)
 {
     QString server_address_proto("%1:%2");
@@ -326,8 +316,6 @@ bool CoreEnvironment::Init()
 void CoreEnvironment::InitInterfaces()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    ;
-
 
     interfaces.authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     interfaces.fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
@@ -932,43 +920,6 @@ QVector<int> CoreEnvironment::GetFFNIds(QSet<int> sources)
         result.push_back(id.web.ffn);
 
     return result;
-}
-
-core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, sql::Database db)
-{
-    WebPage page;
-    TimedAction fetchAction("Author page fetch", [&](){
-        page = env::RequestPage(url.trimmed(),  fetching::CacheStrategy::NetworkOnly());
-    });
-    fetchAction.run(false);
-    emit resetEditorText();
-    FavouriteStoryParser parser;
-    QString name = ParseAuthorNameFromFavouritePage(page.content);
-    parser.authorName = name;
-    parser.ProcessPage(page.url, page.content);
-    emit updateInfo(parser.diagnostics.join(""));
-    database::Transaction transaction(db);
-    QSet<QString> fandoms;
-    interfaces.authors->EnsureId(parser.recommender.author); // assuming ffn
-    auto author =interfaces.authors->GetByWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
-    parser.authorStats->id = author->id;
-    FavouriteStoryParser::MergeStats(author,interfaces.fandoms, {parser});
-
-    interfaces.authors->UpdateAuthorRecord(author);
-    {
-        interfaces.fanfics->ProcessIntoDataQueues(parser.processedStuff);
-        fandoms =interfaces.fandoms->EnsureFandoms(parser.processedStuff);
-        QList<core::FicRecommendation> recommendations;
-        recommendations.reserve(parser.processedStuff.size());
-        for(auto& section : parser.processedStuff)
-            recommendations.push_back({section, author});
-        interfaces.fanfics->AddRecommendations(recommendations);
-        auto result =interfaces.fanfics->FlushDataQueues();
-        Q_UNUSED(result)
-        interfaces.fandoms->RecalculateFandomStats(fandoms.values());
-    }
-    transaction.finalize();
-    return author;
 }
 
 QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLabel* infoTarget, bool silent)
