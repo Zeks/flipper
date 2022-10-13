@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/environment.h"
 #include "include/timeutils.h"
 #include "include/page_utils.h"
-#include "include/EGenres.h"
+
 #include "sql_abstractions/sql_transaction.h"
 #include <array>
 

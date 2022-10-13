@@ -6,7 +6,7 @@
 #include "include/sqlitefunctions.h"
 #include "include/pure_sql.h"
 #include "include/db_fixers.h"
-#include "include/backups.h"
+#include "include/sql/backups.h"
 #include "logger/QsLog.h"
 #include <QSettings>
 #include <QTextCodec>

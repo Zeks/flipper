@@ -39,7 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/timeutils.h"
 #include "include/in_tag_accessor.h"
 #include "include/sqlitefunctions.h"
-#include "include/backups.h"
+#include "include/sql/backups.h"
 
 #ifdef USE_WEBVIEW
 #include "include/webview/pagegetter_w.h"
@@ -64,7 +64,7 @@ void CoreEnvironment::InitMetatypes()
 {
     qRegisterMetaType<WebPage>("WebPage");
     qRegisterMetaType<PageResult>("PageResult");
-    qRegisterMetaType<ECacheMode>("ECacheMode");
+
     qRegisterMetaType<FandomParseTask>("FandomParseTask");
     qRegisterMetaType<FandomParseTaskResult>("FandomParseTaskResult");
 }

@@ -27,6 +27,11 @@ struct ListWithIdentifier{
     int id;
     QSet<int>  favourites;
 };
+
+
+// utilitary class to group and load/save caculation data together
+// currently unused because the function it was made for is largely defunct
+// doesn't mean it won't come helpful later
 struct CalcDataHolder{
     QVector<core::FicWeightPtr> fics;
     QList<core::AuthorPtr>  authors;

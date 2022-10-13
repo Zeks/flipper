@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "pagetask.h"
 #include "url_utils.h"
 #include "Interfaces/genres.h"
-#include "EGenres.h"
+
 #include "include/in_tag_accessor.h"
 #include "GlobalHeaders/snippets_templates.h"
 #include "fmt/format.h"

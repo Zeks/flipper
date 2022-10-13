@@ -251,7 +251,6 @@ private:
 
     bool AskYesNoQuestion(QString);
 
-    ECacheMode GetCurrentCacheMode() const;
 
     void CreateSimilarListForGivenFic(int);
 
@@ -580,12 +579,6 @@ signals:
 
 
     void pageTask(FandomParseTask);
-    // page task when trudging through fandoms
-    // contains the first url and the last url to stop
-    //void pageTask(QString, QString, QDate, ECacheMode, bool);
-    // page task when iterating through favourites pages
-    // contains urls from a SUBtask
-    void pageTaskList(QStringList, ECacheMode);
     void qrChange();
 };
 

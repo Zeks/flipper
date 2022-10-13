@@ -28,8 +28,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/core/section.h"
 #include "GlobalHeaders/run_once.h"
 #include "include/transaction.h"
-#include "include/container_utils.h"
-
 
 namespace interfaces {
 
@@ -188,6 +186,15 @@ void Fandoms::SetLastUpdateDate(QString fandom, QDate date)
         return;
     auto result = sql::SetLastUpdateDateForFandom(id, date, db);
 }
+
+
+template <typename T, template <typename> class Cont>
+void CleanupPtrList(Cont<T>& container){
+    auto it = std::remove_if(std::begin(container), std::end(container), [](auto item){
+                                 return !item;});
+    container.erase(it, std::end(container));
+}
+
 
 QStringList Fandoms::GetRecentFandoms()
 {

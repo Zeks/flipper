@@ -14,12 +14,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma once
-#include <QString>
-#include <QDateTime>
 #include "sql_abstractions/sql_database.h"
+#include "include/web/cache_strategy.h"
 #include <QSharedPointer>
 #include <QUuid>
-#include "ECacheMode.h"
+#include <QString>
+#include <QDateTime>
+
 class PageSubTask;
 class PageTask;
 class PageFailure;

@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QScopedPointer>
 #include "sql_abstractions/sql_database.h"
 #include <QThread>
-#include "ECacheMode.h"
+
 #include <atomic>
 enum class EPageType
 {

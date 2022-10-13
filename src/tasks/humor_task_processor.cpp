@@ -27,7 +27,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/recommendation_lists.h"
 #include "include/url_utils.h"
 #include "include/timeutils.h"
-#include "include/EGenres.h"
+#include "include/core/EGenres.h"
+
 #include <array>
 #include <cmath>
 

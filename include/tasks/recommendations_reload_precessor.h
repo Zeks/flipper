@@ -19,9 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "sql_abstractions/sql_database.h"
 #include <QSharedPointer>
 #include <QSet>
-#include "ECacheMode.h"
+
 
 #include "include/core/section.h"
+#include "include/web/cache_strategy.h"
 
 namespace interfaces{
 class Fanfics;
@@ -65,5 +66,6 @@ signals:
     void updateCounter(int);
     void updateInfo(QString);
 };
+
 
 

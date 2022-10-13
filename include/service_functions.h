@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include <QString>
 #include "core/section.h"
-#include "ECacheMode.h"
+
 class PageManager;
 namespace service{
 

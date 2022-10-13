@@ -55,7 +55,6 @@ App{
     ]
 
     files: [
-        "include/calc_data_holder.h",
         "include/core/db_entity.h",
         "include/core/fanfic.h",
         "include/core/fav_list_analysis.h",
@@ -76,7 +75,7 @@ App{
         "include/threaded_data/threaded_save.h",
         "include/core/author.h",
         "src/core/author.cpp",
-        "src/calc_data_holder.cpp",
+
         "src/core/fandom.cpp",
         "src/core/fanfic.cpp",
         "src/core/fav_list_analysis.cpp",
@@ -104,7 +103,6 @@ App{
         "src/Interfaces/ffn/ffn_authors.cpp",
 
         "src/Interfaces/recommendation_lists.cpp",
-        "include/container_utils.h",
         "include/generic_utils.h",
         "include/timeutils.h",
         "include/servers/feed.h",

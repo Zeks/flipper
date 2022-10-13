@@ -21,7 +21,7 @@ App{
 
     files: [
         "include/Interfaces/pagetask_interface.h",
-        "include/cache_strategy.h",
+        "include/web/cache_strategy.h",
         "include/core/db_entity.h",
         "include/core/fanfic.h",
         "include/core/fav_list_details.h",

@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "environment.h"
 #include "include/favholder.h"
 #include "third_party/roaring/roaring.hh"
-#include "include/calc_data_holder.h"
+#include "include/app/servitor/calc_data_holder.h"
 #include "tasks/author_genre_iteration_processor.h"
 
 namespace Ui {

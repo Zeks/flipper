@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "backups.h"
+#include "sql/backups.h"
 #include "sqlitefunctions.h"
 
 #include <QDir>
@@ -119,19 +119,25 @@ bool CreateDatabaseBackup(sql::Database originalDb, QString targetFolder, QStrin
     auto backupDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile(targetFolder, targetFile,
                                                                          dbInitFile, targetFile, false);
 
+    bool success = true;
     database::Transaction transaction(backupDb);
-    sql::PassScoresToAnotherDatabase(originalDb, backupDb);
-    sql::PassTagSetToAnotherDatabase(originalDb, backupDb);
-    sql::PassFicTagsToAnotherDatabase(originalDb, backupDb);
-    sql::PassSnoozesToAnotherDatabase(originalDb, backupDb);
-    sql::PassFicNotesToAnotherDatabase(originalDb, backupDb);
-    sql::PassClientDataToAnotherDatabase(originalDb, backupDb);
-    sql::PassRecentFandomsToAnotherDatabase(originalDb, backupDb);
-    sql::PassReadingDataToAnotherDatabase(originalDb, backupDb);
-    sql::PassIgnoredFandomsToAnotherDatabase(originalDb, backupDb);
-    sql::PassFandomListSetToAnotherDatabase(originalDb, backupDb);
-    sql::PassFandomListDataToAnotherDatabase(originalDb, backupDb);
+    success &= sql::PassScoresToAnotherDatabase(originalDb, backupDb).success;
+    success &= sql::PassTagSetToAnotherDatabase(originalDb, backupDb).success;
+    success &= sql::PassFicTagsToAnotherDatabase(originalDb, backupDb).success;
+    success &= sql::PassSnoozesToAnotherDatabase(originalDb, backupDb).success;
+    success &= sql::PassFicNotesToAnotherDatabase(originalDb, backupDb).success;
+    success &= sql::PassClientDataToAnotherDatabase(originalDb, backupDb).success;
+    success &= sql::PassRecentFandomsToAnotherDatabase(originalDb, backupDb).success;
+    success &= sql::PassReadingDataToAnotherDatabase(originalDb, backupDb).success;
+    success &= sql::PassIgnoredFandomsToAnotherDatabase(originalDb, backupDb).success;
+    success &= sql::PassFandomListSetToAnotherDatabase(originalDb, backupDb).success;
+    success &= sql::PassFandomListDataToAnotherDatabase(originalDb, backupDb).success;
+    if(!success){
+        transaction.cancel();
+        return false;
+    }
     transaction.finalize();
+    return true;
 }
 
 }}

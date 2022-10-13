@@ -37,7 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "timeutils.h"
 #include "regex_utils.h"
 #include "Interfaces/tags.h"
-#include "EGenres.h"
+
 #include <QMessageBox>
 #include <QReadWriteLock>
 #include <QReadLocker>
@@ -2051,11 +2051,6 @@ void MainWindow::FillRecommenderListView(bool forceRefresh)
     for(const auto& stat : std::as_const(allStats))
         result.push_back(stat->authorName);
     recommendersModel->setStringList(result);
-}
-
-ECacheMode MainWindow::GetCurrentCacheMode() const
-{
-    return ECacheMode::dont_use_cache;
 }
 
 void MainWindow::CreateSimilarListForGivenFic(int id)

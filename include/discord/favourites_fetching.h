@@ -1,8 +1,7 @@
 #pragma once
-#include "ECacheMode.h"
-
 #include <QSet>
 #include <QSharedPointer>
+#include "include/web/cache_strategy.h"
 
 
 namespace discord{

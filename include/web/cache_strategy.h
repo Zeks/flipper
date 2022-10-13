@@ -1,9 +1,11 @@
 #pragma once
-#include "include/ECacheMode.h"
 #include <QDateTime>
 #include <functional>
 namespace fetching{
 
+
+// used to control how the pages are fetched from cache or internet
+// based on several externally set parameters
 struct CacheStrategy{
     bool useCache = false;
     bool abortIfCacheUnavailable = false;
@@ -11,6 +13,9 @@ struct CacheStrategy{
     bool fetchIfCacheIsOld = false;
     bool saveResults = true;
     int cacheExpirationDays = 0;
+
+    // external function used to check if the page is valid
+    // and ignore cached or fetched page if it isn't
     std::function<bool(QString)> pageChecker;
 
     bool CacheIsExpired(QDate generationDate){

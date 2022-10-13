@@ -103,7 +103,7 @@ ServitorWindow::ServitorWindow(QWidget *parent) :
     ui->setupUi(this);
     qRegisterMetaType<WebPage>("WebPage");
     qRegisterMetaType<PageResult>("PageResult");
-    qRegisterMetaType<ECacheMode>("ECacheMode");
+
     //    qRegisterMetaType<FandomParseTask>("FandomParseTask");
     //    qRegisterMetaType<FandomParseTaskResult>("FandomParseTaskResult");
     ReadSettings();

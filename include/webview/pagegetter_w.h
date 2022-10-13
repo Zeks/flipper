@@ -25,8 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "GlobalHeaders/SingletonHolder.h"
 #include "include/tasks/fandom_task_processor.h"
 #include "include/webpage.h"
-//#include "ECacheMode.h"
-#include "cache_strategy.h"
+//
+#include "include/web/cache_strategy.h"
 #include <atomic>
 
 namespace webview{

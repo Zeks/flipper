@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QScopedPointer>
 #include "GlobalHeaders/SingletonHolder.h"
 #include "include/webpage.h"
-#include "ECacheMode.h"
+#include "include/web/cache_strategy.h"
 
 namespace discord {
 class PageGetterPrivate;

@@ -86,13 +86,6 @@ struct BastardizedCircularBuffer{
     void Push(T value){
         if(data.size() == maxSize)
             data.pop_front();
-
-//        while(currentIndex != 0)
-//        {
-//            data.pop_();
-//            currentIndex--;
-//        }
-
         data.push_back(value);
         currentIndex = 0;
     }

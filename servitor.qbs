@@ -65,7 +65,7 @@ App{
     files: [
         "UI/servitorwindow.ui",
         "include/Interfaces/authors.h",
-        "include/calc_data_holder.h",
+        "include/app/servitor/calc_data_holder.h",
         "include/core/db_entity.h",
         "include/core/fanfic.h",
         "include/core/fav_list_details.h",
@@ -84,7 +84,7 @@ App{
         "include/threaded_data/threaded_load.h",
         "include/threaded_data/threaded_save.h",
         "src/Interfaces/fandom_lists.cpp",
-        "src/calc_data_holder.cpp",
+        "src/app/servitor/calc_data_holder.cpp",
         "src/core/fandom.cpp",
         "src/core/fanfic.cpp",
         "src/core/fav_list_details.cpp",
@@ -118,7 +118,6 @@ App{
         "src/Interfaces/ffn/ffn_authors.cpp",
         
         "src/Interfaces/recommendation_lists.cpp",
-        "include/container_utils.h",
         "include/generic_utils.h",
         "include/timeutils.h",
         "src/generic_utils.cpp",
