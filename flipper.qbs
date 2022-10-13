@@ -153,7 +153,6 @@ App{
         "src/parsers/ffn/ffnparserbase.cpp",
         "src/parsers/ffn/ficparser.cpp",
         "src/main_flipper.cpp",
-        "src/ui/mainwindow_utility.cpp",
         "src//webview/pagegetter_w.cpp",
         "include/webview/pagegetter_w.h",
         "src/pure_sql.cpp",
