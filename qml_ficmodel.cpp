@@ -34,8 +34,8 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return AdaptingTableModel::data(index.sibling(index.row(), 2), Qt::DisplayRole);
         if(role == SummaryRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 3), Qt::DisplayRole);
-//        if(role == GenreRole)
-//            return AdaptingTableModel::data(index.sibling(index.row(), 4), Qt::DisplayRole).toString().split("/");
+        //        if(role == GenreRole)
+        //            return AdaptingTableModel::data(index.sibling(index.row(), 4), Qt::DisplayRole).toString().split("/");
         if(role == GenreRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 4), Qt::DisplayRole).toString().split("/");
         if(role == CharactersRole)
@@ -167,60 +167,61 @@ FicModel::FicModel(QObject *parent) : AdaptingTableModel(parent)
 
 
 QHash<int, QByteArray> FicModel::roleNames() const {
-    QHash<int, QByteArray> roles;
-    roles[AuthorRole] = "author";
-    roles[AuthorIdRole] = "author_id";
-    roles[FandomRole] = "fandom";
-    roles[TitleRole] = "title";
-    roles[SummaryRole] = "summary";
-    roles[GenreRole] = "genre";
-    roles[UrlRole] = "url";
-    roles[TagsRole] = "tags";
-    roles[OriginRole] = "origin";
-    roles[LanguageRole] = "language";
-    roles[PublishedRole] = "published";
-    roles[UpdatedRole] = "updated";
-    roles[CharactersRole] = "characters";
-    roles[WordsRole] = "words";
-    roles[CompleteRole] = "complete";
-    roles[CurrentChapterRole] = "currentchapter";
-    roles[ChaptersRole] = "chapters";
-    roles[ReviewsRole] = "reviews";
-    roles[FavesRole] = "favourites";
-    roles[RatedRole] = "rated";
-    roles[AtChapterRole] = "atChapter";
-    roles[RownumRole] = "rownum";
-    roles[FicIdRole] = "ID";
-    roles[RecommendationsMainRole] = "recommendationsMain";
-    roles[RealGenreRole] = "realGenre";
-    roles[SlashRole] = "minSlashLevel";
-    roles[BreakdownRole] = "roleBreakdown";
-    roles[BreakdownCountRole] = "roleBreakdownCount";
-    roles[LikedAuthorRole] = "likedAuthor";
-    roles[PurgedRole] = "purged";
-    roles[ScoreRole] = "score";
-    roles[SnoozeExpiredRole] = "snoozeExpired";
-    roles[SnoozeModeRole] = "snoozeMode";
-    roles[SnoozeLimitRole] = "snoozeLimit";
-    roles[SnoozeOriginRole] = "snoozeOrigin";
-    roles[NotesRole] = "notes";
-    roles[QuotesRole] = "quotes";
-    roles[SelectedRole] = "selected";
-    roles[RecommendationsSecondRole] = "recommendationsSecond";
-    roles[PlaceInMainList] = "placeMain";
-    roles[PlaceInSecondList] = "placeSecond";
-    roles[PlaceOnFirstPedestal] = "placeOnFirstPedestal";
-    roles[PlaceOnSecondPedestal] = "placeOnSecondPedestal";
-    roles[FicIsSnoozed] = "ficIsSnoozed";
-
+    static QHash<int, QByteArray> roles;
+    if(!roles.size()){
+        roles[AuthorRole] = "author";
+        roles[AuthorIdRole] = "author_id";
+        roles[FandomRole] = "fandom";
+        roles[TitleRole] = "title";
+        roles[SummaryRole] = "summary";
+        roles[GenreRole] = "genre";
+        roles[UrlRole] = "url";
+        roles[TagsRole] = "tags";
+        roles[OriginRole] = "origin";
+        roles[LanguageRole] = "language";
+        roles[PublishedRole] = "published";
+        roles[UpdatedRole] = "updated";
+        roles[CharactersRole] = "characters";
+        roles[WordsRole] = "words";
+        roles[CompleteRole] = "complete";
+        roles[CurrentChapterRole] = "currentchapter";
+        roles[ChaptersRole] = "chapters";
+        roles[ReviewsRole] = "reviews";
+        roles[FavesRole] = "favourites";
+        roles[RatedRole] = "rated";
+        roles[AtChapterRole] = "atChapter";
+        roles[RownumRole] = "rownum";
+        roles[FicIdRole] = "ID";
+        roles[RecommendationsMainRole] = "recommendationsMain";
+        roles[RealGenreRole] = "realGenre";
+        roles[SlashRole] = "minSlashLevel";
+        roles[BreakdownRole] = "roleBreakdown";
+        roles[BreakdownCountRole] = "roleBreakdownCount";
+        roles[LikedAuthorRole] = "likedAuthor";
+        roles[PurgedRole] = "purged";
+        roles[ScoreRole] = "score";
+        roles[SnoozeExpiredRole] = "snoozeExpired";
+        roles[SnoozeModeRole] = "snoozeMode";
+        roles[SnoozeLimitRole] = "snoozeLimit";
+        roles[SnoozeOriginRole] = "snoozeOrigin";
+        roles[NotesRole] = "notes";
+        roles[QuotesRole] = "quotes";
+        roles[SelectedRole] = "selected";
+        roles[RecommendationsSecondRole] = "recommendationsSecond";
+        roles[PlaceInMainList] = "placeMain";
+        roles[PlaceInSecondList] = "placeSecond";
+        roles[PlaceOnFirstPedestal] = "placeOnFirstPedestal";
+        roles[PlaceOnSecondPedestal] = "placeOnSecondPedestal";
+        roles[FicIsSnoozed] = "ficIsSnoozed";
+    }
     return roles;
 }
 
 QVariantMap FicModel::get(int idx) const {
-  QVariantMap map;
-  for(int key: roleNames().keys()) {
-      auto index = AdaptingTableModel::index(idx, 0, QModelIndex());
-    map[roleNames().value(key)] = data(index, key);
-  }
-  return map;
+    QVariantMap map;
+    for(int key: roleNames().keys()) {
+        auto index = AdaptingTableModel::index(idx, 0, QModelIndex());
+        map[roleNames().value(key)] = data(index, key);
+    }
+    return map;
 }
