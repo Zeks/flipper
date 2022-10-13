@@ -1,7 +1,7 @@
 #include "include/parsers/ffn/favparser_wrapper.h"
 #include "include/parsers/ffn/mobile_favparser.h"
 #include "include/timeutils.h"
-#include "include/environment.h"
+#include "include/flipper_client_logic.h"
 #include <stdexcept>
 namespace parsers{
 namespace ffn{

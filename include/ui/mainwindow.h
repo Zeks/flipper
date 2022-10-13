@@ -47,7 +47,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/tasks/fandom_task_processor.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"
-#include "include/environment.h"
+#include "include/flipper_client_logic.h"
 #include <vector>
 
 #include <QMovie>
@@ -147,7 +147,7 @@ public:
     void DisplayRandomFicsForCurrentFilter();
     void QueueDefaultRecommendations();
 
-    QSharedPointer<CoreEnvironment> env;
+    QSharedPointer<FlipperClientLogic> env;
 
 private:
 

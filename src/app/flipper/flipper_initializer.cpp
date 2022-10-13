@@ -7,7 +7,7 @@ bool FlipperInitializer::Init(){
 
     SetupLogger();
     ProcessStateOfExistingDatabase();
-    coreEnvironment.reset(new CoreEnvironment());
+    coreEnvironment.reset(new FlipperClientLogic());
 
     if(RequiresReinit() && !PerformInitialSetup())
         return false;

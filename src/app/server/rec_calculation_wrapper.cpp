@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "include/favholder.h"
+#include "include/app/server/rec_calculation_wrapper.h"
 #include "include/Interfaces/authors.h"
 #include "logger/QsLog.h"
 #include "include/timeutils.h"
@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <cmath>
 namespace core{
 
-void RecCalculator::LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface)
+void RecCalculationWrapper::LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface)
 {
     CreateTempDataDir();
     QSettings settings("settings/settings_server.ini", QSettings::IniFormat);
@@ -47,13 +47,13 @@ void RecCalculator::LoadFavourites(QSharedPointer<interfaces::Authors> authorInt
     }
 }
 
-void RecCalculator::CreateTempDataDir()
+void RecCalculationWrapper::CreateTempDataDir()
 {
     QDir dir(QDir::currentPath());
     dir.mkdir("ServerData");
 }
 
-void RecCalculator::LoadFavouritesDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface)
+void RecCalculationWrapper::LoadFavouritesDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface)
 {
        Q_UNUSED(authorInterface)
     //    auto favourites = authorInterface->LoadFullFavouritesHashset();
@@ -64,12 +64,12 @@ void RecCalculator::LoadFavouritesDataFromDatabase(QSharedPointer<interfaces::Au
     //    }
 }
 
-void RecCalculator::LoadStoredFavouritesData()
+void RecCalculationWrapper::LoadStoredFavouritesData()
 {
     //thread_boost::LoadFavouritesData("ServerData", favourites);
 }
 
-void RecCalculator::SaveFavouritesData()
+void RecCalculationWrapper::SaveFavouritesData()
 {
     //thread_boost::SaveFavouritesData("ServerData", favourites);
 }
@@ -77,7 +77,7 @@ void RecCalculator::SaveFavouritesData()
 
 
 
-RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t, core::FicWeightPtr> fetchedFics,
+RecommendationListResult RecCalculationWrapper::GetMatchedFicsForFavList(QHash<uint32_t, core::FicWeightPtr> fetchedFics,
                                                                  QSharedPointer<RecommendationList> params,
                                                                  genre_stats::GenreMoodData moodData)
 {
@@ -106,7 +106,7 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
     return calculator->result;
 }
 
-DiagnosticRecommendationListResult RecCalculator::GetDiagnosticRecommendationList(QHash<uint32_t, FicWeightPtr> fetchedFics, QSharedPointer<RecommendationList> params, genre_stats::GenreMoodData moodData)
+DiagnosticRecommendationListResult RecCalculationWrapper::GetDiagnosticRecommendationList(QHash<uint32_t, FicWeightPtr> fetchedFics, QSharedPointer<RecommendationList> params, genre_stats::GenreMoodData moodData)
 {
     DiagnosticRecommendationListResult result;
 
@@ -137,7 +137,7 @@ DiagnosticRecommendationListResult RecCalculator::GetDiagnosticRecommendationLis
     return result;
 }
 
-FavouritesMatchResult RecCalculator::GetMatchedFics(UserMatchesInput input, int user2)
+FavouritesMatchResult RecCalculationWrapper::GetMatchedFics(UserMatchesInput input, int user2)
 {
     QLOG_INFO() << "Creating calculator";
     QSharedPointer<RecCalculatorImplWeighted> calculator;

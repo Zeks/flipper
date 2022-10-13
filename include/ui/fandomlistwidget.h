@@ -12,7 +12,7 @@ class FandomListWidget;
 }
 
 class CustomIconDelegate;
-class CoreEnvironment;
+class FlipperClientLogic;
 
 class FandomListWidget : public QWidget
 {
@@ -46,7 +46,7 @@ public:
     std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> GetStateForSearches();
     static std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> GetStateForSearchesFromTreeItem(std::shared_ptr<TreeItemInterface> item);
 
-    QSharedPointer<CoreEnvironment> env;
+    QSharedPointer<FlipperClientLogic> env;
 private:
     std::shared_ptr<TreeItemInterface> FetchAndConvertFandomLists();
     void ScrollToFandom(std::shared_ptr<TreeItemInterface>, uint32_t id);

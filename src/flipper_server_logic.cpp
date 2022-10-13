@@ -15,11 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "include/feeder_environment.h"
+#include "include/flipper_server_logic.h"
 #include "include/regex_utils.h"
 #include "include/Interfaces/recommendation_lists.h"
 #include "include/pure_sql.h"
-#include "include/url_utils.h"
 #include "querybuilder.h"
 #include "sql_abstractions/sql_query.h"
 #include <QDebug>

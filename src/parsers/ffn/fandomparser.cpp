@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "parsers/ffn/fandomparser.h"
 #include "Interfaces/fanfics.h"
-#include "url_utils.h"
 #include "regex_utils.h"
 #include <QRegularExpression>
 

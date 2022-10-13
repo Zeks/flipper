@@ -2,7 +2,7 @@
 #include "parsers/ffn/favparser_wrapper.h"
 #include "discord/discord_pagegetter.h"
 #include "discord/db_vendor.h"
-#include "environment.h"
+#include "flipper_client_logic.h"
 #include "timeutils.h"
 #include <QCoreApplication>
 namespace parsers{

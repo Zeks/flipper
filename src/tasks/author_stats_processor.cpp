@@ -25,7 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/fandoms.h"
 #include "include/Interfaces/authors.h"
 #include "include/Interfaces/pagetask_interface.h"
-#include "include/url_utils.h"
 #include "include/page_utils.h"
 #include "include/timeutils.h"
 #include "include/statistics_utils.h"

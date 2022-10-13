@@ -122,11 +122,11 @@ struct BastardizedCircularBuffer{
     int maxSize;
 };
 
-class CoreEnvironment : public QObject
+class FlipperClientLogic : public QObject
 {
 Q_OBJECT
 public:
-    CoreEnvironment(QObject* obj = nullptr);
+    FlipperClientLogic(QObject* obj = nullptr);
 
     struct Interfaces{
         // the interface classes used to avoid direct database access in the application

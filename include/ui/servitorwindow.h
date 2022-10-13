@@ -22,8 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 //#include <QtCharts>
 
 //using namespace QtCharts;
-#include "environment.h"
-#include "include/favholder.h"
+#include "flipper_client_logic.h"
+#include "include/app/server/rec_calculation_wrapper.h"
 #include "third_party/roaring/roaring.hh"
 #include "include/app/servitor/calc_data_holder.h"
 #include "tasks/author_genre_iteration_processor.h"
@@ -109,7 +109,7 @@ public:
     QList<uint32_t> keys;
 
     //QSharedPointer<database::IDBWrapper> dbInterface;
-    CoreEnvironment env;
+    FlipperClientLogic env;
     AuthorGenreIterationProcessor iteratorProcessor;
     QHash<int, std::array<double, 22>> authorGenreDataOriginal;
 

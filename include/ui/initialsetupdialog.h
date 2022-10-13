@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #pragma once
 #include <QDialog>
-#include "include/environment.h"
+#include "include/flipper_client_logic.h"
 
 namespace Ui {
 class InitialSetupDialog;
@@ -41,7 +41,7 @@ public:
     QVector<int> PickFicIDsFromString(QString str);
 
 
-    QSharedPointer<CoreEnvironment> env;
+    QSharedPointer<FlipperClientLogic> env;
     bool authorTestSuccessfull = false;
     bool initComplete = false;
     bool readsSlash = false;

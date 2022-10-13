@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "include/environment.h"
+#include "include/flipper_client_logic.h"
 #include "include/ui/tagwidget.h"
 #include "include/page_utils.h"
 #include "include/regex_utils.h"
@@ -45,8 +45,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/webview/pagegetter_w.h"
 #endif
 
-#include "include/url_utils.h"
-
 #include "sql_abstractions/sql_query.h"
 #include <QSqlError>
 #include <QTextCodec>
@@ -60,7 +58,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QStandardPaths>
 
 
-void CoreEnvironment::InitMetatypes()
+void FlipperClientLogic::InitMetatypes()
 {
     qRegisterMetaType<WebPage>("WebPage");
     qRegisterMetaType<PageResult>("PageResult");
@@ -69,7 +67,7 @@ void CoreEnvironment::InitMetatypes()
     qRegisterMetaType<FandomParseTaskResult>("FandomParseTaskResult");
 }
 
-void CoreEnvironment::LoadData()
+void FlipperClientLogic::LoadData()
 {
     ficScores= interfaces.fanfics->GetScoresForFics();
 
@@ -204,7 +202,7 @@ void CoreEnvironment::LoadData()
 //    QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
 //};
 
-void CoreEnvironment::LoadHistoryFrame(FilterFrame frame)
+void FlipperClientLogic::LoadHistoryFrame(FilterFrame frame)
 {
     filter = frame.filter;
     fanfics = frame.fanfics;
@@ -214,12 +212,12 @@ void CoreEnvironment::LoadHistoryFrame(FilterFrame frame)
     currentQuery = frame.currentQuery;
 }
 
-CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj), searchHistory(250)
+FlipperClientLogic::FlipperClientLogic(QObject *obj): QObject(obj), searchHistory(250)
 {
     rngGenerator.reset(new core::DefaultRNGgenerator);
 }
 
-sql::Database CoreEnvironment::GetUserDatabase() const
+sql::Database FlipperClientLogic::GetUserDatabase() const
 {
     return interfaces.userDb;
 }
@@ -231,7 +229,7 @@ static inline QString CreateConnectString(QString ip,QString port)
     return server_address;
 }
 
-bool CoreEnvironment::Init()
+bool FlipperClientLogic::Init()
 {
     InitMetatypes();
 
@@ -313,7 +311,7 @@ bool CoreEnvironment::Init()
     return true;
 }
 
-void CoreEnvironment::InitInterfaces()
+void FlipperClientLogic::InitInterfaces()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
 
@@ -343,7 +341,7 @@ void CoreEnvironment::InitInterfaces()
 
 }
 
-void CoreEnvironment::InstantiateClientDatabases(QString folder)
+void FlipperClientLogic::InstantiateClientDatabases(QString folder)
 {
     interfaces.userDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile(folder, "UserDB", QDir::currentPath() + "/dbcode/user_db_init.sql", "", true);
     userToken = sql::GetUserToken(interfaces.userDb).data;
@@ -351,7 +349,7 @@ void CoreEnvironment::InstantiateClientDatabases(QString folder)
     interfaces.pageCache = database::sqlite::InitAndUpdateSqliteDatabaseForFile(folder, "PageCache", QDir::currentPath()  + "/dbcode/pagecacheinit.sql", "PageCache", false);
 }
 
-int CoreEnvironment::GetResultCount()
+int FlipperClientLogic::GetResultCount()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
 
@@ -393,7 +391,7 @@ int CoreEnvironment::GetResultCount()
     filter.scoresHash = ficScores;
     return ficSource->GetFicCount(filter);
 }
-void CoreEnvironment::UseAuthorTask(PageTaskPtr task)
+void FlipperClientLogic::UseAuthorTask(PageTaskPtr task)
 {
     sql::Database db = sql::Database::database();
     sql::Database tasksDb = sql::Database::database("Tasks");
@@ -403,14 +401,14 @@ void CoreEnvironment::UseAuthorTask(PageTaskPtr task)
                                      interfaces.fandoms,
                                      interfaces.authors,
                                      interfaces.pageTask);
-    connect(&authorLoader, &AuthorLoadProcessor::requestProgressbar, this, &CoreEnvironment::requestProgressbar);
-    connect(&authorLoader, &AuthorLoadProcessor::updateCounter, this, &CoreEnvironment::updateCounter);
-    connect(&authorLoader, &AuthorLoadProcessor::updateInfo, this, &CoreEnvironment::updateInfo);
-    connect(&authorLoader, &AuthorLoadProcessor::resetEditorText, this, &CoreEnvironment::resetEditorText);
+    connect(&authorLoader, &AuthorLoadProcessor::requestProgressbar, this, &FlipperClientLogic::requestProgressbar);
+    connect(&authorLoader, &AuthorLoadProcessor::updateCounter, this, &FlipperClientLogic::updateCounter);
+    connect(&authorLoader, &AuthorLoadProcessor::updateInfo, this, &FlipperClientLogic::updateInfo);
+    connect(&authorLoader, &AuthorLoadProcessor::resetEditorText, this, &FlipperClientLogic::resetEditorText);
     authorLoader.Run(task);
 }
 
-void CoreEnvironment::LoadMoreAuthors(QString listName, fetching::CacheStrategy cacheStrategy)
+void FlipperClientLogic::LoadMoreAuthors(QString listName, fetching::CacheStrategy cacheStrategy)
 {
     filter.mode = core::StoryFilter::filtering_in_recommendations;
     interfaces.recs->SetCurrentRecommendationList(interfaces.recs->GetListIdForName(listName));
@@ -430,7 +428,7 @@ void CoreEnvironment::LoadMoreAuthors(QString listName, fetching::CacheStrategy 
     UseAuthorTask(pageTask);
 }
 
-void CoreEnvironment::LoadAllLinkedAuthors(fetching::CacheStrategy cacheStrategy)
+void FlipperClientLogic::LoadAllLinkedAuthors(fetching::CacheStrategy cacheStrategy)
 {
     filter.mode = core::StoryFilter::filtering_in_recommendations;
     QStringList authorUrls;
@@ -460,7 +458,7 @@ void CoreEnvironment::LoadAllLinkedAuthors(fetching::CacheStrategy cacheStrategy
     UseAuthorTask(pageTask);
 }
 
-void CoreEnvironment::LoadAllLinkedAuthorsMultiFromCache()
+void FlipperClientLogic::LoadAllLinkedAuthorsMultiFromCache()
 {
     sql::Database db = sql::Database::database();
     AuthorCacheReprocessor reprocessor(db,
@@ -475,7 +473,7 @@ void CoreEnvironment::LoadAllLinkedAuthorsMultiFromCache()
 
 
 
-void CoreEnvironment::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater)
+void FlipperClientLogic::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater)
 {
     auto authors = interfaces.authors->GetAllAuthors("ffn");
     emit updateInfo("Authors: " + QString::number(authors.size()));
@@ -493,7 +491,7 @@ void CoreEnvironment::UpdateAllAuthorsWith(std::function<void(QSharedPointer<cor
 }
 
 
-void CoreEnvironment::ReprocessAuthorNamesFromTheirPages()
+void FlipperClientLogic::ReprocessAuthorNamesFromTheirPages()
 {
     auto functor = [&](QSharedPointer<core::Author> author, WebPage webPage){
         //auto splittings = SplitJob(webPage.content);
@@ -508,7 +506,7 @@ void CoreEnvironment::ReprocessAuthorNamesFromTheirPages()
 
 
 
-void CoreEnvironment::ProcessListIntoRecommendations(QString list)
+void FlipperClientLogic::ProcessListIntoRecommendations(QString list)
 {
     QFile data(list);
     sql::Database db = sql::Database::database();
@@ -559,7 +557,7 @@ void CoreEnvironment::ProcessListIntoRecommendations(QString list)
     }
 }
 
-QVector<int> CoreEnvironment::GetSourceFicsFromFile(QString filename)
+QVector<int> FlipperClientLogic::GetSourceFicsFromFile(QString filename)
 {
     //QFile data("lists/source.txt");
     QFile data(filename);
@@ -591,7 +589,7 @@ QVector<int> CoreEnvironment::GetSourceFicsFromFile(QString filename)
     return sourceList;
 }
 
-int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params,QVector<int> sourceFics)
+int FlipperClientLogic::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params,QVector<int> sourceFics)
 {
 
     qDebug() << "At start list id is: " << params->id;
@@ -682,7 +680,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     return params->id;
 }
 
-core::FavListDetails CoreEnvironment::GetStatsForFicList(QVector<int> sourceFics)
+core::FavListDetails FlipperClientLogic::GetStatsForFicList(QVector<int> sourceFics)
 {
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     QVector<core::Identity> pack;
@@ -699,7 +697,7 @@ core::FavListDetails CoreEnvironment::GetStatsForFicList(QVector<int> sourceFics
     return core::FavListDetails();
 }
 
-int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
+int FlipperClientLogic::BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
 {
     sql::Database db = sql::Database::database();
     database::Transaction transaction(db);
@@ -755,13 +753,13 @@ int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::Recom
 }
 
 
-int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params,
+int FlipperClientLogic::BuildRecommendations(QSharedPointer<core::RecommendationList> params,
                                           QVector<int> sourceFics)
 {
     return BuildRecommendationsServerFetch(params,sourceFics);
 }
 
-int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::RecommendationList> list,
+int FlipperClientLogic::BuildDiagnosticsForRecList(QSharedPointer<core::RecommendationList> list,
                                                 QVector<int> sourceFics)
 {
     list->id = interfaces.recs->GetListIdForName(list->name);
@@ -813,7 +811,7 @@ int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::Recommendat
 
 }
 
-bool CoreEnvironment::ResumeUnfinishedTasks()
+bool FlipperClientLogic::ResumeUnfinishedTasks()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(settings.value("Settings/skipUnfinishedTasksCheck",true).toBool())
@@ -865,7 +863,7 @@ bool CoreEnvironment::ResumeUnfinishedTasks()
     return true;
 }
 
-void CoreEnvironment::CreateSimilarListForGivenFic(int id, sql::Database db)
+void FlipperClientLogic::CreateSimilarListForGivenFic(int id, sql::Database db)
 {
     database::Transaction transaction(db);
     QSharedPointer<core::RecommendationList> params = core::RecommendationList::NewRecList();
@@ -880,7 +878,7 @@ void CoreEnvironment::CreateSimilarListForGivenFic(int id, sql::Database db)
     transaction.finalize();
 }
 
-QVector<int> CoreEnvironment::GetListSourceFFNIds(int listId)
+QVector<int> FlipperClientLogic::GetListSourceFFNIds(int listId)
 {
     QVector<int> result;
     auto sources = interfaces.recs->GetAllSourceFicIDs(listId);
@@ -902,7 +900,7 @@ QVector<int> CoreEnvironment::GetListSourceFFNIds(int listId)
     return result;
 }
 
-QVector<int> CoreEnvironment::GetFFNIds(QSet<int> sources)
+QVector<int> FlipperClientLogic::GetFFNIds(QSet<int> sources)
 {
     QVector<int> result;
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
@@ -922,7 +920,7 @@ QVector<int> CoreEnvironment::GetFFNIds(QSet<int> sources)
     return result;
 }
 
-QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLabel* infoTarget, bool silent)
+QSet<QString>  FlipperClientLogic::LoadAuthorFicIdsForRecCreation(QString url, QLabel* infoTarget, bool silent)
 {
     auto result = LoadAuthorFics(url);
     QSet<QString> urlResult;
@@ -1020,7 +1018,7 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
     return urlResult;
 }
 
-bool CoreEnvironment::TestAuthorID(QString id)
+bool FlipperClientLogic::TestAuthorID(QString id)
 {
     QString url = "https://www.fanfiction.net/u/" + id;
     WebPage page;
@@ -1039,7 +1037,7 @@ bool CoreEnvironment::TestAuthorID(QString id)
 //    QMessageBox::warning(nullptr, "Warning!", "URL is not an FFN author url\nNeeeds to be a https://www.fanfiction.net/u/NUMERIC_ID");
 //    return result;
 //}
-bool CoreEnvironment::TestAuthorID(QLineEdit * input, QLabel * lblStatus)
+bool FlipperClientLogic::TestAuthorID(QLineEdit * input, QLabel * lblStatus)
 {
     auto userID = input->text();
     //https://www.fanfiction.net/u/4507073/
@@ -1064,7 +1062,7 @@ bool CoreEnvironment::TestAuthorID(QLineEdit * input, QLabel * lblStatus)
     return true;
 }
 
-QList<QSharedPointer<core::Fanfic> > CoreEnvironment::LoadAuthorFics(QString url)
+QList<QSharedPointer<core::Fanfic> > FlipperClientLogic::LoadAuthorFics(QString url)
 {
     QStringList result;
     WebPage page;
@@ -1082,7 +1080,7 @@ QList<QSharedPointer<core::Fanfic> > CoreEnvironment::LoadAuthorFics(QString url
     return parser.processedStuff;
 }
 
-PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate,
+PageTaskPtr FlipperClientLogic::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate,
                                                 fetching::CacheStrategy cacheStrategy,
                                                 QString wordCutoff)
 {
@@ -1109,7 +1107,7 @@ PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDat
     return result;
 }
 
-void CoreEnvironment::FillDBIDsForTags()
+void FlipperClientLogic::FillDBIDsForTags()
 {
     database::Transaction transaction(interfaces.tags->db);
     auto pack = interfaces.tags->GetAllFicsThatDontHaveDBID();
@@ -1119,7 +1117,7 @@ void CoreEnvironment::FillDBIDsForTags()
     transaction.finalize();
 }
 
-QList<int> CoreEnvironment::GetDBIDsForFics(QVector<int> ids)
+QList<int> FlipperClientLogic::GetDBIDsForFics(QVector<int> ids)
 {
     QVector<core::Identity> pack;
     pack.resize(ids.size());
@@ -1141,7 +1139,7 @@ QList<int> CoreEnvironment::GetDBIDsForFics(QVector<int> ids)
     return result;
 }
 
-QSet<int> CoreEnvironment::GetAuthorsContainingFicFromRecList(int fic, QString recList)
+QSet<int> FlipperClientLogic::GetAuthorsContainingFicFromRecList(int fic, QString recList)
 {
     auto currentList = interfaces.recs->GetListIdForName(recList);
     auto authors = interfaces.recs->GetAuthorsForRecommendationListClient(currentList);
@@ -1150,7 +1148,7 @@ QSet<int> CoreEnvironment::GetAuthorsContainingFicFromRecList(int fic, QString r
     return resultingAuthors;
 }
 
-QSet<int> CoreEnvironment::GetFicsForTags(QStringList tags)
+QSet<int> FlipperClientLogic::GetFicsForTags(QStringList tags)
 {
     interfaces::TagIDFetcherSettings tagFetcherSettings;
     tagFetcherSettings.tags = tags;
@@ -1160,7 +1158,7 @@ QSet<int> CoreEnvironment::GetFicsForTags(QStringList tags)
     return fics;
 }
 
-QSet<int> CoreEnvironment::GetFicsForNegativeTags()
+QSet<int> FlipperClientLogic::GetFicsForNegativeTags()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
@@ -1169,12 +1167,12 @@ QSet<int> CoreEnvironment::GetFicsForNegativeTags()
     return majorNegativeFics;
 }
 
-QSet<int> CoreEnvironment::GetIgnoredDeadFics()
+QSet<int> FlipperClientLogic::GetIgnoredDeadFics()
 {
     return GetFicsForTags({"Limbo"});
 }
 
-void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fanfic>& fanfics)
+void FlipperClientLogic::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fanfic>& fanfics)
 {
     interfaces.recs->FetchRecommendationsBreakdown(&fanfics, filter.mainListId);
     for(auto& fic : fanfics)
@@ -1187,7 +1185,7 @@ void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, Q
     }
 }
 
-int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
+int FlipperClientLogic::CreateDefaultRecommendationsForCurrentUser()
 {
     auto user = interfaces.recs->GetUserProfile();
     if(user < 1)
@@ -1218,7 +1216,7 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
     return result;
 }
 
-void CoreEnvironment::RefreshSnoozes()
+void FlipperClientLogic::RefreshSnoozes()
 {
     auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo(false);
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
@@ -1226,14 +1224,14 @@ void CoreEnvironment::RefreshSnoozes()
     interfaces.fanfics->WriteExpiredSnoozes(expiredSnoozes);
 }
 
-void CoreEnvironment::UseFandomTask(PageTaskPtr task)
+void FlipperClientLogic::UseFandomTask(PageTaskPtr task)
 {
     sql::Database db = sql::Database::database();
     FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask);
 
-    connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &CoreEnvironment::requestProgressbar);
-    connect(&proc, &FandomLoadProcessor::updateCounter, this, &CoreEnvironment::updateCounter);
-    connect(&proc, &FandomLoadProcessor::updateInfo, this, &CoreEnvironment::updateInfo);
+    connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &FlipperClientLogic::requestProgressbar);
+    connect(&proc, &FandomLoadProcessor::updateCounter, this, &FlipperClientLogic::updateCounter);
+    connect(&proc, &FandomLoadProcessor::updateInfo, this, &FlipperClientLogic::updateInfo);
     proc.Run(task);
 }
 
@@ -1250,7 +1248,7 @@ static QString CreatePrototypeWithSearchParams(QString cutoffText)
     return resultString;
 }
 
-PageTaskPtr CoreEnvironment::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms,
+PageTaskPtr FlipperClientLogic::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms,
                                                   QString taskComment,
                                                   bool allowCacheRefresh,
                                                   fetching::CacheStrategy cacheStrategy,
@@ -1261,9 +1259,9 @@ PageTaskPtr CoreEnvironment::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms
     sql::Database db = sql::Database::database();
     FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask);
 
-    connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &CoreEnvironment::requestProgressbar);
-    connect(&proc, &FandomLoadProcessor::updateCounter, this, &CoreEnvironment::updateCounter);
-    connect(&proc, &FandomLoadProcessor::updateInfo, this, &CoreEnvironment::updateInfo);
+    connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &FlipperClientLogic::requestProgressbar);
+    connect(&proc, &FandomLoadProcessor::updateCounter, this, &FlipperClientLogic::updateCounter);
+    connect(&proc, &FandomLoadProcessor::updateInfo, this, &FlipperClientLogic::updateInfo);
 
     auto result = proc.CreatePageTaskFromFandoms(fandoms,
                                                  CreatePrototypeWithSearchParams(cutoffText),
@@ -1277,7 +1275,7 @@ PageTaskPtr CoreEnvironment::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms
 }
 
 
-void CoreEnvironment::Log(QString value)
+void FlipperClientLogic::Log(QString value)
 {
     qDebug() << value;
 }

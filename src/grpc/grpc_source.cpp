@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/grpc/grpc_source.h"
-#include "include/url_utils.h"
 #include "include/Interfaces/fandoms.h"
 #include "include/tokenkeeper.h"
 #include "include/servers/token_processing.h"

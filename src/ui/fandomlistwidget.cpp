@@ -7,7 +7,7 @@
 #include "Interfaces/fandom_lists.h"
 #include "Interfaces/fandoms.h"
 #include "GlobalHeaders/snippets_templates.h"
-#include "environment.h"
+#include "flipper_client_logic.h"
 #include <QMouseEvent>
 #include <QStyledItemDelegate>
 #include <QPainter>

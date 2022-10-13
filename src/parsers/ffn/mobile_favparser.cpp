@@ -1,5 +1,5 @@
 #include "parsers/ffn/mobile_favparser.h"
-#include "environment.h"
+#include "flipper_client_logic.h"
 #include "pagegetter.h"
 #include "timeutils.h"
 #include <QCoreApplication>

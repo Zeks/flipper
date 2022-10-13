@@ -42,10 +42,10 @@ namespace core{
 
 
 class RecommendationList;
-class RecCalculator
+class RecCalculationWrapper
 {
 public:
-    RecCalculator(QString settingsFile = "", QSharedPointer<interfaces::Authors> authors = {}, QSharedPointer<interfaces::Fanfics> fanfics = {})
+    RecCalculationWrapper(QString settingsFile = "", QSharedPointer<interfaces::Authors> authors = {}, QSharedPointer<interfaces::Fanfics> fanfics = {})
         : holder(settingsFile, authors, fanfics){}
     void CreateTempDataDir();
     void LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface);
@@ -68,4 +68,4 @@ public:
 
 
 }
-BIND_TO_SELF_SINGLE(core::RecCalculator);
+BIND_TO_SELF_SINGLE(core::RecCalculationWrapper);

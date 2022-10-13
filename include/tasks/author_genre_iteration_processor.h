@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QSharedPointer>
 
 #include "include/pageconsumer.h"
-#include "include/environment.h"
+#include "include/flipper_client_logic.h"
 #include "include/core/section.h"
 #include "third_party/roaring/roaring.hh"
 

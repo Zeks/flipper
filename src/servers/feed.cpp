@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "servers/feed.h"
 #include "servers/token_processing.h"
 #include "servers/database_context.h"
-#include "favholder.h"
+#include "app/server/rec_calculation_wrapper.h"
 
 #include "tokenkeeper.h"
 #include "timeutils.h"
@@ -76,7 +76,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     auto mainDb = database::sqlite::InitAndUpdateSqliteDatabaseForFile("database","CrawlerDB","dbcode/dbinit.sql", GetDbNameFromCurrentThread(), true);
     QLOG_TRACE() << 1;
 
-    An<core::RecCalculator> calculator;
+    An<core::RecCalculationWrapper> calculator;
     auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authors->db = mainDb;
     QLOG_TRACE() << 2;
@@ -314,7 +314,7 @@ grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const P
 {
     Q_UNUSED(context);
     QLOG_INFO() << "Starting user matches";
-    An<core::RecCalculator> holder;
+    An<core::RecCalculationWrapper> holder;
     QHash<int, core::FavouritesMatchResult> fics;
     QLOG_INFO() << "received user task of size: " << task->test_users_size();
     Roaring r;
@@ -529,7 +529,7 @@ grpc::Status FeederService::DiagnosticRecommendationListCreation(grpc::ServerCon
     if(task->data().id_packs().ffn_ids_size() == 0)
         return Status::OK;
 
-    An<core::RecCalculator> recCalculator;
+    An<core::RecCalculationWrapper> recCalculator;
 
     auto recommendationsCreationParams = basicRecommendationsParamReader(reqContext, task);
     auto ficResult = ficPackReader(reqContext, task);
@@ -622,7 +622,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     //QLOG_INFO() << "Received source fics: " << ficResult.sourceFics.toList();
     //recommendationsCreationParams->Log();
 
-    An<core::RecCalculator> recCalculator;
+    An<core::RecCalculationWrapper> recCalculator;
     auto moodData = CalcMoodDistributionForFicList(ficResult.fetchedFics.keys(), recCalculator->holder.genreComposites);
 
 
@@ -751,7 +751,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     QLOG_INFO() << "Byte size will be: " << response->ByteSize();
     #endif
     #ifdef Q_OS_LINUX
-    QLOG_INFO() << "Byte size will be: " << response->ByteSize();
+    QLOG_INFO() << "Byte size will be: " << response->ByteSizeLong();
     #endif
     return Status::OK;
 }

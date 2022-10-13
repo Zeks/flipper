@@ -89,7 +89,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/tasks/recommendations_reload_precessor.h"
 #include "include/tasks/fandom_list_reload_processor.h"
 #include "include/page_utils.h"
-#include "include/environment.h"
+#include "include/flipper_client_logic.h"
 #include "include/generic_utils.h"
 #include "include/statistics_utils.h"
 
@@ -433,10 +433,10 @@ void MainWindow::InitConnections()
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
     connect(ui->edtRecsContents, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
 
-    connect(env.data(), &CoreEnvironment::resetEditorText, this, &MainWindow::OnResetTextEditor);
-    connect(env.data(), &CoreEnvironment::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
-    connect(env.data(), &CoreEnvironment::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
-    connect(env.data(), &CoreEnvironment::updateInfo, this, &MainWindow::OnNewProgressString);
+    connect(env.data(), &FlipperClientLogic::resetEditorText, this, &MainWindow::OnResetTextEditor);
+    connect(env.data(), &FlipperClientLogic::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
+    connect(env.data(), &FlipperClientLogic::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
+    connect(env.data(), &FlipperClientLogic::updateInfo, this, &MainWindow::OnNewProgressString);
     ui->chkApplyLocalSlashFilter->setVisible(false);
     ui->chkOnlySlashLocal->setVisible(false);
     ui->chkInvertedSlashFilterLocal->setVisible(false);

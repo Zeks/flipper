@@ -35,7 +35,7 @@ private:
     bool SetupForValidDatabase();
     bool SetupMainWindow();
 
-    QSharedPointer<CoreEnvironment> coreEnvironment;
+    QSharedPointer<FlipperClientLogic> coreEnvironment;
     QSharedPointer<MainWindow> w;
 
     bool hasDBFile = false;
