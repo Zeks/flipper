@@ -154,6 +154,8 @@ public:
     void LoadHistoryFrame(FilterFrame);
     int GetResultCount();
 
+    void ReinitTagList();
+
     void LoadMoreAuthors(QString listname, fetching::CacheStrategy cacheStrategy);
     void LoadAllLinkedAuthors(fetching::CacheStrategy cacheStrategy);
     void LoadAllLinkedAuthorsMultiFromCache();
@@ -229,6 +231,7 @@ public:
 
     QSharedPointer<FicSource> ficSource;
     QSharedPointer<core::IRNGGenerator> rngGenerator;
+    QStringList tagList; // user tags currently used in the system
     QString userToken;
     QSet<int> likedAuthors;
     QHash<int, int> ficScores;

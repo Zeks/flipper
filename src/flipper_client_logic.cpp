@@ -391,6 +391,11 @@ int FlipperClientLogic::GetResultCount()
     filter.scoresHash = ficScores;
     return ficSource->GetFicCount(filter);
 }
+
+void FlipperClientLogic::ReinitTagList()
+{
+    tagList = interfaces.tags->ReadUserTags();
+}
 void FlipperClientLogic::UseAuthorTask(PageTaskPtr task)
 {
     sql::Database db = sql::Database::database();

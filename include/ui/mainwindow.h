@@ -325,7 +325,7 @@ private:
 
     Ui::MainWindow *ui;
 
-    QStringList tagList; // user tags used in the system
+    //QStringList tagList; // user tags used in the system
     QTimer taskTimer; // used to initiate the warnign about unfinished tasks after the app window is shown
 
 
@@ -333,9 +333,9 @@ private:
     QMovie refreshSpin; // an indicator that some work is in progress
     // using the Movie because it can animate while stuff is happening otherwise without much hassle from my side
 
-    QSharedPointer<TableDataInterface> typetableInterface;
-    FicModel* typetableModel = nullptr; // model for fanfics to be passed into qml
-    TableDataListHolder<QVector, core::Fanfic>* holder = nullptr; // an interface class that model uses to access the data
+    QSharedPointer<TableDataInterface> qmlFanficModelInterface;
+    FicModel* qmlFanficModel = nullptr; // model for fanfics to be passed into qml
+    TableDataListHolder<QVector, core::Fanfic>* backendFanficDataKeeper = nullptr; // an interface class that model uses to access the data
 
     QStringListModel* recentFandomsModel= nullptr; // used in the listview that shows the recently search fandoms
     QStringListModel* ignoredFandomsModel= nullptr;
