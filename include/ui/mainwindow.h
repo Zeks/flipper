@@ -68,13 +68,6 @@ class MainWindow;
 }
 
 
-struct BuildRecommendationParams{
-    QString listName;
-    int minTagCountMatch;
-    int alwaysPickAuthorOnThisMatchCount;
-    double threshholdRatio;
-};
-
 struct FilterErrors{
     void AddError(QString error){
         errors += error;
@@ -83,8 +76,6 @@ struct FilterErrors{
     bool hasErrors = false;
     QStringList errors;
 };
-
-
 
 class ReclistCreationUIHelper
 {
@@ -108,27 +99,24 @@ public:
 };
 
 
-struct InitializationProgress{
-    bool fandomListsReady = false;
-    bool tagWidgetInterfacesFilled = false;
-    bool fandomlistWidgetInitialized = false;
-    bool recsUiHelperFilled = false;
 
-};
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+    struct InitializationProgress{
+        bool fandomListsReady = false;
+        bool tagWidgetInterfacesFilled = false;
+        bool fandomlistWidgetInitialized = false;
+        bool recsUiHelperFilled = false;
+
+    };
 
 public:
-    // current search mode
-    // defines which search elemnts are to be used
-    // and how
-    enum ELastFilterButtonPressed
-    {
-        lfbp_search = 0,
-        lfbp_recs = 1
-    };
+    // this is public to let external setup happen
+    QSharedPointer<FlipperClientLogic> env;
+
+
     explicit MainWindow(QWidget *parent = nullptr);
 
     //initalizes widgets
@@ -136,7 +124,7 @@ public:
 
 
     ~MainWindow();
-    void InitFanficListSortingCombobox();
+
     // used to set up signal/slot connections
     void InitConnections();
     // sets up the timer that later triggers a check if there are unfinished tasks
@@ -149,96 +137,119 @@ public:
     void SetFinishedStatus();
     // used to indicate failure of the performed action to the user
     void SetFailureStatus();
+
     void DisplayInitialFicSelection();
     void DisplayRandomFicsForCurrentFilter();
     void QueueDefaultRecommendations();
 
-    QSharedPointer<FlipperClientLogic> env;
-    // this is used to make sure functions are not called in the wrong order
-    // after they are "optimized"
-    InitializationProgress initProgress;;
+
 
 private:
-
-    void EnableClearButtonForRelevantLineEdits();
-    void PerformDefaultElementHide();
-    void InstallCustomPalettesAndStylesheets();
-    void InitializeRecCreationWidgetWithDefaultState();
-    void EnableImmediateTooltipsForRelevantElements();
-    void PerformPatreonColorization();
-    void PerformDevBuildUiAdjustment();
-    void InitializeHistoryNavigationButtons();
-    void InstantiateModels();
-    void InitializeDefaultSplitterSizes();
-    void VerifyUserFFNId();
-    void InitInterfacesForTagsWidget(QSharedPointer<FlipperClientLogic> env);
-    void InitFandomListWidget(QSharedPointer<FlipperClientLogic> env);
-    void ReadFandomListsIntoUI(QSharedPointer<FlipperClientLogic> env);
-    void CreateStatusBar(QSharedPointer<FlipperClientLogic> env);
-
-    // sets up the model for fanfics
-    void SetupFanficTable(QSharedPointer<FlipperClientLogic> env);
-
-    void FillContextMenuActions();
-
-    void InitializeQmlPropertiesFromSettings(QQuickWidget* qwFics);
-    void InitializeQmlConnectionsToCpp(QQuickWidget* qwFics);
-
-    // sets up the interface to access fic params from core::fic class
-    void SetupAccessorsForGenericFanficTable();
-    //bool event(QEvent * e);
-    // reads settings into a files
-    void ReadSettings();
-    // writes settings into a files
-    void WriteSettings();
-
-    // a unified function to get the name of the current fandom
-    // (without mentioning GUI element each time)
-    QString GetCurrentFandomName();
-    QString GetCrossoverFandomName();
-
-    int GetCurrentFandomID();
-    int GetCrossoverFandomID();
-
-
-    // a wrapper over pagegetter to request pages for fandom parsing
-    //bool RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
-
-    FandomParseTaskResult ProcessFandomSubTask(FandomParseTask);
-
-
-    void SaveCurrentQuery();
-    // use to actually query the search results from the database into fanfic list
+    // used to actually query the new search results from the database into the internal env object
     // placing results into the inetrface happens in PlaceResults
-    void LoadData();
-
-    void PlaceResults(); // places the currently filtered results into table
+    void FetchDataForFilters();
+    // actually places the currently filtered results into table
+    void PlaceResultsIntoTable();
 
     // used to query the information of total query size from database
     // to separate stuff into pages
     int GetResultCount();
 
+    // the four functions below are syntactic candy
+    // to access their params without knowing what eactly ui element is providing those
+    // and without the need to manually do custom conversions each time
+    QString GetCurrentFandomName();
+    QString GetCrossoverFandomName();
+    int GetCurrentFandomID();
+    int GetCrossoverFandomID();
+
+    // will store the current filtering state into a FilterFrame object and push it onto the history stack
+    void SaveCurrentFilteringFrame();
+    // will take a previously recorded filter frame and load all of its data into the ui
+    void LoadFrameIntoUI(const FilterFrame& frame);
+    // enables or disables the filter history navigation buttons
+    void SetPreviousEnabled(bool value);
+    void SetNextEnabled(bool value);
 
 
-//    // used to fill fandom database with new data from web
-//    void UpdateFandomList(UpdateFandomTask);
+    /////////////////////////////////// INITIALIZATION BLOCK///////////////////////////////
+    // init func for main combobox chaging the who app's fic sorting mode
+    void InitFanficListSortingCombobox();
 
-    // used to fill tagwidget
+    // used to setup "clear" button for line edits that is not shown by  default
+    // but necessary for a lot fo them in the application
+    void EnableClearButtonForRelevantLineEdits();
+    // window has quite a bit of ui elements that by deafult should be hidden
+    // leftover and development stuff
+    void PerformDefaultElementHide();
+    // sets up custom colors and styles for various elements
+    void InstallCustomPalettesAndStylesheets();
+    // sets up the helping wrapper for recommendation list part with pointers
+    // calls the default visibility setup function
+    void InitializeRecCreationWidgetWithDefaultState();
+    // some of the ui elements of the main window require tooltips to be displayed immediately
+    // as opposed to after a couple seconds of hovering. this ensures that
+    void EnableImmediateTooltipsForRelevantElements();
+    // will check how much times the app has been run and colorize patreon tab if it is enough
+    void PerformPatreonColorization();
+    // will hide dev stuff from non dev builds
+    // kind of stale - todo
+    void PerformDevBuildUiAdjustment();
+    // will disable the back/forward buttons initially
+    void InitializeHistoryNavigationButtons();
+    // new's the poiinters for models ised in this window
+    void InstantiateModels();
+    // initializes  the app's filters with defaults
+    void InitializeDefaultSplitterSizes();
+    // will acess user's id from env and try to parse a page from ffn to make sure the profile exists
+    // will fail depending on the cloudflare's mood on any given day
+    // failure i not critical for app's operations
+    // it will just make ID red
+    void VerifyUserFFNId();
+    // sets up tag widget with pointers to classes it needs to acess the database
+    void InitInterfacesForTagsWidget(QSharedPointer<FlipperClientLogic> env);
+    // initializes pointers to classes it needs to acess the database
+    // initializes the tree inside the widget
+    void InitFandomListWidget(QSharedPointer<FlipperClientLogic> env);
+    // will acess the database to fill various comboboxes with fandom list data
+    void ReadFandomListsIntoUI(QSharedPointer<FlipperClientLogic> env);
+    // creates status bar for the applications
+    void CreateStatusBar(QSharedPointer<FlipperClientLogic> env);
+    // sets up the generic table model to work for for fanfics
+    void SetupFanficTable(QSharedPointer<FlipperClientLogic> env);
+    // sets up the interface to access fic params from core::fic class
+    // called from the func above
+    void SetupAccessorsForGenericFanficTable();
+
+    // fills up several menus with their actions
+    void FillContextMenuActions();
+
+    // reads properties for qml root context that are stored in settings
+    // this needs to be called before the qml file is loaded in quickwidget
+    void InitializeQmlPropertiesFromSettings(QQuickWidget* qwFics);
+    // sets up connections between qml and c++ parts
+    void InitializeQmlConnectionsToCpp(QQuickWidget* qwFics);
+
+    // used to fill tagwidget with tags read from the user database
     void ReadTagsIntoUI(QSharedPointer<FlipperClientLogic> env);
 
+    // fills the sort by list combobox with names of recommendation lists
+    void ReadRecommendationListStateIntoUI(QSharedPointer<FlipperClientLogic> env);
+
+    // reads settings into a files
+    void ReadSettings();
+    // writes settings into a files
+    void WriteSettings();
+    /////////////////////////////////// END INITIALIZATION BLOCK///////////////////////////////
+
     // used to set tag to a certain fic
-    void SetTag(int id, QString tag, bool silent = false);
+    void SetTag(int ficId, QString tag, bool silent = false);
 
     // used to unset tag from a certain fic
-    void UnsetTag(int id, QString tag);
+    void UnsetTag(int ficId, QString tag);
 
-    // used to call a widget that llows editing of lineedit contents in a larger box
+    // used to call a widget that allows editing of lineedit contents in a larger box
     void CallExpandedWidget();
-
-    // starts page worker thread execution
-    void StartPageWorker();
-    // stops page worker thread execution
-    void StopPageWorker();
 
     // shows the progress bar and set its max value to maxValue
     void ReinitProgressbar(int maxValue);
@@ -249,63 +260,88 @@ private:
     // simply adds a line to QTextEdit with the results
     void AddToProgressLog(QString);
 
-    // fills the sort by list combobox with names of recommendation lists
-    void ReadRecommendationListStateIntoUI(QSharedPointer<FlipperClientLogic> env);
+
 
     // fills the authors list view with names from currently active recommendation list
+    // in reality only fills the model and nothing more
+    // listview is not possible for  a public flipper build
     void FillRecommenderListView(bool forceRefresh = false);
 
 
-    // a utility to pass a functor to all the authors
-    void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
-
-
-    // creates a recommendation list from passed params
-    int BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
-
     // collects information from the ui into a token to be passed to a query generator
+    // @listToUse will force a select for a different list than what is currently selected
+    // for service functions
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode,
-                                                bool useAuthorLink = false,
-                                                QString listToUse = QString(),
-                                                bool performFilterValidation = true);
+                                                QString listToUse = QString());
+    // will read the storyFilter token into the required ui state all around
     void ProcessStoryFilterIntoGUI(core::StoryFilter filter);
+    // will perform default initialization of every filtering ui element
+    void ResetFilterUItoDefaults(bool resetTagged = true);
 
+    // reads ui stateof the recommendations widget into an object storing the corresponding state
+    QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI(bool silent = false);
+
+    // warns and disallows some currently impossible filter cases
+    // that either make no sense or take too long
     FilterErrors ValidateFilter();
+
+    // used to clean up the textedit currently used for displaying fic urls
+    // whether it's the one in recommendations tab
+    // or the one in fic list analysys tab
     void ResetUrlListEditor(QTextBrowser*edit);
+    // fills the textedit currently used for displaying fic urls with provided urls
     void FillFicUrlsIntoRecsCreator(QTextBrowser *edit, const QSet<QString>&);
 
+    // given the target @textbrowser
+    // will read the usr profile id from @urlEdit
+    // and fill the text browser with favourites data parsed from that profile
+    // displays the resulting warnings in @infoLabel
+    void LoadFFNProfileIntoTextBrowser(QTextBrowser * textbrowser, QLineEdit *urlEdit, QLabel *infoLabel = nullptr);
+
+
+    // these two functions read either a string or textBrowser contents
+    // and fill the resulting list with lla the ffn fic ids found within its contents
+    QVector<int> PickFicIDsFromTextBrowser(QTextBrowser*);
+    QVector<int> PickFicIDsFromString(QString);
 
 
     // pushes fandom to top of recent and reinits the recent fandom listview
-    void ReinitRecent(QString name);
+    void PushAndReinitRecentFandoms(QString name);
 
 
+    // currently unused, but realistically could be any time
     bool AskYesNoQuestion(QString);
 
 
+    // given the fic id will create the simplest "recommendation list" for it
+    // and display it in the main listview
+    // todo, this currently pulls too much from env
+    // suggests a named function in env itself
     void CreateSimilarListForGivenFic(int);
 
-    void SetClientMode();
-    void ResetFilterUItoDefaults(bool resetTagged = true);
-    void DetectGenreSearchState();
-    void DetectSlashSearchState();
-    void LoadFFNProfileIntoTextBrowser(QTextBrowser *, QLineEdit *urlEdit, QLabel *infoLabel = nullptr);
-    QVector<int> PickFicIDsFromTextBrowser(QTextBrowser*);
-    QVector<int> PickFicIDsFromString(QString);
+
+    // depending on whether implied genre search is enabled or not
+    // enables or disables associated ui elements
+    void InitializeUiElementsForCurrentGenreSearchState();
+    // depending on the current slash filtering level
+    // will enabled or disable several ui elements
+    void InitializeUiElementsForCurrentSlashSearchState();
+
+
+    // will fill the "analysis" tab of flipper with statistical data about the given fics set
+    // todo this seems to have logic that is better living elsewhere
     void AnalyzeIdList(QVector<int>);
+    // will fill the "analysis" tab of flipper with statistical data about the currently filtered fic set
     void AnalyzeCurrentFilter();
 
+    // it's a thin wrapper over env->Buildrecommendation list with a warning
     bool CreateRecommendationList(QSharedPointer<core::RecommendationList> params,
                                   QVector<int> sources);
 
-    bool CreateDiagnosticRecommendationList(QSharedPointer<core::RecommendationList> params,
-                                  QVector<int> sources);
 
-    QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI(bool silent = false);
 
-    void LoadFrameIntoUI(const FilterFrame& frame);
-    void SetPreviousEnabled(bool value);
-    void SetNextEnabled(bool value);
+
+
     void FetchScoresForFics();
     bool CreateRecommendationListForCurrentMode();
     void PrepareUIToDisplayNewRecommendationList(QString name);
@@ -320,10 +356,12 @@ private:
     FicSourceResult PickSourcesFromTags();
 
 
-//    QHash<int, int> CreateListOfNotSlashFics();
-//    QHash<int, int> MatchSlashToNotSlash();
 
     Ui::MainWindow *ui;
+
+    // this is used to make sure functions are not called in the wrong order
+    // after they are "optimized"
+    InitializationProgress initProgress;;
 
     //QStringList tagList; // user tags used in the system
     QTimer taskTimer; // used to initiate the warnign about unfinished tasks after the app window is shown
@@ -464,25 +502,22 @@ private slots:
 
 
     // used to put urls for all authors in the current list into the clipboard
-    void OnCopyFavUrls();
+    // this is highly intrusive and should never be a part of the public build
+    // unless hidden by some obscure parameter
+    void OnCopyRecommenderUrls();
 
 
-    // used to toggle the UI elements dealing with fic randomization
+    // used to toggle the UI elements dealing with fic randomization on and off
     void on_chkRandomizeSelection_toggled(bool checked);
 
     void OnRemoveFandomFromRecentList();
-    //void OnRemoveFandomFromIgnoredList();
     void OnRemoveFandomFromSlashFilterIgnoredList();
 
 
     void OnFandomsContextMenu(const QPoint &pos);
-    //void OnIgnoredFandomsContextMenu(const QPoint &pos);
     void OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos);
 
-//    void UpdateCategory(QString cat,
-//                        FFNFandomIndexParserBase* parser,
-//                        QSharedPointer<interfaces::Fandoms> fandomInterface);
-    void OnOpenLogUrl(const QUrl&);
+    void OnOpenUrl(const QUrl&);
 
     void GenerateFormattedList();
     void OnFindSimilarClicked(QVariant);

@@ -224,7 +224,7 @@ void MainWindow::InitConnections()
         {
             env->filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
             if(env->filter.isValid)
-                LoadData();
+                FetchDataForFilters();
         }
         if(ui->wdgTagsPlaceholder->GetSelectedTags().size() == 0)
             on_pbLoadDatabase_clicked();
@@ -264,8 +264,8 @@ void MainWindow::InitConnections()
 
     //connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
     connect(ui->lvExcludedFandomsSlashFilter, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsSlashFilterContextMenu);
-    connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
-    connect(ui->edtRecsContents, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
+    connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenUrl);
+    connect(ui->edtRecsContents, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenUrl);
 
     connect(env.data(), &FlipperClientLogic::resetEditorText, this, &MainWindow::OnResetTextEditor);
     connect(env.data(), &FlipperClientLogic::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
@@ -352,15 +352,15 @@ void MainWindow::SetupFanficTable(QSharedPointer<FlipperClientLogic> env)
 
 
     backendFanficDataKeeper->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary"
-                       << "genre" << "characters" << "rated" << "published"
-                       << "updated" << "url" << "tags" << "wordCount" << "favourites"
-                       << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
-                       << "recommendationsMain" << "realGenres" << "author_id" << "minSlashLevel"
-                       << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score"
-                       << "snoozeExpired" << "snoozeMode" << "snoozeLimit" << "snoozeOrigin"
-                       << "notes" << "quotes" << "selected" << "recommendationsSecond"
-                       << "placeMain" << "placeSecond" << "placeOnFirstPedestal" << "placeOnSecondPedestal"
-                       << "ficIsSnoozed" );
+                                        << "genre" << "characters" << "rated" << "published"
+                                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
+                                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
+                                        << "recommendationsMain" << "realGenres" << "author_id" << "minSlashLevel"
+                                        << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score"
+                                        << "snoozeExpired" << "snoozeMode" << "snoozeLimit" << "snoozeOrigin"
+                                        << "notes" << "quotes" << "selected" << "recommendationsSecond"
+                                        << "placeMain" << "placeSecond" << "placeOnFirstPedestal" << "placeOnSecondPedestal"
+                                        << "ficIsSnoozed" );
 
 
 
@@ -384,10 +384,19 @@ void MainWindow::SetupFanficTable(QSharedPointer<FlipperClientLogic> env)
     env->ReinitTagList();
     qwFics->rootContext()->setContextProperty("tagModel", env->tagList);
     qwFics->rootContext()->setContextProperty("main", this);
+
+
+    InitializeQmlPropertiesFromSettings(qwFics);
     QUrl source("qrc:/qml/ficview.qml");
     qwFics->setSource(source);
 
-    InitializeQmlPropertiesFromSettings(qwFics);
+    QObject* windowObject= qwFics->rootObject();
+
+
+    // this needs to be set explicitly later than the rest of the sttings properties
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    windowObject->setProperty("magnetTag", uiSettings.value("Settings/magneticTag").toString());
     InitializeQmlConnectionsToCpp(qwFics);
 }
 
@@ -423,31 +432,30 @@ void MainWindow::InitializeQmlPropertiesFromSettings(QQuickWidget* qwFics)
     qwFics->rootContext()->setContextProperty("scanIconVisible",
                                               settings.value("Settings/scanIconVisible", true).toBool());
 
-    QObject* windowObject= qwFics->rootObject();
-    windowObject->setProperty("magnetTag", uiSettings.value("Settings/magneticTag").toString());
+
 
 }
 
 void MainWindow::InitializeQmlConnectionsToCpp(QQuickWidget *qwFics)
 {
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
-    connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant)));
-    connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
+    connect(childObject, SIGNAL(chapterChanged(QVariant,QVariant)), this, SLOT(OnChapterUpdated(QVariant,QVariant)));
+    connect(childObject, SIGNAL(tagAdded(QVariant,QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(heartDoubleClicked(QVariant)), this, SLOT(OnHeartDoubleClicked(QVariant)));
-    connect(childObject, SIGNAL(scoreAdjusted(QVariant, QVariant, QVariant)), this, SLOT(OnScoreAdjusted(QVariant, QVariant, QVariant)));
-    connect(childObject, SIGNAL(snoozeTypeChanged(QVariant, QVariant, QVariant)), this, SLOT(OnSnoozeTypeChanged(QVariant, QVariant, QVariant)));
+    connect(childObject, SIGNAL(scoreAdjusted(QVariant,QVariant, QVariant)), this, SLOT(OnScoreAdjusted(QVariant,QVariant,QVariant)));
+    connect(childObject, SIGNAL(snoozeTypeChanged(QVariant, QVariant, QVariant)), this, SLOT(OnSnoozeTypeChanged(QVariant,QVariant,QVariant)));
     connect(childObject, SIGNAL(addSnooze(QVariant)), this, SLOT(OnSnoozeAdded(QVariant)));
     connect(childObject, SIGNAL(removeSnooze(QVariant)), this, SLOT(OnSnoozeRemoved(QVariant)));
-    connect(childObject, SIGNAL(notesEdited(QVariant, QVariant)), this, SLOT(OnNotesEdited(QVariant, QVariant)));
+    connect(childObject, SIGNAL(notesEdited(QVariant,QVariant)), this, SLOT(OnNotesEdited(QVariant, QVariant)));
     connect(childObject, SIGNAL(newQRSource(QVariant)), this, SLOT(OnNewQRSource(QVariant)));
-    connect(childObject, SIGNAL(tagAddedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagAddInTagWidget(QVariant,QVariant)));
-    connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
+    connect(childObject, SIGNAL(tagAddedInTagWidget(QVariant,QVariant)), this, SLOT(OnTagAddInTagWidget(QVariant,QVariant)));
+    connect(childObject, SIGNAL(tagDeleted(QVariant,QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeletedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagRemoveInTagWidget(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
     connect(childObject, SIGNAL(findSimilarClicked(QVariant)), this, SLOT(OnFindSimilarClicked(QVariant)));
     connect(childObject, SIGNAL(refilter()), this, SLOT(OnQMLRefilter()));
     connect(childObject, SIGNAL(fandomToggled(QVariant)), this, SLOT(OnQMLFandomToggled(QVariant)));
-    connect(childObject, SIGNAL(authorToggled(QVariant, QVariant)), this, SLOT(OnQMLAuthorToggled(QVariant,QVariant)));
+    connect(childObject, SIGNAL(authorToggled(QVariant,QVariant)), this, SLOT(OnQMLAuthorToggled(QVariant,QVariant)));
 
     QObject* windowObject= qwFics->rootObject();
     connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
@@ -467,9 +475,9 @@ void MainWindow::OnDisplayNextPage()
         windowObject->setProperty("havePagesAfter", false);
 
     windowObject->setProperty("currentPage", env->pageOfCurrentQuery);
-    LoadData();
+    FetchDataForFilters();
     FetchScoresForFics();
-    PlaceResults();
+    PlaceResultsIntoTable();
     AnalyzeCurrentFilter();
 }
 
@@ -484,9 +492,9 @@ void MainWindow::OnDisplayPreviousPage()
     if(env->pageOfCurrentQuery == 0)
         windowObject->setProperty("havePagesBefore", false);
     windowObject->setProperty("currentPage", env->pageOfCurrentQuery);
-    LoadData();
+    FetchDataForFilters();
     FetchScoresForFics();
-    PlaceResults();
+    PlaceResultsIntoTable();
     AnalyzeCurrentFilter();
 }
 
@@ -541,9 +549,9 @@ void MainWindow::OnDisplayExactPage(int page)
     windowObject->setProperty("havePagesAfter", env->sizeOfCurrentQuery > env->filter.recordLimit * page);
     windowObject->setProperty("havePagesBefore", page > 0);
 
-    LoadData();
+    FetchDataForFilters();
     FetchScoresForFics();
-    PlaceResults();
+    PlaceResultsIntoTable();
 }
 
 MainWindow::~MainWindow()
@@ -567,7 +575,7 @@ void MainWindow::InitFanficListSortingCombobox()
     ui->cbSortMode->addItem("Gems", static_cast<int>(core::StoryFilter::sm_gems));
 }
 
-void MainWindow::SaveCurrentQuery()
+void MainWindow::SaveCurrentFilteringFrame()
 {
     FilterFrame frame;
     frame.filter = env->filter;
@@ -590,7 +598,7 @@ void MainWindow::SaveCurrentQuery()
 }
 
 
-void MainWindow::LoadData()
+void MainWindow::FetchDataForFilters()
 {
     if(ui->cbMinWordCount->currentText().trimmed().isEmpty())
         ui->cbMinWordCount->setCurrentText("0");
@@ -614,7 +622,7 @@ void MainWindow::LoadData()
 
     env->LoadData();
     FetchScoresForFics();
-    SaveCurrentQuery();
+    SaveCurrentFilteringFrame();
 
     if(env->searchHistory.Size() > 1)
         SetPreviousEnabled(true);
@@ -668,29 +676,16 @@ void MainWindow::ReadTagsIntoUI(QSharedPointer<FlipperClientLogic> env)
 
 }
 
-void MainWindow::SetTag(int id, QString tag, bool)
+void MainWindow::SetTag(int ficId, QString tag, bool)
 {
-    env->interfaces.tags->SetTagForFic(id, tag);
+    env->interfaces.tags->SetTagForFic(ficId, tag);
     env->ReinitTagList();
 }
 
-void MainWindow::UnsetTag(int id, QString tag)
+void MainWindow::UnsetTag(int ficId, QString tag)
 {
-    env->interfaces.tags->RemoveTagFromFic(id, tag);
+    env->interfaces.tags->RemoveTagFromFic(ficId, tag);
     env->ReinitTagList();
-}
-
-void MainWindow::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)>)
-{
-    TaskProgressGuard guard(this);
-    env->filter.mode = core::StoryFilter::filtering_in_recommendations;
-
-    env->ReprocessAuthorNamesFromTheirPages();
-
-    ShutdownProgressbar();
-    ui->edtResults->clear();
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
 }
 
 void MainWindow::OnCopyFicUrl(QString text)
@@ -833,8 +828,8 @@ void MainWindow::on_pbLoadDatabase_clicked()
     env->InstallNewStoryFilter(ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics));
     if(env->filter.isValid)
     {
-        LoadData();
-        PlaceResults();
+        FetchDataForFilters();
+        PlaceResultsIntoTable();
     }
     AnalyzeCurrentFilter();
     transaction.finalize();
@@ -911,7 +906,7 @@ void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
 
     env->InstallNewStoryFilter(ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics));
 
-    LoadData();
+    FetchDataForFilters();
     AnalyzeCurrentFilter();
 
 }
@@ -958,9 +953,9 @@ void MainWindow::OnGetUrlsForTags(bool idMode)
 
 void MainWindow::SetRecommenderFilteringMode(QStringList authors)
 {
-        SetIdFilteringMode(authors);
-        ui->cbIDMode->setCurrentIndex(2);
-        qwFics->rootObject()->setProperty("chartDisplay", false);
+    SetIdFilteringMode(authors);
+    ui->cbIDMode->setCurrentIndex(2);
+    qwFics->rootObject()->setProperty("chartDisplay", false);
 }
 
 void MainWindow::SetAuthorFilteringMode(QStringList authors)
@@ -1120,8 +1115,8 @@ void MainWindow::ReadSettings()
     reclistUIHelper.SetupVisibilityForRecsCreatorElements();
 
 
-    DetectGenreSearchState();
-    DetectSlashSearchState();
+    InitializeUiElementsForCurrentGenreSearchState();
+    InitializeUiElementsForCurrentSlashSearchState();
 
     if(!uiSettings.value("Settings/appsize").toSize().isNull())
         this->resize(uiSettings.value("Settings/appsize").toSize());
@@ -1320,7 +1315,7 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
     {
         SetRecommenderFilteringMode(authorList);
         env->InstallNewStoryFilter(ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics));
-        LoadData();
+        FetchDataForFilters();
     }
 
 
@@ -1462,7 +1457,7 @@ void MainWindow::OnTagRemoveInTagWidget(QVariant tag, QVariant row)
 }
 
 
-void MainWindow::ReinitRecent(QString name)
+void MainWindow::PushAndReinitRecentFandoms(QString name)
 {
     env->interfaces.fandoms->PushFandomToTopOfRecent(name);
     env->interfaces.fandoms->ReloadRecentFandoms();
@@ -1489,14 +1484,14 @@ bool MainWindow::AskYesNoQuestion(QString value)
     return true;
 }
 
-void MainWindow::PlaceResults()
+void MainWindow::PlaceResultsIntoTable()
 {
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
     backendFanficDataKeeper->SetData(env->fanfics);
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     QMetaObject::invokeMethod(childObject, "positionViewAtBeginning");
-    ReinitRecent(GetCurrentFandomName());
+    PushAndReinitRecentFandoms(GetCurrentFandomName());
 }
 
 void MainWindow::SetWorkingStatus()
@@ -1777,26 +1772,6 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 }
 
 
-int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool)
-{
-    TaskProgressGuard guard(this);
-    int result = -1;
-    TimedAction action("Full list creation: ",[&](){
-        result = env->BuildRecommendations(params, env->GetSourceFicsFromFile("lists/source.txt"));
-    });
-    action.run();
-    if(result == -1)
-    {
-        QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
-                                                    "Try using more source fics, or loosen the restrictions");
-    }
-
-    ReadRecommendationListStateIntoUI(env);
-    FillRecommenderListView();
-
-    return result;
-}
-
 
 FilterErrors MainWindow::ValidateFilter()
 {
@@ -1869,24 +1844,24 @@ int SortRecoderToUi(QComboBox* cb, core::StoryFilter::ESortMode index){
 
 
 core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode,
-                                                        bool useAuthorLink,
-                                                        QString listToUse,
-                                                        bool performFilterValidation)
+                                                        QString listToUse)
 {
-    Q_UNUSED(useAuthorLink)
     auto valueIfChecked = [](QCheckBox* box, auto value){
         if(box->isChecked())
             return value;
         return decltype(value)();
     };
     core::StoryFilter filter;
+
+
     auto filterState = ValidateFilter();
-    if(performFilterValidation && filterState.hasErrors)
-    {
+    if(filterState.hasErrors){
         filter.isValid = false;
         QMessageBox::warning(nullptr, "Attention!",filterState.errors.join("\n"));
         return filter;
     }
+
+
     auto tags = ui->wdgTagsPlaceholder->GetSelectedTags();
     if(ui->chkEnableTagsFilter->isChecked())
         filter.activeTags = tags;
@@ -2183,9 +2158,9 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
 
 
     switch(filter.genrePresenceForExclude){
-    case core::StoryFilter::gp_none:  ui->cbGenrePresenceTypeExclude->setCurrentText("None"); break;
-    case core::StoryFilter::gp_minimal:  ui->cbGenrePresenceTypeExclude->setCurrentText("Minimal"); break;
-    case core::StoryFilter::gp_medium:  ui->cbGenrePresenceTypeExclude->setCurrentText("Medium"); break;
+    case core::StoryFilter::gp_none:          ui->cbGenrePresenceTypeExclude->setCurrentText("None"); break;
+    case core::StoryFilter::gp_minimal:       ui->cbGenrePresenceTypeExclude->setCurrentText("Minimal"); break;
+    case core::StoryFilter::gp_medium:        ui->cbGenrePresenceTypeExclude->setCurrentText("Medium"); break;
     case core::StoryFilter::gp_considerable:  ui->cbGenrePresenceTypeExclude->setCurrentText("Considerable"); break;
     }
 
@@ -2353,7 +2328,7 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
 
 }
 
-void MainWindow::OnCopyFavUrls()
+void MainWindow::OnCopyRecommenderUrls()
 {
     TaskProgressGuard guard(this);
     QClipboard *clipboard = QApplication::clipboard();
@@ -2373,7 +2348,7 @@ void MainWindow::on_chkRandomizeSelection_toggled(bool checked)
     ui->sbMaxRandomFicCount->setEnabled(checked);
 }
 
-void MainWindow::OnOpenLogUrl(const QUrl & url)
+void MainWindow::OnOpenUrl(const QUrl & url)
 {
     QDesktopServices::openUrl(url);
 }
@@ -2488,8 +2463,8 @@ void MainWindow::OnFillDBIdsForTags()
 
 void MainWindow::OnTagReloadRequested()
 {
-    ReadTagsIntoUI(env);
     env->ReinitTagList();
+    ReadTagsIntoUI(env);
     qwFics->rootContext()->setContextProperty("tagModel", env->tagList);
 }
 
@@ -2569,26 +2544,6 @@ bool MainWindow::CreateRecommendationList(QSharedPointer<core::RecommendationLis
     return success;
 }
 
-bool MainWindow::CreateDiagnosticRecommendationList(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics)
-{
-    if(!params)
-        return false;
-
-    bool success = false;
-    TimedAction action("Diagnostic list creation: ",[&](){
-        TaskProgressGuard guard(this);
-        auto result = env->BuildRecommendations(params, sourceFics);
-        if(result == -1)
-        {
-            QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
-                                                        "Try using more source fics, or loosen the restrictions");
-            success = false;
-        }
-        success = true;
-    });
-    action.run();
-    return success;
-}
 
 
 void MainWindow::on_pbDiagnosticList_clicked()
@@ -2881,7 +2836,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->wdgTagsPlaceholder->ResetFilters();
 }
 
-void MainWindow::DetectGenreSearchState()
+void MainWindow::InitializeUiElementsForCurrentGenreSearchState()
 {
     if(ui->chkGenreUseImplied->isChecked())
     {
@@ -2899,7 +2854,7 @@ void MainWindow::DetectGenreSearchState()
     }
 }
 
-void MainWindow::DetectSlashSearchState()
+void MainWindow::InitializeUiElementsForCurrentSlashSearchState()
 {
     if(ui->cbSlashFilterAggressiveness->currentText() == "Strong")
     {
@@ -2979,9 +2934,9 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
 
 
     QVector<NameValueDecorator<double>> sizes = {{stats.sizeFactors[0], "Small"},
-                                        {stats.sizeFactors[1], "Medium"},
-                                        {stats.sizeFactors[2], "Large"},
-                                        {stats.sizeFactors[3], "Huge"}};
+                                                 {stats.sizeFactors[1], "Medium"},
+                                                 {stats.sizeFactors[2], "Large"},
+                                                 {stats.sizeFactors[3], "Huge"}};
     ui->edtAnalysisResults->insertHtml("Sizes%:<br>");
     QString sizeTemplate = "%1: <font color=blue>%2</font>";
     std::sort(std::begin(sizes), std::end(sizes), [](const NameValueDecorator<double>& m1,const NameValueDecorator<double>& m2){
@@ -3105,6 +3060,7 @@ void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
 
 void MainWindow::FetchScoresForFics()
 {
+    //return;
     auto mainListId = env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
     auto secondListId = env->interfaces.recs->GetListIdForName(ui->cbRecGroupSecond->currentText());
     env->interfaces.recs->SetCurrentRecommendationList(mainListId);
@@ -3126,8 +3082,8 @@ void MainWindow::DisplayRandomFicsForCurrentFilter()
     env->InstallRandomStoryFilter(ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics), ui->sbMaxRandomFicCount->value());
     if(env->filter.isValid)
     {
-        LoadData();
-        PlaceResults();
+        FetchDataForFilters();
+        PlaceResultsIntoTable();
     }
     AnalyzeCurrentFilter();
 }
@@ -3515,12 +3471,12 @@ void MainWindow::on_pbProfileCompare_clicked()
 
 void MainWindow::on_chkGenreUseImplied_stateChanged(int)
 {
-    DetectGenreSearchState();
+    InitializeUiElementsForCurrentGenreSearchState();
 }
 
 void MainWindow::on_cbSlashFilterAggressiveness_currentIndexChanged(int)
 {
-    DetectSlashSearchState();
+    InitializeUiElementsForCurrentSlashSearchState();
 }
 
 void MainWindow::on_pbLoadUrlForAnalysis_clicked()
