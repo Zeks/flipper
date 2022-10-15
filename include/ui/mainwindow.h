@@ -127,9 +127,6 @@ public:
 
     // used to set up signal/slot connections
     void InitConnections();
-    // sets up the timer that later triggers a check if there are unfinished tasks
-    // written into the task databse
-    void StartTaskTimer();
 
     // used to indicate "action in progress" status to the user
     void SetWorkingStatus();
@@ -297,7 +294,11 @@ private:
     // and fill the text browser with favourites data parsed from that profile
     // displays the resulting warnings in @infoLabel
     void LoadFFNProfileIntoTextBrowser(QTextBrowser * textbrowser, QLineEdit *urlEdit, QLabel *infoLabel = nullptr);
-
+    // will load favourite fic set from @profile into a set which is returned
+    // while diagnostics are put into @infoLabel
+    QSet<QString> LoadFavourteIdsFromFFNProfile(QString profile, QLabel *infoLabel = nullptr);
+    // verifies that the provided url is a valid ffn url
+    bool VerifyProfileUrlString(QString);
 
     // these two functions read either a string or textBrowser contents
     // and fill the resulting list with lla the ffn fic ids found within its contents
@@ -334,28 +335,55 @@ private:
     // will fill the "analysis" tab of flipper with statistical data about the currently filtered fic set
     void AnalyzeCurrentFilter();
 
+    // will fetch the scores breakdown for current ficset from LOCAL user database
+    void FetchScoresForFics();
+
     // it's a thin wrapper over env->Buildrecommendation list with a warning
     bool CreateRecommendationList(QSharedPointer<core::RecommendationList> params,
                                   QVector<int> sources);
 
-
-
-
-
-    void FetchScoresForFics();
+    // will crate a new recommendation list based on the state of recommendations cretor widget
+    // i.e will read settings from currently active elements
     bool CreateRecommendationListForCurrentMode();
+
+    // will set up the relevant default filtering options to display the newly creaated recommendation list
     void PrepareUIToDisplayNewRecommendationList(QString name);
 
+
+    // helper struct to display errors in fetching sources for recommendation list
+    // after soruce function returned
     struct FicSourceResult{
         QVector<int> sources;
         QString error;
     };
-
+    // will read user profile and fill QVector<int> with favourited fic ids from it
     FicSourceResult PickSourcesForEnteredProfile(QLineEdit* edit);
+    // will read text edit with urls and fill QVector<int> with fic ids from it
     FicSourceResult PickSourcesFromEditor();
+    // will read the currently selected tags (in tags widget way below)
+    // and fill QVector<int> with relevant fic ids for everything tagged with selected tags
     FicSourceResult PickSourcesFromTags();
 
 
+
+    // sets up a mode that filters fics excusively in favourite lists from a list of recommenders in db
+    void SetRecommenderFilteringMode(QStringList);
+    // sets up a mode that filters fics excusively written by a provided author id
+    void SetAuthorFilteringMode(QStringList);
+    // sets up ui for id filtering mode, the exact mode is set externally (fic, author, recommenders)
+    void SetIdFilteringMode(QStringList);
+    // unsets the ui that triggers id filtering mode to happen
+    void UnsetAuthorFilteringMode();
+
+
+    // depending on a state of checkbox will call either generation of webpage with formatted list of selected fics
+    // or a list of currently selecred fics grouped by fandom
+    void GenerateFormattedList();
+    // used to create targeted HTML lists to put on the web
+    void GenerateFormattedListByFandoms();
+    void GenerateDefaultFormattedList();
+
+    ////////////////////// CLASS DATA BLOCK ////////////////////
 
     Ui::MainWindow *ui;
 
@@ -364,10 +392,6 @@ private:
     InitializationProgress initProgress;;
 
     //QStringList tagList; // user tags used in the system
-    QTimer taskTimer; // used to initiate the warnign about unfinished tasks after the app window is shown
-
-
-
     QMovie refreshSpin; // an indicator that some work is in progress
     // using the Movie because it can animate while stuff is happening otherwise without much hassle from my side
 
@@ -376,31 +400,34 @@ private:
     TableDataListHolder<QVector, core::Fanfic>* backendFanficDataKeeper = nullptr; // an interface class that model uses to access the data
 
     QStringListModel* recentFandomsModel= nullptr; // used in the listview that shows the recently search fandoms
-    QStringListModel* ignoredFandomsModel= nullptr;
+    // this is supposed to hold fandoms that should not be slash filtered
+    // but it's too complex for the end user and is currently unused
     QStringListModel* ignoredFandomsSlashFilterModel= nullptr;
     QStringListModel* recommendersModel = nullptr; // this keeps names of te authors in current recommendation list
 
     QLineEdit* currentExpandedEdit = nullptr; // expanded editor for line edits
     QDialog* expanderWidget = nullptr; // a dialog to display data from currentExpandedEdit for editing
-    QTextEdit* edtExpander = new QTextEdit; //text edit taht contains the data of currentExpandedEdit while tis displayed by expanderWidget
+    QTextEdit* edtExpander = new QTextEdit; //text edit that contains the data of currentExpandedEdit while tis displayed by expanderWidget
 
+    // helper instance to control the state and behaviour of recommendations widget
     ReclistCreationUIHelper reclistUIHelper;
 
-    QQuickWidget* qwFics = nullptr; // a widget that holds qml fic search results
+    QQuickWidget* qwFics = nullptr; // a widget that holds qml view of fic search results
     QProgressBar* pbMain = nullptr; // a link to the progresspar on the ActionProgress widget
     ActionProgress* actionProgress = nullptr;
 
-    QLabel* lblClientVersion = nullptr; // a copyable user id
-    QLabel* lblUserIdStatic = nullptr; // a copyable user id
+    QLabel* lblClientVersion = nullptr;
+    QLabel* lblUserIdStatic = nullptr;
     QLabel* lblUserIdActive = nullptr; // a copyable user id
-    QLabel* lblDBUpdateInfo = nullptr; // a copyable user id
-    QLabel* lblDBUpdateDate = nullptr; // a copyable user id
+    QLabel* lblDBUpdateInfo = nullptr;
+    QLabel* lblDBUpdateDate = nullptr;
     QLabel* lblCurrentOperation = nullptr; // basically an expander so that actionProgress is shown to the right
 
-    QMenu fandomMenu;
-    QMenu ignoreFandomMenu;
-    QMenu ignoreFandomSlashFilterMenu;
+    QMenu menuRecentFandoms;
+    QMenu menuFandomLIsts;
+    QMenu menuSlashFilterIgnores;
 
+    // image provider for qr code inside the qml view
     QRImageProvider* imgProvider = nullptr;
 
     QString lastCreatedListName;
@@ -412,17 +439,8 @@ private:
     bool reclistCreationShown = false;
     bool defaultRecommendationsQueued = false;
 
-
+    ////////////////////// END CLASS DATA BLOCK ////////////////////
 public slots:
-    //broken and needs refactoring anyway
-    //void ProcessFandoms(WebPage webPage);
-    //void ProcessCrossovers(WebPage webPage);
-    //void on_pbInit_clicked();
-    // if anything, this needs to be rewritten to use fandom_ids
-    // unsure if I want to give users that
-    //void WipeSelectedFandom(bool);
-
-
     // triggered when user changes chapter in qml
     void OnChapterUpdated(QVariant, QVariant);
     // triggered when user adds tag in qml
@@ -430,15 +448,23 @@ public slots:
     // triggered when user removes tag from a fic in qml
     void OnTagRemove(QVariant tag, QVariant row);
 
+    // calls a new fic set consisting only of fics present in lists of people
+    // that recommended the fic that the heart was clicked on
     void OnHeartDoubleClicked(QVariant);
+    // called wjhen user clicks on stars  to the right of the fic
     void OnScoreAdjusted(QVariant, QVariant, QVariant);
+    // called when user fiddles with snooze type and range for fic in qml
     void OnSnoozeTypeChanged(QVariant, QVariant, QVariant);
+    // called when user adds a snooze to the fic i nqms
     void OnSnoozeAdded(QVariant);
+    // called when user removes a snooze in qm
     void OnSnoozeRemoved(QVariant);
+    // called when user finishes editing of notes for a fic in qml
     void OnNotesEdited(QVariant, QVariant);
 
+    // called to request a new qr code from image provider when user hovers
+    // over respetive button on qml
     void OnNewQRSource(QVariant);
-
 
     // triggered when user adds tag in qml
     void OnTagAddInTagWidget(QVariant tag, QVariant row);
@@ -449,9 +475,7 @@ public slots:
     void OnCopyFicUrl(QString);
     // copies urls of all currently visible fics into the cliboard
     void OnCopyAllUrls();
-    // used to create targeted HTML lists to put on the web
-    void OnDoFormattedListByFandoms();
-    void OnDoFormattedList();
+
     // queries and displays next page for the current query
     void OnDisplayNextPage();
 
@@ -463,19 +487,23 @@ public slots:
     void OnDisplayExactPage(int);
 
     // invoked on "Search" click
-    void on_pbLoadDatabase_clicked();
-    QSet<QString> LoadFavourteIdsFromFFNProfile(QString, QLabel *infoLabel = nullptr);
-    bool VerifyProfileUrlString(QString);
+    void OnRefilterRequested();
+
+
+    // catches refilter events from qml and refilters the table
+    // current amount of such eventts - none
     void OnQMLRefilter();
+    // catches clicks on fandoms in qml and passes them onto the ignore fandom combobox
     void OnQMLFandomToggled(QVariant);
+    // catches the clicks on "show fics by author" in qml and refilters the table respectively
     void OnQMLAuthorToggled(QVariant, QVariant active);
+
+    // used to read the tags in tagwidget filter and pull all of the fic urls
+    // for the fics that are marked with selected tags
+    // into the clipboard
     void OnGetUrlsForTags(bool);
 
-    // custom filtering modes
-    void SetRecommenderFilteringMode(QStringList);
-    void SetAuthorFilteringMode(QStringList);
-    void SetIdFilteringMode(QStringList);
-    void UnsetAuthorFilteringMode();
+
 
 
 
@@ -510,144 +538,197 @@ private slots:
     // used to toggle the UI elements dealing with fic randomization on and off
     void on_chkRandomizeSelection_toggled(bool checked);
 
+    // triggered on context menu item to remove a fandom from recent fandom searches list
     void OnRemoveFandomFromRecentList();
+    // triggered on context menu item to remove a fandom from slash filter ignore list
     void OnRemoveFandomFromSlashFilterIgnoredList();
 
-
+    // currently not called todo
     void OnFandomsContextMenu(const QPoint &pos);
+    // todo probably remove this as I don't think this is ever enabled
     void OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos);
 
+    // called to open url in a browser
     void OnOpenUrl(const QUrl&);
 
-    void GenerateFormattedList();
+
+    // called when user clicks on "pinpoint" in qml
+    // causes a refilter into a "simple merged list of fics favu=ourited with this one"
     void OnFindSimilarClicked(QVariant);
 
-    //void on_pbIgnoreFandom_clicked();
 
-
-
+    // these are all called on signals from backaend as it processes data
     void OnUpdatedProgressValue(int);
     void OnNewProgressString(QString);
     void OnResetTextEditor();
     void OnProgressBarRequested(int);
     void OnWarningRequested(QString value);
+
+
+    // calls a service function that fills db ids for fics imported from TagExported file
     void OnFillDBIdsForTags();
+    // called from import tag routine to reload after all of the tags have been read
     void OnTagReloadRequested();
+
+    // called from tagwidget when user checks "show only fics from authors of the tagged fics"
+    // to clear up the "only liked authors" check as these are exclusive
     void OnClearLikedAuthorsRequested();
 
+    // this toggles several recommendation list ui elements on and off
+    // depending on the state of "automatic" checkbox
     void on_chkRecsAutomaticSettings_toggled(bool checked);
 
+    // will load favourites from a provided ffn profile into rec sources list
     void on_pbRecsLoadFFNProfileIntoSource_clicked();
 
+    // will create actual recommendation list from prefilled filled sources editor
     void on_pbRecsCreateListFromSources_clicked();
 
-
+    // this is disabled and hidden now
     void on_pbReapplyFilteringMode_clicked();
 
+    // this is disabled and hidden now
     void on_cbCurrentFilteringMode_currentTextChanged(const QString &arg1);
 
+
+    // refetches metascores for fics upon selection of a new rec list
     void on_cbRecGroup_currentTextChanged(const QString &arg1);
 
+    // triggers on "html" button and creates a file with current fics in the filter
+    // optionally grouped by fandoms
     void on_pbCreateHTML_clicked();
 
-
+    // this auto,atically enables "search within list as long as checkbox next to metascore value filter is not null and enabled
     void on_sbMinimumListMatches_valueChanged(int arg1);
 
-    void on_chkOtherFandoms_toggled(bool checked);
-
-    //void on_chkIgnoreFandoms_toggled(bool checked);
-
+    // calls deletion of currently selected recommendation list
     void on_pbDeleteRecList_clicked();
 
+    // copies to clipboard the sources for currently selected recommendation list
     void on_pbGetSourceLinks_clicked();
 
 
+    // this would compare favourites between two profiles if that actually wasn't dangerous because of cloudflare limits
     void on_pbProfileCompare_clicked();
 
+    // triggers using implied genre mode mode on and off depending on the ui state
     void on_chkGenreUseImplied_stateChanged(int arg1);
 
+    // used to reinit the rest of the slash filter ui when the user changes the aggressivenewss level
     void on_cbSlashFilterAggressiveness_currentIndexChanged(int index);
 
+    // loads up user profile for analysis (requires parsing so a no go atm)
     void on_pbLoadUrlForAnalysis_clicked();
 
+    // analyzes a list of fic ids in the second tab of the app
+    // works either with parsing first or just dumping a list directly
     void on_pbAnalyzeListOfFics_clicked();
 
+    // this uses the stored information about the recommendation list
+    // to fully recreate it with new fics from the server
     void on_pbRefreshRecList_clicked();
 
-
-
+    // will show/hide the second fandom combobox based on the state of "crossovers" checkbox
     void on_chkCrossovers_stateChanged(int arg1);
 
+    // switches the values of crossovers and normal fandom filter combobox
     void on_pbFandomSwitch_clicked();
 
+    // will show/hide the second fandom combobox based on the state of "crossovers" checkbox
     void on_chkNonCrossovers_stateChanged(int arg1);
 
+    // this ui is hidden and unnecessary
     void on_chkInvertedSlashFilter_stateChanged(int arg1);
 
+    // this will untik a control that is currently not visible
     void on_chkOnlySlash_stateChanged(int arg1);
 
+    // will enabled id search mode (will tick the checkbox) and refilter to show fics for author
     void on_leAuthorID_returnPressed();
 
+    // search history navigation -> next
     void on_pbPreviousResults_clicked();
-
+    // search history navigation -> previous
     void on_pbNextResults_clicked();
 
+    // this is for service function only and is not facing the user
+    // will load up some diagnostics about fics and lists into the dev database
     void on_pbDiagnosticList_clicked();
 
+    // experimental stale feature of second recommendation list and comparison
+    // not intended to work rn
     void on_cbRecGroupSecond_currentIndexChanged(const QString &arg1);
 
+    // triggered from settings to show/hide author name in fic's sheet
     void on_chkDisplayAuthorName_stateChanged(int arg1);
 
+    // stale feature
     void on_chkDisplaySecondList_stateChanged(int arg1);
 
+    // used to enabled/disable comma between thousand in fic's wordcount
     void on_chkDisplayComma_stateChanged(int arg1);
 
-
+    // changes the meanign of the number tot the left of the fic
+    // can be position in current selection or position in the full reclist
     void on_cbFicIDDisplayMode_currentIndexChanged(const QString &arg1);
 
+    // will enable/disable the display of detected genre instead of author set
     void on_chkDisplayDetectedGenre_stateChanged(int arg1);
 
+    // will trigger a reparse of the user fav list to test if it's valid
+    // depending on cloudfkare's mood it can fail
     void on_pbVerifyUserFFNId_clicked();
 
+    // will change what exactly is loaded upon the app startup
+    // - current top of reclist
+    // - random selection
+    // - nothing
     void on_cbStartupLoadSelection_currentIndexChanged(const QString &arg1);
 
+    // calls on_pbVerifyUserFFNId_clicked when user edits their ffn id
     void on_leUserFFNId_editingFinished();
 
+    // will stop coloring patreon tab is the user ticks the respective checkbox
     void on_chkStopPatreon_stateChanged(int arg1);
 
+    // these all deal with differnt modes of creating recommednation list  in reclist widget
     void on_rbSimpleMode_clicked();
-
     void on_rbAdvancedMode_clicked();
-
     void on_rbProfileMode_clicked();
-
     void on_rbUrlMode_clicked();
-
     void on_rbSelectedTagsMode_clicked();
-
+    // this will show/hide the recommendation list creation subwidget
+    // when the suer clicks on "new recommendationm list"
     void on_pbNewRecommendationList_clicked();
 
+
+    // will parse ffn profile for favourites once return has been pressed in the respective lineedit
+    // in recs creation widget
     void on_leFFNProfileInputForUrls_returnPressed();
 
-
+    // older controls, will change the state of "always pick at" if "automatic" is not checked
     void on_chkUseAwaysPickAt_stateChanged(int arg1);
 
-
+    // will parse and validate user id
     void on_pbValidateUserID_clicked();
 
+    // will copy the unique id of the user database to cliboard for error reporting
     void onCopyDbUIDToClipboard(const QString&);
+    // calls expanded editor for "id" search lineedit
     void on_pbExpandIEntityds_clicked();
 
+    // will clear the "authors for tags" checkbox in tags widget since it's exclusive with liked authors
     void on_chkLikedAuthors_stateChanged(int arg1);
 
+    // will reset application filter to default state
     void on_pbResetFilter_clicked();
 
+    // will read fic list inside the clipboard and assign currently selected tags to them
+    // very service~ey, very experimental and  likely unsafe
     void OnTagFromClipboard();
 
 signals:
 
-
-    void pageTask(FandomParseTask);
     void qrChange();
 };
 

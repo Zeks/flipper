@@ -156,7 +156,6 @@ public:
 
     void ReinitTagList();
 
-    void LoadMoreAuthors(QString listname, fetching::CacheStrategy cacheStrategy);
     void LoadAllLinkedAuthors(fetching::CacheStrategy cacheStrategy);
     void LoadAllLinkedAuthorsMultiFromCache();
 
@@ -205,7 +204,7 @@ public:
 
     QList<QSharedPointer<core::Fanfic>>  LoadAuthorFics(QString url);
 
-    PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, fetching::CacheStrategy cacheStrategy, QString wordCutoff);
+
     void FillDBIDsForTags();
     QList<int> GetDBIDsForFics(QVector<int>);
     QSet<int> GetAuthorsContainingFicFromRecList(int fic, QString recList);

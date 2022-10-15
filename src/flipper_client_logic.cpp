@@ -413,25 +413,6 @@ void FlipperClientLogic::UseAuthorTask(PageTaskPtr task)
     authorLoader.Run(task);
 }
 
-void FlipperClientLogic::LoadMoreAuthors(QString listName, fetching::CacheStrategy cacheStrategy)
-{
-    filter.mode = core::StoryFilter::filtering_in_recommendations;
-    interfaces.recs->SetCurrentRecommendationList(interfaces.recs->GetListIdForName(listName));
-    QStringList authorUrls = interfaces.recs->GetLinkedPagesForList(interfaces.recs->GetCurrentRecommendationList(), "ffn");
-    emit requestProgressbar(authorUrls.size());
-    emit updateInfo("Authors: " + QString::number(authorUrls.size()));
-    QString comment = "Loading more authors from list: " + QString::number(interfaces.recs->GetCurrentRecommendationList());
-    auto pageTask = page_utils::CreatePageTaskFromUrls(interfaces.pageTask,
-                                                       database::sqlite::GetCurrentDateTime(interfaces.userDb),
-                                                       authorUrls,
-                                                       comment,
-                                                       500,
-                                                       3,
-                                                       cacheStrategy,
-                                                       true);
-
-    UseAuthorTask(pageTask);
-}
 
 void FlipperClientLogic::LoadAllLinkedAuthors(fetching::CacheStrategy cacheStrategy)
 {
@@ -1085,32 +1066,6 @@ QList<QSharedPointer<core::Fanfic> > FlipperClientLogic::LoadAuthorFics(QString 
     return parser.processedStuff;
 }
 
-PageTaskPtr FlipperClientLogic::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate,
-                                                fetching::CacheStrategy cacheStrategy,
-                                                QString wordCutoff)
-{
-    interfaces.fanfics->ClearProcessedHash();
-    auto fandoms = interfaces.fandoms->ListOfTrackedFandoms();
-    //qDebug()  << "Tracked fandoms: " << fandoms;
-    emit resetEditorText();
-
-    QStringList nameList;
-    for(const auto& fandom : fandoms)
-    {
-        if(!fandom)
-            continue;
-        nameList.push_back(fandom->GetName());
-    }
-
-    emit updateInfo(QString("Starting load of tracked %1 fandoms <br>").arg(fandoms.size()));
-    auto result = ProcessFandomsAsTask(fandoms,
-                                       "",
-                                       true,
-                                       cacheStrategy,
-                                       wordCutoff,
-                                       forcedDate);
-    return result;
-}
 
 void FlipperClientLogic::FillDBIDsForTags()
 {

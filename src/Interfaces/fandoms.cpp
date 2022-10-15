@@ -346,29 +346,6 @@ void Fandoms::ReloadRecentFandoms()
     }
 }
 
-bool Fandoms::LoadTrackedFandoms(bool forced)
-{
-    bool result = false;
-    bool needsLoading = trackedFandoms.empty()  || forced;
-    if(!needsLoading)
-        return true;
-
-    auto opResult = sql::GetTrackedFandomList(db);
-    auto trackedList = opResult.data;
-    if(trackedList.empty() || !opResult.success)
-        return false;
-
-    trackedFandoms.clear();
-    trackedFandoms.reserve(trackedList.size());
-    for(const auto& bit : trackedList)
-    {
-        bool localResult = EnsureFandom(bit);
-        if(localResult)
-            trackedFandoms.push_back(nameIndex[bit.toLower()]);
-        result = result && localResult;
-    }
-    return result;
-}
 
 bool Fandoms::LoadAllFandoms(bool forced)
 {
@@ -550,25 +527,6 @@ QString Fandoms::GetNameForID(int id)
         result = idIndex[id]->GetName();
     return result;
 }
-
-
-QStringList Fandoms::ListOfTrackedNames()
-{
-    QStringList names;
-    if(!LoadTrackedFandoms())
-        return names;
-    for(const auto& fandom: std::as_const(trackedFandoms))
-        if(fandom)
-            names.push_back(fandom->GetName());
-    return names;
-}
-
-QList<core::FandomPtr > Fandoms::ListOfTrackedFandoms()
-{
-    LoadTrackedFandoms();
-    return trackedFandoms;
-}
-
 
 
 bool Fandoms::LoadFandom(QString name)

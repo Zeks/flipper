@@ -40,7 +40,6 @@ public:
     virtual bool IsDataLoaded() ;
 
     virtual bool Load() ;
-    bool LoadTrackedFandoms(bool forced = false);
     bool LoadAllFandoms(bool forced = false);
     QList<core::FandomPtr> LoadAllFandomsAfter(int id);
     virtual bool LoadFandom(QString name);
@@ -84,8 +83,6 @@ public:
     bool RemoveFandomFromIgnoredListSlashFilter(int id);
 
 
-    virtual QStringList ListOfTrackedNames();
-    virtual QList<core::FandomPtr> ListOfTrackedFandoms();
 
     virtual bool CreateFandom(core::FandomPtr,
                               bool writeUrls = true,

@@ -134,7 +134,6 @@ bool FlipperInitializer::SetupMainWindow()
     w->InitConnections();
     w->show();
     w->DisplayInitialFicSelection();
-    w->StartTaskTimer();
     return true;
 }
 

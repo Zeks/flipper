@@ -215,6 +215,7 @@ void MainWindow::InitConnections()
     connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
     connect(ui->wdgTagsPlaceholder, &TagWidget::createUrlsForTags, this, &MainWindow::OnGetUrlsForTags);
+    connect(ui->pbLoadDatabase, &QPushButton::clicked, this, &MainWindow::OnRefilterRequested);
 
     //this connection is actually currently never triggered
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
@@ -227,7 +228,7 @@ void MainWindow::InitConnections()
                 FetchDataForFilters();
         }
         if(ui->wdgTagsPlaceholder->GetSelectedTags().size() == 0)
-            on_pbLoadDatabase_clicked();
+            OnRefilterRequested();
         ui->edtResults->setUpdatesEnabled(true);
         ui->edtResults->setReadOnly(true);
         backendFanficDataKeeper->SetData(env->fanfics);
@@ -402,9 +403,9 @@ void MainWindow::SetupFanficTable(QSharedPointer<FlipperClientLogic> env)
 
 void MainWindow::FillContextMenuActions()
 {
-    fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
-    ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
-    ignoreFandomSlashFilterMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromSlashFilterIgnoredList()));
+    menuRecentFandoms.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
+    menuFandomLIsts.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
+    menuSlashFilterIgnores.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromSlashFilterIgnoredList()));
 
     ui->lvRecentFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->lvExcludedFandomsSlashFilter->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -714,7 +715,7 @@ void MainWindow::OnCopyAllUrls()
     clipboard->setText(result);
 }
 
-void MainWindow::OnDoFormattedListByFandoms()
+void MainWindow::GenerateFormattedListByFandoms()
 {
     TaskProgressGuard guard(this);
     QClipboard *clipboard = QApplication::clipboard();
@@ -789,7 +790,7 @@ void MainWindow::OnDoFormattedListByFandoms()
     clipboard->setText(result);
 }
 
-void MainWindow::OnDoFormattedList()
+void MainWindow::GenerateDefaultFormattedList()
 {
     TaskProgressGuard guard(this);
     QClipboard *clipboard = QApplication::clipboard();
@@ -821,7 +822,7 @@ void MainWindow::OnDoFormattedList()
     clipboard->setText(result);
 }
 
-void MainWindow::on_pbLoadDatabase_clicked()
+void MainWindow::OnRefilterRequested()
 {
     TaskProgressGuard guard(this);
     database::Transaction transaction(env->interfaces.fandoms->db);
@@ -868,7 +869,7 @@ bool MainWindow::VerifyProfileUrlString(QString url)
 
 void MainWindow::OnQMLRefilter()
 {
-    on_pbLoadDatabase_clicked();
+    OnRefilterRequested();
 }
 
 void MainWindow::OnQMLFandomToggled(QVariant var)
@@ -1464,12 +1465,6 @@ void MainWindow::PushAndReinitRecentFandoms(QString name)
     recentFandomsModel->setStringList(env->interfaces.fandoms->GetRecentFandoms());
 }
 
-void MainWindow::StartTaskTimer()
-{
-    taskTimer.setSingleShot(true);
-    taskTimer.start(1000);
-}
-
 bool MainWindow::AskYesNoQuestion(QString value)
 {
     QMessageBox m;
@@ -1546,11 +1541,11 @@ void MainWindow::DisplayInitialFicSelection()
     bool hasAnyRecommendationList = ui->cbRecGroup->count() > 0;
     if(!hasAnyRecommendationList){
         ui->cbSortMode->setCurrentIndex(2);
-        on_pbLoadDatabase_clicked();
+        OnRefilterRequested();
     }
 
     if(hasAnyRecommendationList && settings.value("Settings/startupLoadMode", 2).toInt() == 1)
-        on_pbLoadDatabase_clicked();
+        OnRefilterRequested();
     if(hasAnyRecommendationList && settings.value("Settings/startupLoadMode", 2).toInt() == 2)
         DisplayRandomFicsForCurrentFilter();
 
@@ -1768,7 +1763,7 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
     ui->cbRecGroup->setCurrentText(params->name);
     ui->cbSortMode->setCurrentText("Metascore");
     env->interfaces.recs->SetCurrentRecommendationList(env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
-    on_pbLoadDatabase_clicked();
+    OnRefilterRequested();
 }
 
 
@@ -2371,20 +2366,20 @@ void MainWindow::OnRemoveFandomFromSlashFilterIgnoredList()
 
 void MainWindow::OnFandomsContextMenu(const QPoint &pos)
 {
-    fandomMenu.popup(ui->lvRecentFandoms->mapToGlobal(pos));
+    menuRecentFandoms.popup(ui->lvRecentFandoms->mapToGlobal(pos));
 }
 
 void MainWindow::OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos)
 {
-    ignoreFandomSlashFilterMenu.popup(ui->lvExcludedFandomsSlashFilter->mapToGlobal(pos));
+    menuSlashFilterIgnores.popup(ui->lvExcludedFandomsSlashFilter->mapToGlobal(pos));
 }
 
 void MainWindow::GenerateFormattedList()
 {
     if(ui->chkGroupFandoms->isChecked())
-        OnDoFormattedListByFandoms();
+        GenerateFormattedListByFandoms();
     else
-        OnDoFormattedList();
+        GenerateDefaultFormattedList();
 }
 
 void MainWindow::on_pbCreateHTML_clicked()
@@ -2724,7 +2719,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         return;
 
     PrepareUIToDisplayNewRecommendationList(lastCreatedListName);
-    on_pbLoadDatabase_clicked();
+    OnRefilterRequested();
 }
 
 
@@ -2759,7 +2754,7 @@ void MainWindow::on_pbRefreshRecList_clicked()
     ui->cbSortMode->setCurrentText("Metascore");
     ui->cbSortDirection->setCurrentText("DESC");
 
-    on_pbLoadDatabase_clicked();
+    OnRefilterRequested();
 }
 
 void MainWindow::on_pbReapplyFilteringMode_clicked()
@@ -3220,7 +3215,6 @@ void MainWindow::InitializeHistoryNavigationButtons()
 void MainWindow::InstantiateModels()
 {
     recentFandomsModel = new QStringListModel;
-    ignoredFandomsModel = new QStringListModel;
     ignoredFandomsSlashFilterModel= new QStringListModel;
     recommendersModel= new QStringListModel;
 }
@@ -3273,7 +3267,6 @@ void MainWindow::ReadFandomListsIntoUI(QSharedPointer<FlipperClientLogic> env)
 
 
     recentFandomsModel->setStringList(env->interfaces.fandoms->GetRecentFandoms());
-    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
     ignoredFandomsSlashFilterModel->setStringList(env->interfaces.fandoms->GetIgnoredFandomsSlashFilter());
     ui->lvRecentFandoms->setModel(recentFandomsModel);
     ui->lvExcludedFandomsSlashFilter->setModel(ignoredFandomsSlashFilterModel);
@@ -3357,15 +3350,10 @@ void MainWindow::on_cbRecGroupSecond_currentIndexChanged(const QString &arg1)
 
 void MainWindow::on_sbMinimumListMatches_valueChanged(int value)
 {
-    if(value > 0)
+    if(value > 0 && ui->chkUseReclistMatches)
         ui->chkSearchWithinList->setChecked(true);
 }
 
-void MainWindow::on_chkOtherFandoms_toggled(bool checked)
-{
-    if(checked)
-        ui->chkIgnoreFandoms->setChecked(false);
-}
 
 //void MainWindow::on_chkIgnoreFandoms_toggled(bool checked)
 //{
@@ -3537,7 +3525,7 @@ void MainWindow::on_chkNonCrossovers_stateChanged(int arg1)
 void MainWindow::on_leAuthorID_returnPressed()
 {
     ui->chkIdSearch->setChecked(true);
-    on_pbLoadDatabase_clicked();
+    OnRefilterRequested();
 }
 
 void MainWindow::on_chkInvertedSlashFilter_stateChanged(int arg1)

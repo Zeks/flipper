@@ -73,7 +73,7 @@
            </size>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>4</number>
           </property>
           <widget class="QWidget" name="tab_10">
            <property name="maximumSize">
@@ -3766,7 +3766,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="bgRecsMode"/>
   <buttongroup name="bgRecsSource"/>
+  <buttongroup name="bgRecsMode"/>
  </buttongroups>
 </ui>
