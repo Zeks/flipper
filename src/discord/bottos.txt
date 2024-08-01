@@ -1,0 +1,5 @@
+Rights to use our service
+You have the right to use the service as long as you don't use it in any way that would break Discords ToS or the rules of the guild ("server") you're in. 
+We reserve the right to permanently block you from our services, deny support and/or services or report you to discord.
+
+We are not responsible for content generated via our bot by users that is violating Discords ToS in any way.
